@@ -97,7 +97,8 @@ const SLATE: NeutralRamp = {
 const MONO = "'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', 'Consolas', monospace";
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
-// CERTEN — the default brand (corporate, light, neutral-first, restrained orange accent).
+// CERTEN — the default brand. Serious enterprise software: near-monochrome slate, one restrained
+// deep-navy accent, refined (not heavy) headings, tight instrument-grade geometry. No flash.
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 export const CERTEN_BRAND: BrandConfig = {
   name: 'CERTEN',
@@ -106,41 +107,44 @@ export const CERTEN_BRAND: BrandConfig = {
     'Nothing high-value executes until policy is satisfied and proven — whether the actor is a person, a multisig, or an AI.',
   markIcon: VerifiedUserRoundedIcon,
 
-  accent: { main: '#C2620E', light: '#E58A3C', dark: '#9A4E0B', contrastText: '#FFFFFF' },
+  // Deep, desaturated navy — the accent of financial/security infrastructure. Used SPARINGLY:
+  // primary action, active rail, one highlight. Everything else is quiet slate.
+  accent: { main: '#1F4E79', light: '#A7BED4', dark: '#173B5C', contrastText: '#FFFFFF' },
   neutral: SLATE,
+  // Semantic status only (verdicts / health) — sobered so they read as serious signals, not candy.
   status: {
-    success: { main: '#15803D', light: '#22C55E', dark: '#166534' },
-    error: { main: '#DC2626', light: '#EF4444', dark: '#B91C1C' },
-    warning: { main: '#B45309', light: '#F59E0B', dark: '#92400E' },
-    info: { main: '#0369A1', light: '#0EA5E9', dark: '#075985' },
+    success: { main: '#157347', light: '#2E9E5B', dark: '#10532F' },
+    error: { main: '#B42318', light: '#D14438', dark: '#8A1B12' },
+    warning: { main: '#B45309', light: '#D58A2C', dark: '#8A3F08' },
+    info: { main: '#1F6F8B', light: '#4F97AC', dark: '#17576B' },
   },
   surfaces: {
-    canvas: '#F6F7F9',
+    canvas: '#F5F7FA',
     paper: '#FFFFFF',
     subtle: SLATE[50],
     sunken: SLATE[100],
     overlay: '#FFFFFF',
-    border: '#E5E8EC',
+    border: '#E2E6EC',
   },
   typography: {
     fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     monoFamily: MONO,
-    headingWeight: 700,
+    headingWeight: 600,
     fontImportHref:
       'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap',
   },
-  radii: { sm: 6, md: 8, lg: 12, full: 9999 },
+  radii: { sm: 4, md: 6, lg: 8, full: 9999 },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
-// EXAMPLE client preset — shows how little it takes to rebrand (a blue enterprise accent).
+// EXAMPLE client preset — shows how little it takes to rebrand (a distinct teal accent).
 // Copy this block, rename, change `accent` (+ `name`), then activate it at the bottom.
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 export const ACME_BRAND: BrandConfig = {
   ...CERTEN_BRAND,
   name: 'ACME',
   productLabel: 'Authorization Console',
-  accent: { main: '#1D4ED8', light: '#3B82F6', dark: '#1E40AF', contrastText: '#FFFFFF' },
+  accent: { main: '#0F766E', light: '#5EEAD4', dark: '#115E59', contrastText: '#FFFFFF' },
 };
 
 // ════════════════════════════════════════════════════════════════════════════════════════════

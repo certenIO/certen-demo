@@ -38,7 +38,7 @@ export function Launcher({
         <Chip
           size="small"
           label={mode === 'live' ? 'LIVE · API Gateway' : 'SIMULATED'}
-          color={mode === 'live' ? 'success' : 'warning'}
+          color={mode === 'live' ? 'success' : 'default'}
           variant="outlined"
         />
       </Stack>

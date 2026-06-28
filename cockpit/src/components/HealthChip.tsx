@@ -26,7 +26,7 @@ export function HealthChip({ mode }: { mode: string }) {
   if (!live) {
     return (
       <Tooltip title="Uses deterministic demo data; proof and explorer links mirror live shapes. Switch to live mode for real gateway / proof / EVM execution.">
-        <Chip size="small" label="SIMULATED CHOREOGRAPHY" color="warning" variant="outlined" sx={{ fontWeight: 700, fontSize: '0.66rem' }} />
+        <Chip size="small" label="SIMULATED CHOREOGRAPHY" color="default" variant="outlined" sx={{ fontWeight: 600, fontSize: '0.66rem', letterSpacing: '0.04em' }} />
       </Tooltip>
     );
   }

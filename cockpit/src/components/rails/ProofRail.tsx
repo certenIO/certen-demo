@@ -4,7 +4,7 @@ import ShieldRoundedIcon from '@mui/icons-material/ShieldRounded';
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
 import { Rail } from '../Rail';
-import { CERTEN_COLORS, MONO_FAMILY } from '../../theme';
+import { CERTEN_COLORS, MONO_FAMILY, NEUTRAL } from '../../theme';
 import type { ProofInfo } from '../../types';
 
 function Field({ label, value }: { label: string; value: string }) {
@@ -37,7 +37,7 @@ export function ProofRail({ proof }: { proof: ProofInfo | null }) {
       active
       accent={accent}
       right={
-        <Chip label={`Governance ${proof.governanceLevel}`} size="small" sx={{ bgcolor: alpha(accent, 0.15), color: accent, fontWeight: 700 }} />
+        <Chip label={`Governance ${proof.governanceLevel}`} size="small" sx={{ bgcolor: alpha(accent, 0.10), color: accent, fontWeight: 700 }} />
       }
     >
       <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }}>
@@ -56,7 +56,7 @@ export function ProofRail({ proof }: { proof: ProofInfo | null }) {
               p: 1.75,
               borderRadius: 2,
               border: `1px solid ${alpha(accent, 0.25)}`,
-              bgcolor: alpha('#ffffff', 0.02),
+              bgcolor: NEUTRAL[50],
             }}
           >
             <Field label="Proof ID" value={proof.id} />

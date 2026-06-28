@@ -11,7 +11,7 @@ export function PresenterCuePanel({ cue }: { cue: PresenterCue | null | undefine
     <Card sx={{ p: 1.5, border: `1px dashed ${alpha(accent, 0.5)}`, bgcolor: alpha(accent, 0.06) }}>
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
         <RecordVoiceOverRoundedIcon sx={{ color: accent, fontSize: 18 }} />
-        <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.1em', color: accent, textTransform: 'uppercase' }}>
+        <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.1em', color: accent, textTransform: 'uppercase' }}>
           Presenter cue (operator only)
         </Typography>
       </Stack>

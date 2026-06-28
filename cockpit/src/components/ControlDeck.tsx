@@ -63,11 +63,7 @@ export function ControlDeck({
                   : { bgcolor: accent, '&:hover': { bgcolor: accent } }),
                 ...(c.emphasis &&
                   !busy && {
-                    animation: 'deckPulse 1.4s ease-in-out infinite',
-                    '@keyframes deckPulse': {
-                      '0%,100%': { boxShadow: `0 0 0 0 ${alpha(accent, 0.55)}` },
-                      '50%': { boxShadow: `0 0 0 12px ${alpha(accent, 0)}` },
-                    },
+                    boxShadow: `0 0 0 1px ${alpha(accent, 0.4)}`,
                   }),
               }}
             >

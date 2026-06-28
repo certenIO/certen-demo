@@ -5,8 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:static": "vite --mode static",
     "build": "vite build",
+    "build:static": "vite build --mode static",
     "preview": "vite preview --host",
+    "preview:static": "vite preview --mode static --host",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

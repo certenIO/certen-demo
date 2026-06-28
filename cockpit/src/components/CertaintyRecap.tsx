@@ -4,7 +4,7 @@ import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 import VpnKeyOffRoundedIcon from '@mui/icons-material/VpnKeyOffRounded';
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
-import { CERTEN_COLORS } from '../theme';
+import { CERTEN_COLORS, NEUTRAL, SHADOW } from '../theme';
 
 /**
  * Post-demo "certainty recap" — the closer. Auto-surfaces on the terminal state:
@@ -51,7 +51,7 @@ export function CertaintyRecap({ variant, policyLine, stopReason, outcomeLine, o
       sx={{
         position: 'absolute', inset: 0, zIndex: 20,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(8,9,14,0.66)', backdropFilter: 'blur(3px)',
+        bgcolor: alpha(NEUTRAL[900], 0.55), backdropFilter: 'blur(3px)',
       }}
       onClick={onClose}
     >
@@ -62,13 +62,13 @@ export function CertaintyRecap({ variant, policyLine, stopReason, outcomeLine, o
         onClick={(e) => e.stopPropagation()}
         style={{ width: 'min(560px, 92vw)' }}
       >
-        <Box sx={{ p: 3, borderRadius: 3, bgcolor: 'background.paper', border: `2px solid ${alpha(accent, 0.6)}`, boxShadow: `0 24px 80px ${alpha(accent, 0.3)}` }}>
+        <Box sx={{ p: 3, borderRadius: 3, bgcolor: 'background.paper', border: `1.5px solid ${alpha(accent, 0.6)}`, boxShadow: SHADOW.lg }}>
           <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 0.5 }}>
-            <Box sx={{ width: 44, height: 44, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: alpha(accent, 0.15), color: accent }}>
+            <Box sx={{ width: 44, height: 44, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: alpha(accent, 0.10), color: accent }}>
               {safe ? <CheckCircleRoundedIcon sx={{ fontSize: 28 }} /> : <CancelRoundedIcon sx={{ fontSize: 28 }} />}
             </Box>
             <Box>
-              <Typography sx={{ fontWeight: 800, fontSize: '1.4rem', color: accent, letterSpacing: '-0.01em' }}>
+              <Typography sx={{ fontWeight: 700, fontSize: '1.4rem', color: accent, letterSpacing: '-0.01em' }}>
                 {safe ? 'CERTEN was certain' : 'CERTEN was not certain'}
               </Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>
@@ -96,7 +96,7 @@ export function CertaintyRecap({ variant, policyLine, stopReason, outcomeLine, o
           </Stack>
 
           <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha(accent, 0.08), border: `1px solid ${alpha(accent, 0.3)}`, mb: 2 }}>
-            <Typography sx={{ fontWeight: 700, color: safe ? CERTEN_COLORS.success.light : CERTEN_COLORS.error.light }}>
+            <Typography sx={{ fontWeight: 700, color: safe ? CERTEN_COLORS.success.dark : CERTEN_COLORS.error.dark }}>
               {safe
                 ? 'So — and only so — it executed.'
                 : `No proof, no execution.${outcomeLine ? ` ${outcomeLine}` : ''}`}

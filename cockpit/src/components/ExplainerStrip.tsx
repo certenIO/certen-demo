@@ -5,7 +5,7 @@ import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
 import ShieldRoundedIcon from '@mui/icons-material/ShieldRounded';
 import StarRoundedIcon from '@mui/icons-material/StarRounded';
 import IntegrationInstructionsRoundedIcon from '@mui/icons-material/IntegrationInstructionsRounded';
-import { CERTEN_COLORS } from '../theme';
+import { CERTEN_COLORS, SURFACE } from '../theme';
 import type { ScenarioExplainer } from '../types';
 
 /** "Why This Matters" self-teaching strip (Runbook 2). One line per field, compact. */
@@ -37,17 +37,17 @@ export function ExplainerStrip({ explainer }: { explainer: ScenarioExplainer | n
           borderRadius: 2,
           border: '1px solid',
           borderColor: alpha(CERTEN_COLORS.primary.main, 0.18),
-          background: `linear-gradient(90deg, ${alpha(CERTEN_COLORS.error.main, 0.06)}, ${alpha(CERTEN_COLORS.success.main, 0.06)})`,
+          backgroundColor: SURFACE.subtle,
         }}
       >
         {seg(<ReportProblemRoundedIcon sx={{ fontSize: 20 }} />, 'Without CERTEN', explainer.pain, CERTEN_COLORS.error.main)}
         <Box sx={{ color: 'text.secondary', opacity: 0.5 }}>→</Box>
-        {seg(<ShieldRoundedIcon sx={{ fontSize: 20 }} />, 'CERTEN did this', explainer.certenMove, CERTEN_COLORS.primary.light)}
+        {seg(<ShieldRoundedIcon sx={{ fontSize: 20 }} />, 'CERTEN did this', explainer.certenMove, CERTEN_COLORS.primary.main)}
         <Box sx={{ color: 'text.secondary', opacity: 0.5 }}>→</Box>
         {seg(<StarRoundedIcon sx={{ fontSize: 20 }} />, 'Why it matters', explainer.buyerTakeaway, CERTEN_COLORS.success.main)}
         {explainer.integrationHint && (
           <Tooltip title={explainer.integrationHint}>
-            <IntegrationInstructionsRoundedIcon sx={{ fontSize: 20, color: CERTEN_COLORS.secondary.light, flexShrink: 0 }} />
+            <IntegrationInstructionsRoundedIcon sx={{ fontSize: 20, color: CERTEN_COLORS.secondary.main, flexShrink: 0 }} />
           </Tooltip>
         )}
       </Box>

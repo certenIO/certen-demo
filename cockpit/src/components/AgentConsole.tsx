@@ -2,12 +2,12 @@ import { useEffect, useRef } from 'react';
 import { Box, Card, Chip, Stack, Typography, alpha } from '@mui/material';
 import { motion } from 'framer-motion';
 import SmartToyRoundedIcon from '@mui/icons-material/SmartToyRounded';
-import { CERTEN_COLORS, MONO_FAMILY } from '../theme';
+import { CERTEN_COLORS, MONO_FAMILY, NEUTRAL, SURFACE } from '../theme';
 import type { AgentConsole as AgentConsoleData, AgentLine } from '../types';
 
 const STYLE: Record<AgentLine['kind'], { color: string; prefix: string }> = {
-  thought: { color: '#A3A7BA', prefix: '·' },
-  action: { color: CERTEN_COLORS.primary.light, prefix: '→' },
+  thought: { color: NEUTRAL[500], prefix: '·' },
+  action: { color: CERTEN_COLORS.primary.main, prefix: '→' },
   result: { color: CERTEN_COLORS.success.main, prefix: '✓' },
   blocked: { color: CERTEN_COLORS.error.main, prefix: '⛔' },
 };
@@ -24,16 +24,16 @@ export function AgentConsole({ agent }: { agent: AgentConsoleData }) {
         direction="row"
         alignItems="center"
         spacing={1.25}
-        sx={{ px: 2, py: 1.5, borderBottom: '1px solid rgba(255,255,255,0.06)', bgcolor: alpha(CERTEN_COLORS.secondary.main, 0.08) }}
+        sx={{ px: 2, py: 1.5, borderBottom: `1px solid ${SURFACE.border}`, bgcolor: alpha(CERTEN_COLORS.secondary.main, 0.08) }}
       >
-        <SmartToyRoundedIcon sx={{ color: CERTEN_COLORS.secondary.light }} />
+        <SmartToyRoundedIcon sx={{ color: CERTEN_COLORS.secondary.main }} />
         <Box sx={{ flexGrow: 1 }}>
           <Typography sx={{ fontWeight: 700 }}>AI Agent</Typography>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
             {agent.goal}
           </Typography>
         </Box>
-        <Chip size="small" label={agent.model} sx={{ fontFamily: 'monospace', bgcolor: alpha(CERTEN_COLORS.secondary.main, 0.15), color: CERTEN_COLORS.secondary.light }} />
+        <Chip size="small" label={agent.model} sx={{ fontFamily: MONO_FAMILY, bgcolor: alpha(CERTEN_COLORS.secondary.main, 0.10), color: CERTEN_COLORS.secondary.dark }} />
       </Stack>
 
       <Box sx={{ p: 2, flexGrow: 1, overflowY: 'auto', fontFamily: MONO_FAMILY, fontSize: '0.82rem', minHeight: 220 }}>
@@ -60,7 +60,7 @@ export function AgentConsole({ agent }: { agent: AgentConsoleData }) {
               display: 'inline-block',
               width: 9,
               height: 16,
-              bgcolor: CERTEN_COLORS.secondary.light,
+              bgcolor: CERTEN_COLORS.secondary.main,
               animation: 'blink 1s steps(2) infinite',
               '@keyframes blink': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0 } },
             }}

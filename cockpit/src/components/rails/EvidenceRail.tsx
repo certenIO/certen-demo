@@ -43,10 +43,10 @@ export function EvidenceRail({
           <Chip
             size="small"
             label={`${evidence.proofLevel} · ${evidence.proofLevelMeaning ?? ''}`}
-            sx={{ height: 20, maxWidth: 300, bgcolor: alpha(cfg.accent, 0.15), color: cfg.accent, fontWeight: 700, '& .MuiChip-label': { fontSize: '0.64rem' } }}
+            sx={{ height: 20, maxWidth: 300, bgcolor: alpha(cfg.accent, 0.10), color: cfg.accent, fontWeight: 700, '& .MuiChip-label': { fontSize: '0.64rem' } }}
           />
         ) : (
-          <Chip size="small" label={evidence.kind === 'pending-record' ? 'PENDING' : 'RECORDED'} sx={{ height: 20, bgcolor: alpha(cfg.accent, 0.15), color: cfg.accent, fontWeight: 700 }} />
+          <Chip size="small" label={evidence.kind === 'pending-record' ? 'PENDING' : 'RECORDED'} sx={{ height: 20, bgcolor: alpha(cfg.accent, 0.10), color: cfg.accent, fontWeight: 700 }} />
         )
       }
     >

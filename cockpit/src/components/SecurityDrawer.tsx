@@ -7,7 +7,7 @@ import VerifiedRoundedIcon from '@mui/icons-material/VerifiedRounded';
 import ShieldRoundedIcon from '@mui/icons-material/ShieldRounded';
 import BlockRoundedIcon from '@mui/icons-material/BlockRounded';
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
-import { CERTEN_COLORS, MONO_FAMILY } from '../theme';
+import { CERTEN_COLORS, MONO_FAMILY, SURFACE } from '../theme';
 
 /**
  * Security model drawer. The story is the redundant, sequential cryptographic gate chain:
@@ -74,6 +74,14 @@ const QA: { q: string; a: string }[] = [
     a: 'It can be configured so keys stay in your KMS/HSM/callback signer. Provider mode is optional; local provider is for dev/test or self-hosted scenarios.',
   },
   {
+    q: 'Do we have to use Certen’s policy engine?',
+    a: 'No — bring your own. Your existing off-chain rules service (OPA, Sentinel, fraud/AML, or homegrown) keeps deciding. It is not a Certen black box: you author, audit, and change the rules. Certen only consumes its yes/no.',
+  },
+  {
+    q: 'How does our policy engine’s decision become enforceable?',
+    a: 'Your engine holds one key on the vault’s Accumulate key page. A “yes” becomes an Ed25519 signature on the pending transaction; Accumulate executes only if the key-page threshold (M-of-N) is met. The engine is bounded by the key math — for high-value actions it doesn’t hold the keys (humans / a delegated higher-threshold page do), so even a buggy or compromised engine can’t exceed its lane.',
+  },
+  {
     q: 'Are the dollars real?',
     a: 'In these simulated demos the amounts are value-equivalent labels and the flow is deterministic choreography. The control and proof shapes mirror the live system; live mode runs real testnet transactions.',
   },
@@ -97,7 +105,7 @@ export function SecurityDrawer({ open, onClose }: { open: boolean; onClose: () =
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <VpnKeyOffRoundedIcon sx={{ color: CERTEN_COLORS.primary.main }} />
         <Box sx={{ flexGrow: 1 }}>
-          <Typography sx={{ fontWeight: 800 }}>Execution governed by proof</Typography>
+          <Typography sx={{ fontWeight: 700 }}>Execution governed by proof</Typography>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
             A chain of redundant, sequential gates — every class of attack dies at one.
           </Typography>
@@ -124,14 +132,14 @@ export function SecurityDrawer({ open, onClose }: { open: boolean; onClose: () =
         </Stack>
         <Stack spacing={0.75} sx={{ mb: 2 }}>
           {GATES.map((g) => (
-            <Box key={g.gate} sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1.1fr auto 1.4fr' }, gap: 1, alignItems: 'center', p: 1, borderRadius: 1.5, border: '1px solid', borderColor: 'divider', bgcolor: alpha('#ffffff', 0.02) }}>
+            <Box key={g.gate} sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1.1fr auto 1.4fr' }, gap: 1, alignItems: 'center', p: 1, borderRadius: 1.5, border: '1px solid', borderColor: 'divider', bgcolor: SURFACE.subtle }}>
               <Stack direction="row" spacing={0.75} alignItems="center">
                 <BlockRoundedIcon sx={{ color: CERTEN_COLORS.error.main, fontSize: 15 }} />
                 <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>{g.attack}</Typography>
               </Stack>
               <ArrowForwardRoundedIcon sx={{ color: 'text.secondary', fontSize: 15, display: { xs: 'none', sm: 'block' } }} />
               <Box>
-                <Chip size="small" label={g.gate} sx={{ height: 18, mb: 0.25, bgcolor: alpha(CERTEN_COLORS.success.main, 0.14), color: CERTEN_COLORS.success.light, fontWeight: 700, fontSize: '0.64rem' }} />
+                <Chip size="small" label={g.gate} sx={{ height: 18, mb: 0.25, bgcolor: alpha(CERTEN_COLORS.success.main, 0.10), color: CERTEN_COLORS.success.dark, fontWeight: 700, fontSize: '0.64rem' }} />
                 <Typography sx={{ fontSize: '0.74rem', color: 'text.primary' }}>{g.how}</Typography>
               </Box>
             </Box>
@@ -178,20 +186,14 @@ export function SecurityThesisChip({ onClick }: { onClick: () => void }) {
       label="Execution only on proof"
       onClick={onClick}
       sx={{
-        fontWeight: 800,
+        fontWeight: 700,
         fontSize: '0.72rem',
         height: 30,
         cursor: 'pointer',
-        bgcolor: alpha(CERTEN_COLORS.success.main, 0.16),
-        color: CERTEN_COLORS.success.light,
-        border: `1.5px solid ${alpha(CERTEN_COLORS.success.main, 0.55)}`,
+        bgcolor: alpha(CERTEN_COLORS.success.main, 0.10),
+        color: CERTEN_COLORS.success.dark,
+        border: `1.5px solid ${alpha(CERTEN_COLORS.success.main, 0.4)}`,
         '& .MuiChip-icon': { color: CERTEN_COLORS.success.main, fontSize: 17 },
-        // draw the eye a few times on load, then settle
-        animation: 'secPulse 1.8s ease-in-out 3',
-        '@keyframes secPulse': {
-          '0%,100%': { boxShadow: `0 0 0 0 ${alpha(CERTEN_COLORS.success.main, 0)}` },
-          '50%': { boxShadow: `0 0 0 6px ${alpha(CERTEN_COLORS.success.main, 0.28)}` },
-        },
       }}
     />
   );

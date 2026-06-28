@@ -51,7 +51,7 @@ export function HealthChip({ mode }: { mode: string }) {
       <Chip
         size="small"
         label={anyDown ? 'LIVE · degraded' : 'LIVE · API Gateway'}
-        sx={{ fontWeight: 700, fontSize: '0.66rem', bgcolor: alpha(color, 0.15), color, border: `1px solid ${alpha(color, 0.4)}` }}
+        sx={{ fontWeight: 700, fontSize: '0.66rem', bgcolor: alpha(color, 0.10), color, border: `1px solid ${alpha(color, 0.4)}` }}
       />
     </Tooltip>
   );

@@ -1,7 +1,7 @@
-import { Box, Card, Stack, Typography, alpha } from '@mui/material';
+import { Box, Card, Stack, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
 import AccountBalanceRoundedIcon from '@mui/icons-material/AccountBalanceRounded';
-import { CERTEN_COLORS } from '../theme';
+import { CERTEN_COLORS, NEUTRAL } from '../theme';
 import type { TreasuryAccount, TreasuryPanel } from '../types';
 
 function AccountRow({ acct, color }: { acct: TreasuryAccount; color: string }) {
@@ -15,14 +15,14 @@ function AccountRow({ acct, color }: { acct: TreasuryAccount; color: string }) {
               {acct.delta}
             </Typography>
           )}
-          <Typography sx={{ fontWeight: 800 }}>{acct.balanceLabel}</Typography>
+          <Typography sx={{ fontWeight: 700 }}>{acct.balanceLabel}</Typography>
         </Stack>
       </Stack>
-      <Box sx={{ height: 12, borderRadius: 6, bgcolor: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+      <Box sx={{ height: 12, borderRadius: 6, bgcolor: NEUTRAL[200], overflow: 'hidden' }}>
         <motion.div
           animate={{ width: `${Math.round(acct.fraction * 100)}%` }}
           transition={{ duration: 0.9, ease: [0.2, 0, 0.38, 0.9] }}
-          style={{ height: '100%', borderRadius: 6, background: `linear-gradient(90deg, ${color}, ${alpha(color, 0.6)})` }}
+          style={{ height: '100%', borderRadius: 6, backgroundColor: color }}
         />
       </Box>
     </Box>
@@ -35,7 +35,7 @@ export function TreasuryBar({ treasury }: { treasury: TreasuryPanel }) {
       <Stack direction="row" alignItems="center" spacing={1.25} sx={{ mb: 2 }}>
         <AccountBalanceRoundedIcon sx={{ color: CERTEN_COLORS.info.main }} />
         <Typography sx={{ fontWeight: 700, flexGrow: 1 }}>DAO Treasury</Typography>
-        <Typography sx={{ fontWeight: 800, color: CERTEN_COLORS.info.light }}>{treasury.totalLabel}</Typography>
+        <Typography sx={{ fontWeight: 700, color: CERTEN_COLORS.info.main }}>{treasury.totalLabel}</Typography>
       </Stack>
       <Stack spacing={2.5}>
         <AccountRow acct={treasury.source} color={CERTEN_COLORS.info.main} />

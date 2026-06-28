@@ -11,7 +11,7 @@ export function ToolBoundaryPanel({ boundary }: { boundary: ToolBoundary | null 
   return (
     <Card sx={{ p: 1.5, border: `1px solid ${alpha(CERTEN_COLORS.secondary.main, 0.35)}` }}>
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-        <LockRoundedIcon sx={{ color: CERTEN_COLORS.secondary.light, fontSize: 18 }} />
+        <LockRoundedIcon sx={{ color: CERTEN_COLORS.secondary.main, fontSize: 18 }} />
         <Typography sx={{ fontWeight: 700, fontSize: '0.85rem' }}>Agent tool boundary</Typography>
       </Stack>
       <Stack direction="row" spacing={0.75} sx={{ flexWrap: 'wrap', gap: 0.75, mb: 1 }}>

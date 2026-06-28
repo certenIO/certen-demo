@@ -1,10 +1,11 @@
 import { Box, Typography } from '@mui/material';
-import VerifiedUserRoundedIcon from '@mui/icons-material/VerifiedUserRounded';
-import { CERTEN_COLORS } from '../theme';
+import { CERTEN_COLORS, SHADOW } from '../theme';
+import { BRAND } from '../brand';
 
 export function BrandMark({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   const dims = size === 'lg' ? 48 : size === 'sm' ? 28 : 36;
   const fs = size === 'lg' ? '2rem' : size === 'sm' ? '1.05rem' : '1.35rem';
+  const MarkIcon = BRAND.markIcon;
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
       <Box
@@ -14,22 +15,22 @@ export function BrandMark({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
           borderRadius: 2,
           display: 'grid',
           placeItems: 'center',
-          background: `linear-gradient(135deg, ${CERTEN_COLORS.primary.main}, ${CERTEN_COLORS.primary.dark})`,
-          boxShadow: `0 6px 18px ${CERTEN_COLORS.primary.dark}55`,
+          backgroundColor: CERTEN_COLORS.primary.main,
+          boxShadow: SHADOW.sm,
         }}
       >
-        <VerifiedUserRoundedIcon sx={{ color: '#fff', fontSize: dims * 0.6 }} />
+        <MarkIcon sx={{ color: CERTEN_COLORS.primary.contrastText, fontSize: dims * 0.6 }} />
       </Box>
       <Box sx={{ lineHeight: 1 }}>
-        <Typography sx={{ fontWeight: 800, fontSize: fs, letterSpacing: '-0.02em' }}>
-          CERTEN
+        <Typography sx={{ fontWeight: 700, fontSize: fs, letterSpacing: '-0.02em' }}>
+          {BRAND.name}
         </Typography>
         {size !== 'sm' && (
           <Typography
             variant="overline"
             sx={{ color: 'text.secondary', letterSpacing: '0.22em', fontSize: '0.62rem' }}
           >
-            Authorization Cockpit
+            {BRAND.productLabel}
           </Typography>
         )}
       </Box>

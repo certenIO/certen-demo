@@ -30,7 +30,7 @@ import { ToolBoundaryPanel } from './ToolBoundaryPanel';
 import { SecurityDrawer, SecurityThesisChip } from './SecurityDrawer';
 import { CertaintyRecap } from './CertaintyRecap';
 import { HealthChip } from './HealthChip';
-import { CERTEN_COLORS } from '../theme';
+import { CERTEN_COLORS, SHADOW } from '../theme';
 
 type Pace = 'cinematic' | 'standard' | 'instant';
 const PACE_MS: Record<Pace, number> = { cinematic: 1700, standard: 1000, instant: 0 };
@@ -53,11 +53,12 @@ const RAIL_PLACEHOLDER: Record<number, [string, string]> = {
 
 /** Briefly glows the rail that is "currently happening" (active-rail spotlight). */
 function Spotlight({ active, children }: { active: boolean; children: ReactNode }) {
-  const ring = `0 0 0 2px ${alpha(CERTEN_COLORS.primary.main, 0.55)}, 0 0 26px ${alpha(CERTEN_COLORS.primary.main, 0.3)}`;
+  const ring = `0 0 0 1px ${alpha(CERTEN_COLORS.primary.main, 0.4)}`;
+  const noRing = `0 0 0 0 ${alpha(CERTEN_COLORS.primary.main, 0)}`;
   return (
     <motion.div
-      animate={active ? { boxShadow: ['0 0 0 0 rgba(0,0,0,0)', ring, '0 0 0 0 rgba(0,0,0,0)'] } : { boxShadow: '0 0 0 0 rgba(0,0,0,0)' }}
-      transition={{ duration: 1.4, ease: 'easeOut' }}
+      animate={{ boxShadow: active ? ring : noRing }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
       style={{ borderRadius: 12 }}
     >
       {children}
@@ -202,7 +203,7 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
                 {state?.title ?? meta.title}
               </Typography>
               {state?.actLabel && (
-                <Chip size="small" label={state.actLabel} sx={{ height: 20, bgcolor: alpha(CERTEN_COLORS.primary.main, 0.12), color: CERTEN_COLORS.primary.light, fontSize: '0.66rem' }} />
+                <Chip size="small" label={state.actLabel} sx={{ height: 20, bgcolor: alpha(CERTEN_COLORS.primary.main, 0.12), color: CERTEN_COLORS.primary.dark, fontSize: '0.66rem' }} />
               )}
             </Stack>
             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 320 }}>
@@ -330,7 +331,7 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
               color="warning"
               endIcon={<SkipNextRoundedIcon />}
               onClick={advance}
-              sx={{ boxShadow: `0 8px 24px ${alpha(CERTEN_COLORS.warning.main, 0.4)}` }}
+              sx={{ boxShadow: SHADOW.md }}
             >
               Reveal next · {revealed}/{readyCount} (Space)
             </Button>

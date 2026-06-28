@@ -1,6 +1,6 @@
 import { Box, Card, Chip, Stack, Typography, alpha } from '@mui/material';
 import RouterRoundedIcon from '@mui/icons-material/RouterRounded';
-import { CERTEN_COLORS, MONO_FAMILY } from '../theme';
+import { CERTEN_COLORS, MONO_FAMILY, SURFACE } from '../theme';
 import type { IntegrationTrace } from '../types';
 
 /** Builder / integration trace (Runbook 9). Shows the adoption path: API events, who calls what. */
@@ -23,7 +23,7 @@ export function IntegrationPanel({ integration }: { integration: IntegrationTrac
             <Box
               sx={{
                 width: 20, height: 20, borderRadius: '50%', flexShrink: 0, mt: 0.25,
-                display: 'grid', placeItems: 'center', fontSize: '0.7rem', fontWeight: 800,
+                display: 'grid', placeItems: 'center', fontSize: '0.7rem', fontWeight: 700,
                 bgcolor: alpha(accent, 0.18), color: accent,
               }}
             >
@@ -48,14 +48,14 @@ export function IntegrationPanel({ integration }: { integration: IntegrationTrac
 
       <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mt: 1.5 }}>
         <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: alpha(CERTEN_COLORS.primary.main, 0.07) }}>
-          <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: CERTEN_COLORS.primary.light, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: CERTEN_COLORS.primary.dark, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             CERTEN handles
           </Typography>
           {integration.certenHandles.map((h) => (
             <Typography key={h} sx={{ fontSize: '0.72rem' }}>• {h}</Typography>
           ))}
         </Box>
-        <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: alpha('#ffffff', 0.04) }}>
+        <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: SURFACE.subtle }}>
           <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Partner implements
           </Typography>

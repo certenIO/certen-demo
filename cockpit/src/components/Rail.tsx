@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { Box, Card, Stack, Typography, alpha } from '@mui/material';
 import { motion } from 'framer-motion';
-import { CERTEN_COLORS } from '../theme';
+import { CERTEN_COLORS, MOTION, NEUTRAL, SHADOW } from '../theme';
 
 /**
  * One numbered rail of the engine (①..⑤). `compact` packs it for the no-scroll presentation
@@ -41,20 +41,20 @@ export function Rail({
         sx={{
           p: pad,
           borderRadius: 2,
-          borderColor: active ? alpha(accent, 0.45) : undefined,
-          boxShadow: active ? `0 0 0 1px ${alpha(accent, 0.35)}, 0 8px 22px ${alpha(accent, 0.1)}` : undefined,
-          background: active ? `linear-gradient(135deg, ${alpha(accent, 0.07)}, transparent 60%)` : undefined,
-          transition: 'all 220ms cubic-bezier(0.2,0,0.38,0.9)',
+          borderColor: active ? alpha(accent, 0.4) : undefined,
+          boxShadow: active ? `0 0 0 1px ${alpha(accent, 0.4)}, ${SHADOW.sm}` : undefined,
+          backgroundColor: active ? alpha(accent, 0.05) : undefined,
+          transition: `all ${MOTION.duration.moderate} ${MOTION.ease.productive}`,
         }}
       >
         <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: children ? (compact ? 0.5 : 1.5) : 0 }}>
           <Box
             sx={{
               width: badge, height: badge, borderRadius: '50%', display: 'grid', placeItems: 'center',
-              flexShrink: 0, fontWeight: 800, fontSize: compact ? '0.82rem' : '0.9rem',
-              color: active ? '#fff' : 'text.secondary',
-              bgcolor: active ? accent : alpha('#ffffff', 0.06),
-              boxShadow: active ? `0 3px 10px ${alpha(accent, 0.5)}` : 'none',
+              flexShrink: 0, fontWeight: 700, fontSize: compact ? '0.82rem' : '0.9rem',
+              color: active ? CERTEN_COLORS.primary.contrastText : 'text.secondary',
+              bgcolor: active ? accent : NEUTRAL[100],
+              boxShadow: active ? SHADOW.sm : 'none',
             }}
           >
             {index}

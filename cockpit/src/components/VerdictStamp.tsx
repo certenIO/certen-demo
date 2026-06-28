@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import BlockRoundedIcon from '@mui/icons-material/BlockRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import BoltRoundedIcon from '@mui/icons-material/BoltRounded';
-import { CERTEN_COLORS } from '../theme';
+import { CERTEN_COLORS, SHADOW } from '../theme';
 import type { Verdict } from '../types';
 
 const MAP: Record<Verdict, { label: string; color: string; Icon: typeof BlockRoundedIcon; pulse?: boolean } | null> = {
@@ -22,10 +22,10 @@ export function VerdictStamp({ verdict, armed = true }: { verdict: Verdict; arme
         {cfg && (
           <motion.div
             key={verdict}
-            initial={{ scale: 1.5, opacity: 0, rotate: -8 }}
-            animate={{ scale: 1, opacity: 1, rotate: -4 }}
-            exit={{ scale: 0.7, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 420, damping: 18 }}
+            initial={{ scale: 0.98, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.98, opacity: 0 }}
+            transition={{ duration: 0.2 }}
           >
             <Stack
               direction="row"
@@ -35,21 +35,14 @@ export function VerdictStamp({ verdict, armed = true }: { verdict: Verdict; arme
                 px: 2.5,
                 py: 1.25,
                 borderRadius: 2,
-                border: `3px solid ${cfg.color}`,
+                border: `1.5px solid ${cfg.color}`,
                 color: cfg.color,
                 bgcolor: alpha(cfg.color, 0.1),
-                boxShadow: `0 8px 28px ${alpha(cfg.color, 0.35)}`,
-                ...(cfg.pulse && {
-                  animation: 'verdictPulse 1.1s ease-in-out infinite',
-                  '@keyframes verdictPulse': {
-                    '0%,100%': { boxShadow: `0 8px 28px ${alpha(cfg.color, 0.25)}` },
-                    '50%': { boxShadow: `0 8px 40px ${alpha(cfg.color, 0.6)}` },
-                  },
-                }),
+                boxShadow: SHADOW.sm,
               }}
             >
               <cfg.Icon sx={{ fontSize: 30 }} />
-              <Typography sx={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '0.06em' }}>
+              <Typography sx={{ fontWeight: 700, fontSize: '1.5rem', letterSpacing: '0.06em' }}>
                 {cfg.label}
               </Typography>
             </Stack>

@@ -37,7 +37,7 @@ export function TrustDrawer({ open, onClose }: { open: boolean; onClose: () => v
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <VerifiedUserRoundedIcon sx={{ color: CERTEN_COLORS.primary.main }} />
         <Box sx={{ flexGrow: 1 }}>
-          <Typography sx={{ fontWeight: 800 }}>Trust model & objections</Typography>
+          <Typography sx={{ fontWeight: 700 }}>Trust model & objections</Typography>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
             Crisp answers to the first security questions.
           </Typography>

@@ -5,13 +5,13 @@ import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import DoNotDisturbRoundedIcon from '@mui/icons-material/DoNotDisturbRounded';
 import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded';
 import { Rail } from '../Rail';
-import { CERTEN_COLORS, MONO_FAMILY } from '../../theme';
+import { CERTEN_COLORS, MONO_FAMILY, NEUTRAL } from '../../theme';
 import type { ExecutionInfo, ExecutionLeg } from '../../types';
 
 function Leg({ leg }: { leg: ExecutionLeg }) {
   const done = leg.status === 'done';
   const running = leg.status === 'executing';
-  const color = done ? CERTEN_COLORS.success.main : running ? CERTEN_COLORS.warning.main : 'rgba(255,255,255,0.4)';
+  const color = done ? CERTEN_COLORS.success.main : running ? CERTEN_COLORS.warning.main : NEUTRAL[400];
   return (
     <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 0.75, py: 0.4, borderRadius: 1.5, border: `1px solid ${alpha(color as string, 0.3)}`, bgcolor: alpha(color as string, 0.06) }}>
       {running ? <CircularProgress size={14} sx={{ color }} /> : done ? <CheckCircleRoundedIcon sx={{ color, fontSize: 16 }} /> : <Box sx={{ width: 14, height: 14, borderRadius: '50%', border: `2px solid ${color}` }} />}
@@ -44,7 +44,7 @@ export function ExecutionRail({ execution }: { execution: ExecutionInfo | null }
         never ? (
           <Chip icon={<DoNotDisturbRoundedIcon />} label="REFUSED" size="small" color="error" sx={{ height: 20 }} />
         ) : (
-          <Chip label={done ? 'CONFIRMED' : 'EXECUTING'} size="small" sx={{ height: 20, bgcolor: alpha(accent, 0.15), color: accent, fontWeight: 700 }} />
+          <Chip label={done ? 'CONFIRMED' : 'EXECUTING'} size="small" sx={{ height: 20, bgcolor: alpha(accent, 0.10), color: accent, fontWeight: 700 }} />
         )
       }
     >
@@ -53,7 +53,7 @@ export function ExecutionRail({ execution }: { execution: ExecutionInfo | null }
           <Stack direction="row" alignItems="center" spacing={1.25} sx={{ mb: execution.legs ? 0.5 : 0 }}>
             {never ? <DoNotDisturbRoundedIcon sx={{ color: accent, fontSize: 19 }} /> : done ? <CheckCircleRoundedIcon sx={{ color: accent, fontSize: 19 }} /> : <CircularProgress size={17} sx={{ color: accent }} />}
             <Box sx={{ minWidth: 0 }}>
-              <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', lineHeight: 1.2, color: never ? CERTEN_COLORS.error.light : 'text.primary' }}>
+              <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', lineHeight: 1.2, color: never ? CERTEN_COLORS.error.main : 'text.primary' }}>
                 {execution.headline}
               </Typography>
               {execution.detail && (
@@ -69,7 +69,7 @@ export function ExecutionRail({ execution }: { execution: ExecutionInfo | null }
           {done && execution.verified && (
             <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mt: 0.5, px: 0.75, py: 0.3, borderRadius: 1.5, border: `1px solid ${alpha(CERTEN_COLORS.success.main, 0.4)}`, bgcolor: alpha(CERTEN_COLORS.success.main, 0.08) }}>
               <FactCheckRoundedIcon sx={{ color: CERTEN_COLORS.success.main, fontSize: 15 }} />
-              <Typography noWrap sx={{ fontFamily: MONO_FAMILY, fontSize: '0.68rem', color: CERTEN_COLORS.success.light }} title={execution.verifiedDetail}>
+              <Typography noWrap sx={{ fontFamily: MONO_FAMILY, fontSize: '0.68rem', color: CERTEN_COLORS.success.main }} title={execution.verifiedDetail}>
                 Verified on-chain — {execution.verifiedDetail}
               </Typography>
             </Stack>

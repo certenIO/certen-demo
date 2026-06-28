@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
 import type { ScenarioMeta } from '../types';
 import { BrandMark } from './Brand';
-import { CERTEN_COLORS } from '../theme';
+import { CERTEN_COLORS, MOTION, NEUTRAL, SHADOW } from '../theme';
+import { BRAND } from '../brand';
 
 const ENGINE = ['Action', 'Policy', 'Approvals', 'Proof', 'Execution'];
 
@@ -29,8 +30,6 @@ export function Launcher({
         display: 'flex',
         flexDirection: 'column',
         gap: 5,
-        background: `radial-gradient(1200px 600px at 15% -10%, ${alpha(CERTEN_COLORS.primary.main, 0.10)}, transparent 60%),
-                     radial-gradient(1000px 500px at 110% 10%, ${alpha(CERTEN_COLORS.secondary.main, 0.10)}, transparent 55%)`,
       }}
     >
       {/* header */}
@@ -54,8 +53,7 @@ export function Launcher({
             </Box>
           </Typography>
           <Typography variant="h5" sx={{ color: 'text.secondary', fontWeight: 500, maxWidth: 720 }}>
-            Nothing high-value executes until policy is satisfied and proven — whether the actor is a
-            person, a multisig, or an AI.
+            {BRAND.tagline}
           </Typography>
         </motion.div>
 
@@ -67,8 +65,8 @@ export function Launcher({
                 label={`${i + 1}. ${step}`}
                 size="small"
                 sx={{
-                  bgcolor: alpha(CERTEN_COLORS.primary.main, 0.12),
-                  color: CERTEN_COLORS.primary.light,
+                  bgcolor: alpha(CERTEN_COLORS.primary.main, 0.10),
+                  color: CERTEN_COLORS.primary.dark,
                   fontWeight: 600,
                 }}
               />
@@ -109,11 +107,11 @@ export function Launcher({
                   cursor: 'pointer',
                   position: 'relative',
                   overflow: 'hidden',
-                  transition: 'all 160ms cubic-bezier(0.2,0,0.38,0.9)',
+                  transition: `all ${MOTION.duration.quick} ${MOTION.ease.productive}`,
                   '&:hover': {
-                    transform: 'translateY(-4px)',
-                    borderColor: alpha(c, 0.5),
-                    boxShadow: `0 16px 40px ${alpha(c, 0.25)}`,
+                    transform: 'translateY(-2px)',
+                    borderColor: NEUTRAL[300],
+                    boxShadow: SHADOW.md,
                   },
                   '&::before': {
                     content: '""',
@@ -122,13 +120,13 @@ export function Launcher({
                     left: 0,
                     right: 0,
                     height: 3,
-                    background: `linear-gradient(90deg, ${c}, ${alpha(c, 0.3)})`,
+                    backgroundColor: c,
                   },
                 }}
               >
                 <Stack spacing={2} sx={{ height: '100%' }}>
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
-                    <Chip label={s.badge} size="small" sx={{ bgcolor: alpha(c, 0.15), color: c, fontWeight: 700 }} />
+                    <Chip label={s.badge} size="small" sx={{ bgcolor: alpha(c, 0.10), color: c, fontWeight: 700 }} />
                     <Typography variant="overline" sx={{ color: 'text.secondary' }}>
                       Demo {i + 1}
                     </Typography>

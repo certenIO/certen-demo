@@ -62,11 +62,7 @@ function Tile({
             onClick={() => onApprove(a.role)} endIcon={<ArrowForwardRoundedIcon />}
             sx={{
               mt: 0.5, py: 0.3, fontSize: '0.72rem',
-              animation: busy ? 'none' : 'approvePulse 1.4s ease-in-out infinite',
-              '@keyframes approvePulse': {
-                '0%,100%': { boxShadow: `0 0 0 0 ${alpha(CERTEN_COLORS.success.main, 0.5)}` },
-                '50%': { boxShadow: `0 0 0 7px ${alpha(CERTEN_COLORS.success.main, 0)}` },
-              },
+              boxShadow: `0 0 0 1px ${alpha(CERTEN_COLORS.success.main, 0.4)}`,
             }}
           >
             Approve
@@ -110,10 +106,10 @@ export function ApprovalsRail({
             <Chip
               size="small"
               label={`pending ${coordination.pendingTxHash.slice(0, 8)}…`}
-              sx={{ height: 20, fontFamily: MONO_FAMILY, fontSize: '0.62rem', bgcolor: alpha(CERTEN_COLORS.info.main, 0.12), color: CERTEN_COLORS.info.light }}
+              sx={{ height: 20, fontFamily: MONO_FAMILY, fontSize: '0.62rem', bgcolor: alpha(CERTEN_COLORS.info.main, 0.10), color: CERTEN_COLORS.info.dark }}
             />
           )}
-          <Chip label={auto ? 'AUTO' : `${collected} of ${threshold}`} sx={{ height: 22, fontWeight: 800, fontSize: '0.82rem', bgcolor: alpha(accent, 0.15), color: accent }} />
+          <Chip label={auto ? 'AUTO' : `${collected} of ${threshold}`} sx={{ height: 22, fontWeight: 700, fontSize: '0.82rem', bgcolor: alpha(accent, 0.10), color: accent }} />
         </Stack>
       }
     >

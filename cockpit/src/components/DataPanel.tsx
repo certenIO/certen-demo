@@ -20,7 +20,7 @@ export function DataPanel({ data }: { data: DataPanelData }) {
         />
       </Stack>
       <motion.div key={data.value} initial={{ scale: 1.05 }} animate={{ scale: 1 }} transition={{ duration: 0.3 }}>
-        <Typography sx={{ fontFamily: MONO_FAMILY, fontWeight: 800, fontSize: '2.4rem', color, lineHeight: 1 }}>
+        <Typography sx={{ fontFamily: MONO_FAMILY, fontWeight: 700, fontSize: '2.4rem', color, lineHeight: 1 }}>
           {data.value.toLocaleString('en-US')}
         </Typography>
       </motion.div>
@@ -29,7 +29,7 @@ export function DataPanel({ data }: { data: DataPanelData }) {
       </Typography>
       {data.safe && (
         <Box sx={{ mt: 2, p: 1.5, borderRadius: 2, bgcolor: alpha(CERTEN_COLORS.success.main, 0.08) }}>
-          <Typography variant="body2" sx={{ color: CERTEN_COLORS.success.light, fontWeight: 600 }}>
+          <Typography variant="body2" sx={{ color: CERTEN_COLORS.success.main, fontWeight: 600 }}>
             Untouched. The delete never reached the database.
           </Typography>
         </Box>

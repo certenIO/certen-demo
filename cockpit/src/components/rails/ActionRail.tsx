@@ -35,13 +35,13 @@ export function ActionRail({
         <Box
           sx={{
             width: 34, height: 34, borderRadius: 1.5, display: 'grid', placeItems: 'center', flexShrink: 0,
-            bgcolor: alpha(accent, 0.15), color: accent,
+            bgcolor: alpha(accent, 0.10), color: accent,
           }}
         >
           <Icon sx={{ fontSize: 20 }} />
         </Box>
         <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2, color: danger ? CERTEN_COLORS.error.light : 'text.primary' }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2, color: danger ? CERTEN_COLORS.error.main : 'text.primary' }}>
             {action.verb}
             <Box component="span" sx={{ color: 'text.secondary', fontWeight: 500 }}>
               {'  —  '}{action.summary}
@@ -56,7 +56,7 @@ export function ActionRail({
         <Stack alignItems="flex-end" spacing={0.25}>
           {action.amountLabel && (
             <Tooltip title="Testnet execution · value-equivalent demo label">
-              <Typography sx={{ fontWeight: 800, fontSize: '1.2rem', color: danger ? CERTEN_COLORS.error.main : CERTEN_COLORS.primary.light, whiteSpace: 'nowrap', lineHeight: 1.05 }}>
+              <Typography sx={{ fontWeight: 700, fontSize: '1.2rem', color: danger ? CERTEN_COLORS.error.main : CERTEN_COLORS.primary.main, whiteSpace: 'nowrap', lineHeight: 1.05 }}>
                 {action.amountLabel}*
               </Typography>
             </Tooltip>

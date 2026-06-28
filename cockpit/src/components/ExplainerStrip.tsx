@@ -1,0 +1,56 @@
+import { ReactNode } from 'react';
+import { Box, Stack, Tooltip, Typography, alpha } from '@mui/material';
+import { motion } from 'framer-motion';
+import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
+import ShieldRoundedIcon from '@mui/icons-material/ShieldRounded';
+import StarRoundedIcon from '@mui/icons-material/StarRounded';
+import IntegrationInstructionsRoundedIcon from '@mui/icons-material/IntegrationInstructionsRounded';
+import { CERTEN_COLORS } from '../theme';
+import type { ScenarioExplainer } from '../types';
+
+/** "Why This Matters" self-teaching strip (Runbook 2). One line per field, compact. */
+export function ExplainerStrip({ explainer }: { explainer: ScenarioExplainer | null | undefined }) {
+  if (!explainer) return null;
+  const seg = (icon: ReactNode, label: string, text: string, color: string) => (
+    <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0, flex: 1 }}>
+      <Box sx={{ color, display: 'flex', flexShrink: 0 }}>{icon}</Box>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', color, textTransform: 'uppercase', lineHeight: 1 }}>
+          {label}
+        </Typography>
+        <Typography noWrap sx={{ fontSize: '0.82rem', color: 'text.primary', lineHeight: 1.3 }} title={text}>
+          {text}
+        </Typography>
+      </Box>
+    </Stack>
+  );
+
+  return (
+    <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          px: 2,
+          py: 0.6,
+          borderRadius: 2,
+          border: '1px solid',
+          borderColor: alpha(CERTEN_COLORS.primary.main, 0.18),
+          background: `linear-gradient(90deg, ${alpha(CERTEN_COLORS.error.main, 0.06)}, ${alpha(CERTEN_COLORS.success.main, 0.06)})`,
+        }}
+      >
+        {seg(<ReportProblemRoundedIcon sx={{ fontSize: 20 }} />, 'Without CERTEN', explainer.pain, CERTEN_COLORS.error.main)}
+        <Box sx={{ color: 'text.secondary', opacity: 0.5 }}>→</Box>
+        {seg(<ShieldRoundedIcon sx={{ fontSize: 20 }} />, 'CERTEN did this', explainer.certenMove, CERTEN_COLORS.primary.light)}
+        <Box sx={{ color: 'text.secondary', opacity: 0.5 }}>→</Box>
+        {seg(<StarRoundedIcon sx={{ fontSize: 20 }} />, 'Why it matters', explainer.buyerTakeaway, CERTEN_COLORS.success.main)}
+        {explainer.integrationHint && (
+          <Tooltip title={explainer.integrationHint}>
+            <IntegrationInstructionsRoundedIcon sx={{ fontSize: 20, color: CERTEN_COLORS.secondary.light, flexShrink: 0 }} />
+          </Tooltip>
+        )}
+      </Box>
+    </motion.div>
+  );
+}

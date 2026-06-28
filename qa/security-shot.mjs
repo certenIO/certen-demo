@@ -1,0 +1,16 @@
+import { chromium } from 'playwright';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+const here = dirname(fileURLToPath(import.meta.url));
+const browser = await chromium.launch();
+const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+await ctx.addInitScript(() => { localStorage.setItem('certen.pace', 'instant'); });
+const page = await ctx.newPage();
+await page.goto('http://localhost:3001', { waitUntil: 'networkidle' });
+await page.getByText('Cross-Chain Treasury Protection', { exact: false }).first().click();
+await page.waitForTimeout(800);
+await page.getByText('Execution only on proof', { exact: false }).first().click();
+await page.waitForTimeout(700);
+await page.screenshot({ path: join(here, 'shots', 'security-drawer.png') });
+await browser.close();
+console.log('captured security-drawer.png');

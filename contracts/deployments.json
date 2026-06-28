@@ -1,0 +1,21 @@
+{
+  "authorizer": "0x32422604b797f0a135d8F28B84Ce72EefA185FC8",
+  "chains": {
+    "base-sepolia": {
+      "chainId": 84532,
+      "explorer": "https://sepolia.basescan.org",
+      "rpc": "https://sepolia.base.org",
+      "DemoUpgradeable": "0xC3E277561653DCa86ac662F77fe76974E104E968",
+      "DemoTreasury": "0xfC497DD28B2e43F1c2146DC4A1Eacd930eFA305e"
+    },
+    "arbitrum-sepolia": {
+      "chainId": 421614,
+      "explorer": "https://sepolia.arbiscan.io",
+      "rpc": "https://sepolia-rollup.arbitrum.io/rpc",
+      "DemoUpgradeable": "0x654A9a62C8EAeD5086B6C1DCD2c19bFA61da42b2",
+      "DemoTreasury": "0x8b227516365E74b1321af9a90c350f274AD63454"
+    }
+  },
+  "deployedAt": "2026-06-27",
+  "note": "Authorizer is the funded sponsor account; the orchestrator executes setVersion/withdraw with the matching EVM_SPONSOR_PRIVATE_KEY only after Certen authorization completes."
+}

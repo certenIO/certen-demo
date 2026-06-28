@@ -1,0 +1,28 @@
+# deps & build output
+node_modules/
+dist/
+cockpit/dist/
+certen-demo/
+*.log
+
+# env & secrets (never commit) — note: .env.production IS committed (only VITE_STATIC=1)
+.env
+.env.local
+.env.*.local
+
+# generated
+scenario-manifest.json
+
+# foundry (contracts) — deps & artifacts
+contracts/lib/
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+
+# qa artifacts
+qa/shots/
+
+# vercel
+.vercel/
+
+.DS_Store

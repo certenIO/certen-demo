@@ -1,0 +1,29 @@
+{
+  "name": "certen-demos",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Certen flagship demos — the Authorization Cockpit and the three demo scenarios.",
+  "workspaces": [
+    "orchestrator",
+    "cockpit",
+    "agent"
+  ],
+  "scripts": {
+    "dev": "concurrently -n orchestrator,cockpit -c magenta,cyan \"npm:dev:orchestrator\" \"npm:dev:cockpit\"",
+    "dev:orchestrator": "npm --workspace orchestrator run dev",
+    "dev:cockpit": "npm --workspace cockpit run dev",
+    "build": "npm --workspace cockpit run build",
+    "seed": "tsx scripts/seed.ts",
+    "preflight": "tsx scripts/preflight.ts",
+    "qa:viewport": "node qa/viewport-qa.mjs",
+    "build:static": "npm --workspace cockpit run build",
+    "preview:static": "npm --workspace cockpit run preview",
+    "agent": "npm --workspace agent run start"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "playwright": "^1.61.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}

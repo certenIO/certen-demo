@@ -1,0 +1,34 @@
+# Certen demos — local stack.
+#   orchestrator : drives the three scenarios (simulated or live)
+#   cockpit      : the Authorization Cockpit UI
+#
+# Usage:
+#   cp .env.example .env   # then edit as needed
+#   docker compose up --build
+#
+# The cockpit talks to the orchestrator from the *browser*, so VITE_ORCHESTRATOR_URL points
+# at the host-published port (localhost:8770), not the in-network service name.
+
+services:
+  orchestrator:
+    build: ./orchestrator
+    env_file: .env
+    ports:
+      - "8770:8770"
+    networks:
+      - certen-demos
+
+  cockpit:
+    build: ./cockpit
+    environment:
+      VITE_ORCHESTRATOR_URL: http://localhost:8770
+    ports:
+      - "3001:3001"
+    depends_on:
+      - orchestrator
+    networks:
+      - certen-demos
+
+networks:
+  certen-demos:
+    driver: bridge

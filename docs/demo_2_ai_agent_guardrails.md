@@ -129,7 +129,94 @@ verbatim in rail ②.
 
 ---
 
-## 7. Certen components used
+## 7. Bring Your Own Policy Engine — how your rules become cryptographic gates
+
+> **You don't adopt Certen's policy. Certen makes *your* policy enforceable.** The policy engine in
+> this demo is deliberately a tiny mirror (`agent/src/policy.ts`) — in production it is *your
+> existing* rules service. Certen does not replace it, ingest it, or turn it into a black box.
+
+### The principle
+
+Most teams already own a decision layer — OPA/Rego, HashiCorp Sentinel, a fraud/AML engine, a
+transaction-monitoring system, or a homegrown risk service. Those rules are off-chain, encode real
+institutional knowledge, and change constantly. Certen's stance: **keep them.**
+
+- **No rewrite.** Your rules stay where they are, in the system and language you already run.
+- **No black box.** Certen never becomes the authority on *what* your policy is — you author it,
+  read it, audit it, and change it whenever you want.
+- **No lock-in.** The rules are yours and stay off-chain. Certen only consumes a yes/no.
+
+### Separation of concerns
+
+| Layer | Who owns it | Property |
+|-------|-------------|----------|
+| **Decision** — "should this be allowed?" | Your existing policy engine (your rules, your data, off-chain) | Soft, editable, **yours** |
+| **Translation** — turn a decision into a signature | Certen | The bridge |
+| **Enforcement** — "did the threshold actually get met?" | Accumulate authority (key book → key page → key + threshold) | Hard, immutable, **cryptographic** |
+
+The decision stays soft so you can change it any time. The *gate* is what becomes hard.
+
+### How a policy decision manifests cryptographically
+
+This is the part that must land: a policy engine's "yes" is **not** a database flag or an API
+`200` — it becomes a **cryptographic signature on an Accumulate key page, and the chain enforces the
+threshold.** Concretely:
+
+1. The policy engine holds **one key** — a single entry on the Vault authority's key page. It does
+   *not* hold the others (the humans / a delegated higher-threshold page do).
+2. When the engine approves an action, Certen turns that decision into an **Ed25519 signature** over
+   the pending transaction, cast against the engine's key (`POST /v1/sign`).
+3. Accumulate evaluates the key page: **if the signatures meet the `acceptThreshold` (M-of-N), the
+   transaction executes; if not, it stays pending.** This is consensus-enforced, not Certen-enforced.
+4. The executed transaction permanently records *which keys signed* — so the proof (rail ④) shows the
+   engine authorized the $250k, or exactly which humans authorized the $5M.
+
+```
+Your policy engine               Certen                          Accumulate authority
+──────────────────               ──────                          ────────────────────
+evaluate(action,$) ──"allow"──►  cast Ed25519 sig    ─────────►  key page: threshold met?
+  (your rules)                   on the engine's key             ├─ yes → tx executes → proof records signer
+                                                                 └─ no  → stays pending → humans notified
+evaluate(action,$) ──"deny"───►  engine withholds sig ────────►  threshold NOT met → BLOCKED
+                                 + notify human(s)               (humans / delegate page must sign)
+```
+
+The dollar threshold ("over $1M needs a human") lives in *your* engine — Accumulate key pages are
+**amount-blind**; they enforce *who signed* and *how many*, never *how much*. So the chain provides
+the **floor** (no execution without the required signatures); your engine decides **which floor
+applies** per action.
+
+### Why this is stronger than "trust the policy engine"
+
+Because the engine is **just one key**, its authority is bounded by the key-page math — not by trust.
+Its blast radius is defined cryptographically:
+
+- The engine can authorize only what its key is scoped to authorize, and **nothing more**.
+- For high-value actions the engine *does not hold the keys* — the humans, or a delegated page with a
+  higher threshold, do. So even a **buggy or fully compromised** policy engine cannot move the $5M:
+  it lacks the signatures, and Accumulate refuses.
+
+This is the answer to *"what if our own policy engine has a bug or gets hacked?"* → **then it can
+only do what its key was scoped to do.** The cryptography is the backstop your software bugs can't
+cross. Your engine is powerful but never omnipotent.
+
+### How it maps onto this demo's Vault
+
+| Demo concept | Accumulate primitive |
+|--------------|----------------------|
+| The Vault money moves *from* | A token account whose `authorities` point at a key book |
+| "An authority that signs up to a limit" | A key page with **threshold 1**, holding the policy-engine key + a delegate to a human key book |
+| Engine auto-approves the $250k | Engine key casts the 1 signature → threshold met → execute |
+| $5M needs a human | Engine withholds; the **delegated** human page (its own higher M-of-N) produces the satisfying signature |
+| Destructive `deleteDatabase` | No key/delegate on the page can satisfy the policy → BLOCKED forever |
+
+> **Demo line:** "This isn't *our* policy — it's *yours*. Your existing rules engine gets a key. When
+> it says yes, that becomes a signature the blockchain enforces. When it says no — or when the amount
+> is beyond what it's trusted to sign alone — the keys simply aren't there, and nothing moves."
+
+---
+
+## 8. Certen components used
 
 | Step | Component | Call |
 |------|-----------|------|
@@ -143,7 +230,7 @@ verbatim in rail ②.
 
 ---
 
-## 8. Scenario data (seeded)
+## 9. Scenario data (seeded)
 
 - **Treasury A / Treasury B:** two chain accounts under a demo ADI on Base Sepolia, A funded.
 - **Approvers:** `Human` (single approver key), `CTO`, `Security` (two keys). Held by orchestrator
@@ -155,7 +242,7 @@ verbatim in rail ②.
 
 ---
 
-## 9. What exists vs. what to build
+## 10. What exists vs. what to build
 
 | Need | Status | Work |
 |------|--------|------|
@@ -167,7 +254,7 @@ verbatim in rail ②.
 
 ---
 
-## 10. Implementation checklist
+## 11. Implementation checklist
 
 - [ ] Policy Engine rules from §6; pass-through of `actionType`/`amountUsd` from `/v1/transaction`.
 - [ ] AI harness: Claude `claude-opus-4-8` tool-use, single `certen_execute` tool, streaming to SSE.
@@ -180,7 +267,7 @@ verbatim in rail ②.
 
 ---
 
-## 11. Live-demo safety
+## 12. Live-demo safety
 
 - The agent's LLM call is the one nondeterministic element. Mitigation: run the agent **before** the
   audience sees the screen during `start`, cache its decision + reasoning transcript, and stream the
@@ -192,7 +279,7 @@ verbatim in rail ②.
 
 ---
 
-## 12. Success criteria
+## 13. Success criteria
 
 A viewer says, unprompted: *"The AI literally couldn't do the dangerous thing without a human —
 and even then, only with proof."* If an investor immediately asks "can this wrap **our** agents?",
@@ -200,7 +287,7 @@ the demo has done its job.
 
 ---
 
-## 13. Cockpit specifics (tool boundary, evidence, modes)
+## 14. Cockpit specifics (tool boundary, evidence, modes)
 
 - An **Agent Tool Boundary** panel sits above the agent console: ✓ `certen_execute()` vs ✗ direct
   wallet / database / RPC. This makes the architectural constraint unmissable — the model has no
@@ -212,7 +299,7 @@ the demo has done its job.
 
 ---
 
-## 14. Sales scripts
+## 15. Sales scripts
 
 **30s (executive):** "An AI agent decides to move money. Its only tool routes through CERTEN. A
 $250k transfer is within policy — it runs automatically. Then it wants $5 million — blocked until a

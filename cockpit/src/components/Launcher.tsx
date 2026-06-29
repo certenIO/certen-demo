@@ -88,7 +88,7 @@ export function Launcher({
             </Stack>
           ))}
           <Typography variant="caption" sx={{ color: 'text.secondary', ml: 1 }}>
-            One engine. Only the action changes.
+            One engine. Execution is conditional on proof.
           </Typography>
         </Stack>
         <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1.5, maxWidth: 820 }}>

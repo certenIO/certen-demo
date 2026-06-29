@@ -17,7 +17,7 @@ const MAP: Record<Verdict, { label: string; color: string; Icon: typeof BlockRou
 export function VerdictStamp({ verdict, armed = true }: { verdict: Verdict; armed?: boolean }) {
   const cfg = armed ? MAP[verdict] : null;
   return (
-    <Box sx={{ minWidth: 230, height: 64, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+    <Box sx={{ minWidth: { xs: 0, lg: 230 }, height: { xs: 'auto', lg: 64 }, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
       <AnimatePresence mode="wait">
         {cfg && (
           <motion.div

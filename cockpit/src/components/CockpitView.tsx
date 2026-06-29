@@ -189,9 +189,9 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
   };
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', px: { xs: 1.5, md: 2.5 }, py: 0.75, position: 'relative' }}>
+    <Box sx={{ height: { xs: 'auto', lg: '100vh' }, minHeight: { xs: '100dvh', lg: 0 }, display: 'flex', flexDirection: 'column', overflow: { xs: 'visible', lg: 'hidden' }, px: { xs: 1.5, md: 2.5 }, py: 0.75, position: 'relative' }}>
       {/* ── Header ── */}
-      <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.5} sx={{ flexShrink: 0, mb: 0.5 }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.5} sx={{ flexShrink: 0, mb: 0.5, flexWrap: { xs: 'wrap', lg: 'nowrap' }, rowGap: 1 }}>
         <Stack direction="row" alignItems="center" spacing={1.5} sx={{ minWidth: 0 }}>
           <IconButton onClick={onExit} size="small" sx={{ border: '1px solid', borderColor: 'divider' }}>
             <ArrowBackRoundedIcon fontSize="small" />
@@ -199,7 +199,7 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
           <BrandMark size="sm" />
           <Box sx={{ borderLeft: '1px solid', borderColor: 'divider', pl: 1.5, minWidth: 0 }}>
             <Stack direction="row" alignItems="center" spacing={1}>
-              <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.1, whiteSpace: 'nowrap' }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.1, whiteSpace: { xs: 'normal', lg: 'nowrap' } }}>
                 {state?.title ?? meta.title}
               </Typography>
               {state?.actLabel && (
@@ -212,12 +212,12 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
           </Box>
         </Stack>
 
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <ToggleButtonGroup size="small" exclusive value={builder ? 'builder' : 'story'} onChange={(_, v) => v && setBuilder(v === 'builder')}>
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ flexWrap: { xs: 'wrap', lg: 'nowrap' }, justifyContent: { xs: 'flex-start', lg: 'flex-end' }, rowGap: 1 }}>
+          <ToggleButtonGroup size="small" exclusive value={builder ? 'builder' : 'story'} onChange={(_, v) => v && setBuilder(v === 'builder')} sx={{ display: { xs: 'none', md: 'flex' } }}>
             <ToggleButton value="story" sx={{ py: 0.25, px: 1, fontSize: '0.66rem' }}>Story</ToggleButton>
             <ToggleButton value="builder" sx={{ py: 0.25, px: 1, fontSize: '0.66rem' }}>Builder</ToggleButton>
           </ToggleButtonGroup>
-          <ToggleButtonGroup size="small" exclusive value={technical ? 'tech' : 'exec'} onChange={(_, v) => v && setTechnical(v === 'tech')}>
+          <ToggleButtonGroup size="small" exclusive value={technical ? 'tech' : 'exec'} onChange={(_, v) => v && setTechnical(v === 'tech')} sx={{ display: { xs: 'none', md: 'flex' } }}>
             <ToggleButton value="exec" sx={{ py: 0.25, px: 1, fontSize: '0.66rem' }}>Exec</ToggleButton>
             <ToggleButton value="tech" sx={{ py: 0.25, px: 1, fontSize: '0.66rem' }}>Technical</ToggleButton>
           </ToggleButtonGroup>
@@ -280,8 +280,8 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
       </AnimatePresence>
 
       {/* ── Body: rails | right column ── */}
-      <Box sx={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.5fr 1fr' }, gap: 2, alignItems: 'stretch' }}>
-        <Stack data-qa="rails" spacing={0.4} sx={{ minHeight: 0, overflowY: 'auto', pr: 0.5 }}>
+      <Box sx={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.5fr 1fr' }, gap: 2, alignItems: 'stretch', alignContent: { xs: 'start', lg: 'stretch' } }}>
+        <Stack data-qa="rails" spacing={0.4} sx={{ minHeight: 0, overflowY: { xs: 'visible', lg: 'auto' }, pr: 0.5 }}>
           {[1, 2, 3, 4, 5].map((i) => {
             const show = ready[i] && i <= revealed;
             if (!show) {
@@ -296,7 +296,7 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
           })}
         </Stack>
 
-        <Stack spacing={1.25} sx={{ minHeight: 0, overflowY: 'auto', pr: 0.5 }}>
+        <Stack spacing={1.25} sx={{ minHeight: 0, overflowY: { xs: 'visible', lg: 'auto' }, pr: 0.5 }}>
           {builder ? (
             <IntegrationPanel integration={state?.integration} />
           ) : (

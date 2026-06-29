@@ -18,7 +18,7 @@ export function ExplainerStrip({ explainer }: { explainer: ScenarioExplainer | n
         <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', color, textTransform: 'uppercase', lineHeight: 1 }}>
           {label}
         </Typography>
-        <Typography noWrap sx={{ fontSize: '0.82rem', color: 'text.primary', lineHeight: 1.3 }} title={text}>
+        <Typography sx={{ fontSize: '0.82rem', color: 'text.primary', lineHeight: 1.3, whiteSpace: { xs: 'normal', md: 'nowrap' }, overflow: { md: 'hidden' }, textOverflow: { md: 'ellipsis' } }} title={text}>
           {text}
         </Typography>
       </Box>
@@ -30,10 +30,11 @@ export function ExplainerStrip({ explainer }: { explainer: ScenarioExplainer | n
       <Box
         sx={{
           display: 'flex',
-          alignItems: 'center',
-          gap: 2,
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: { xs: 'stretch', md: 'center' },
+          gap: { xs: 1, md: 2 },
           px: 2,
-          py: 0.6,
+          py: { xs: 1, md: 0.6 },
           borderRadius: 2,
           border: '1px solid',
           borderColor: alpha(CERTEN_COLORS.primary.main, 0.18),
@@ -41,9 +42,9 @@ export function ExplainerStrip({ explainer }: { explainer: ScenarioExplainer | n
         }}
       >
         {seg(<ReportProblemRoundedIcon sx={{ fontSize: 20 }} />, 'Without CERTEN', explainer.pain, CERTEN_COLORS.error.main)}
-        <Box sx={{ color: 'text.secondary', opacity: 0.5 }}>→</Box>
+        <Box sx={{ color: 'text.secondary', opacity: 0.5, display: { xs: 'none', md: 'block' } }}>→</Box>
         {seg(<ShieldRoundedIcon sx={{ fontSize: 20 }} />, 'CERTEN did this', explainer.certenMove, CERTEN_COLORS.primary.main)}
-        <Box sx={{ color: 'text.secondary', opacity: 0.5 }}>→</Box>
+        <Box sx={{ color: 'text.secondary', opacity: 0.5, display: { xs: 'none', md: 'block' } }}>→</Box>
         {seg(<StarRoundedIcon sx={{ fontSize: 20 }} />, 'Why it matters', explainer.buyerTakeaway, CERTEN_COLORS.success.main)}
         {explainer.integrationHint && (
           <Tooltip title={explainer.integrationHint}>

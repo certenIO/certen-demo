@@ -20,7 +20,7 @@ export function ContrastStrip({ contrast }: { contrast: ContrastInfo | null | un
     </Box>
   );
   return (
-    <Stack direction="row" spacing={1.25}>
+    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25}>
       {col(<CloseRoundedIcon sx={{ fontSize: 16 }} />, 'Without CERTEN', contrast.without, CERTEN_COLORS.error.main)}
       {col(<CheckRoundedIcon sx={{ fontSize: 16 }} />, 'With CERTEN', contrast.with, CERTEN_COLORS.success.main)}
     </Stack>

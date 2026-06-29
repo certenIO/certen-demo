@@ -1,5 +1,5 @@
 import { Box, Stack, Typography, alpha } from '@mui/material';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import BlockRoundedIcon from '@mui/icons-material/BlockRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import BoltRoundedIcon from '@mui/icons-material/BoltRounded';
@@ -18,37 +18,37 @@ export function VerdictStamp({ verdict, armed = true }: { verdict: Verdict; arme
   const cfg = armed ? MAP[verdict] : null;
   return (
     <Box sx={{ minWidth: { xs: 0, lg: 230 }, height: { xs: 'auto', lg: 64 }, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-      <AnimatePresence mode="wait">
-        {cfg && (
-          <motion.div
-            key={verdict}
-            initial={{ scale: 0.98, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.98, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+      {/* Keyed on verdict so each change remounts and replays the entrance — the stamp ALWAYS shows
+          the current verdict. (Avoids AnimatePresence mode="wait", which can stall a state behind
+          under rapid transitions and leave a stamp contradicting the rails.) */}
+      {cfg && (
+        <motion.div
+          key={verdict}
+          initial={{ scale: 0.98, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.2 }}
+        >
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1.25}
+            sx={{
+              px: 2.5,
+              py: 1.25,
+              borderRadius: 2,
+              border: `1.5px solid ${cfg.color}`,
+              color: cfg.color,
+              bgcolor: alpha(cfg.color, 0.1),
+              boxShadow: SHADOW.sm,
+            }}
           >
-            <Stack
-              direction="row"
-              alignItems="center"
-              spacing={1.25}
-              sx={{
-                px: 2.5,
-                py: 1.25,
-                borderRadius: 2,
-                border: `1.5px solid ${cfg.color}`,
-                color: cfg.color,
-                bgcolor: alpha(cfg.color, 0.1),
-                boxShadow: SHADOW.sm,
-              }}
-            >
-              <cfg.Icon sx={{ fontSize: 30 }} />
-              <Typography sx={{ fontWeight: 700, fontSize: '1.5rem', letterSpacing: '0.06em' }}>
-                {cfg.label}
-              </Typography>
-            </Stack>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <cfg.Icon sx={{ fontSize: 30 }} />
+            <Typography sx={{ fontWeight: 700, fontSize: '1.5rem', letterSpacing: '0.06em' }}>
+              {cfg.label}
+            </Typography>
+          </Stack>
+        </motion.div>
+      )}
     </Box>
   );
 }

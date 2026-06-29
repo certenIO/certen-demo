@@ -108,11 +108,11 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
   useEffect(() => { try { localStorage.setItem('certen.pace', pace); } catch { /* ignore */ } }, [pace]);
 
   // ── certainty recap: auto-surface on the terminal state (safe / refused) ──
-  // Refusals always close with "why nothing moved"; successful executions close only at the
-  // true end of the demo (no further act/attack to run) so it doesn't pop after every act.
+  // Both close ONLY at the true end of the demo — no further act/attack/start pending — so it never
+  // pops mid-scenario (e.g. Demo 3's stolen-key refusal in Act 2, with the Act 3 rotation still to come).
   const isEnd = !(state?.controls ?? []).some((c) => c.id.startsWith('act:') || c.id === 'attack' || c.id === 'start');
   const terminalSafe = state?.verdict === 'executed' && isEnd;
-  const terminalRefused = state?.verdict === 'blocked' && state?.execution?.status === 'never';
+  const terminalRefused = state?.verdict === 'blocked' && state?.execution?.status === 'never' && isEnd;
   const terminal = terminalSafe || terminalRefused;
   const recapVariant: 'safe' | 'refused' = terminalSafe ? 'safe' : 'refused';
   const recapKey = terminal && state ? `${state.id}|${state.act}|${state.verdict}|${state.execution?.status}` : '';

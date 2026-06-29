@@ -13,7 +13,7 @@ const PRINCIPAL = 'acc://acme.acme/protocol';
 
 const CONTRAST: ContrastInfo = {
   without: 'Pipeline pushes the upgrade; one missed approval can break production.',
-  with: 'Pending authorization blocks execution until every required signer approves.',
+  with: 'Nothing can change the contract except a verified proof that every required authority signed on-chain — there is no admin key that can bypass it.',
 };
 
 const IMPACTED = ['Protocol contract', 'Customer-facing API', 'Treasury controls', 'Compliance audit trail'];

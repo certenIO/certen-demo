@@ -13,7 +13,7 @@ const PRINCIPAL = 'acc://acme.acme/protocol';
 
 const CONTRAST: ContrastInfo = {
   without: 'Pipeline pushes the upgrade; one missed approval can break production.',
-  with: 'Nothing can change the contract except a verified proof that every required authority signed on-chain — there is no admin key that can bypass it.',
+  with: 'Nothing can change the contract except a verified proof that all required authorities signed on-chain, all policies were satisfied, and the action to execute is the exact action approved — there is no admin key that can bypass it.',
 };
 
 const IMPACTED = ['Protocol contract', 'Customer-facing API', 'Treasury controls', 'Compliance audit trail'];
@@ -65,7 +65,7 @@ export class StopTheMistakeScenario extends BaseScenario {
       proof: null,
       execution: null,
       explainer: {
-        pain: 'A production change is proposed. It cannot run without a verifiable proof that every required authority approved.',
+        pain: 'A production pipeline can change a critical contract — and one missed approval can break production.',
         certenMove: 'CERTEN makes the release executable only against a verified proof that policy was satisfied.',
         buyerTakeaway: 'Execution becomes conditional on proof — not a checklist someone can skip.',
         integrationHint: 'Triggered by CI/CD via the API Gateway.',

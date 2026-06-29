@@ -70,8 +70,9 @@ export function EvidenceRail({
 
           {evidence.kind === 'execution-proof' && (
             <Typography sx={{ mt: 0.75, fontSize: '0.75rem', color: 'text.primary', fontWeight: 600, lineHeight: 1.35 }}>
-              Not an approval log — execution is cryptographically bound to this proof and verified
-              on-chain, from an account with no private key to steal. Anyone can verify it independently.
+              Not an approval log — CERTEN computes an independently verifiable, tamper-evident proof
+              (Merkle + BLS, multi-dimensional). Execution is conditional on that proof verifying
+              on-chain — from an account with no private key to steal.
             </Typography>
           )}
 

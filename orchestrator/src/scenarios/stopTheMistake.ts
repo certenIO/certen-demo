@@ -203,7 +203,7 @@ export class StopTheMistakeScenario extends BaseScenario {
         },
         explainer: {
           pain: 'Without CERTEN, a release runs the moment someone clicks deploy.',
-          certenMove: 'All three authorities signed; CERTEN minted a proof and only then executed the upgrade.',
+          certenMove: 'All three authorities signed; CERTEN computed an independently verifiable proof, and the upgrade executed only because that proof verified on-chain.',
           buyerTakeaway: 'Execution is bound to an approved, provable decision — auditable forever.',
           integrationHint: 'The proof bundle URL is delivered to your release record via webhook.',
         },

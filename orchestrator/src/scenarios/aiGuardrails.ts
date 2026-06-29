@@ -21,7 +21,7 @@ const TOOL_BOUNDARY: ToolBoundary = {
 
 const CONTRAST: ContrastInfo = {
   without: 'Agent tools directly move funds or delete data.',
-  with: 'Agent can only call certen_execute(); policy decides whether the action can proceed.',
+  with: 'The agent can only call certen_execute() — no direct wallet or delete tool. Nothing executes except on a verified proof that policy was satisfied, any required human approved, and the action is exactly the one proposed.',
 };
 
 const INTEGRATION: IntegrationTrace = {

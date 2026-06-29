@@ -20,7 +20,7 @@ const FRESH_KEY_HASH = 'f5'.repeat(32);
 
 const CONTRAST: ContrastInfo = {
   without: 'One stolen key can trigger an irreversible bridge transfer.',
-  with: 'A stolen key only produces a recorded, refused attempt — funds move solely on a verified proof of quorum, and the vault account has no key to steal.',
+  with: 'A stolen key only produces a recorded, refused attempt. Funds move solely on a verified proof that an independent quorum signed, policy was satisfied, and the transfer is exactly the one approved — and the vault account has no key to steal.',
 };
 
 const INTEGRATION: IntegrationTrace = {

@@ -12,13 +12,14 @@ import type { ScenarioExplainer } from '../types';
 export function ExplainerStrip({ explainer }: { explainer: ScenarioExplainer | null | undefined }) {
   if (!explainer) return null;
   const seg = (icon: ReactNode, label: string, text: string, color: string) => (
-    <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0, flex: 1 }}>
-      <Box sx={{ color, display: 'flex', flexShrink: 0 }}>{icon}</Box>
+    <Stack direction="row" alignItems="flex-start" spacing={1} sx={{ minWidth: 0, flex: 1 }}>
+      <Box sx={{ color, display: 'flex', flexShrink: 0, mt: 0.25 }}>{icon}</Box>
       <Box sx={{ minWidth: 0 }}>
-        <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', color, textTransform: 'uppercase', lineHeight: 1 }}>
+        <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', color, textTransform: 'uppercase', lineHeight: 1, mb: 0.25 }}>
           {label}
         </Typography>
-        <Typography sx={{ fontSize: '0.82rem', color: 'text.primary', lineHeight: 1.3, whiteSpace: { xs: 'normal', md: 'nowrap' }, overflow: { md: 'hidden' }, textOverflow: { md: 'ellipsis' } }} title={text}>
+        {/* Full text, no truncation — this strip teaches the value prop; an ellipsis defeats it. */}
+        <Typography sx={{ fontSize: '0.82rem', color: 'text.primary', lineHeight: 1.3 }}>
           {text}
         </Typography>
       </Box>

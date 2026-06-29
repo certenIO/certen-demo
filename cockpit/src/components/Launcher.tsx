@@ -46,18 +46,21 @@ export function Launcher({
       {/* hero */}
       <Box sx={{ maxWidth: 900 }}>
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <Typography variant="h1" sx={{ mb: 1.5 }}>
+          <Typography variant="h1" sx={{ mb: 1 }}>
             The execution{' '}
             <Box component="span" sx={{ color: CERTEN_COLORS.primary.main }}>
               authorization layer
             </Box>
+          </Typography>
+          <Typography sx={{ fontSize: { xs: '1.1rem', md: '1.35rem' }, fontWeight: 600, color: 'text.primary', letterSpacing: '-0.01em', mb: 1.75 }}>
+            Cryptographically enforced change control
           </Typography>
           <Typography variant="h5" sx={{ color: 'text.secondary', fontWeight: 500, maxWidth: 720 }}>
             {BRAND.tagline}
           </Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1.5, maxWidth: 760 }}>
             How it works: any actor proposes an action, your policy engine decides, the required
-            authorities sign, {BRAND.name} mints a cryptographic proof — and execution happens only
+            authorities sign, {BRAND.name} computes a cryptographic proof — and execution happens only
             then. It&rsquo;s not an approval log: the proof is bound to the exact action and verified
             on-chain, from an account with no private key to steal.
           </Typography>

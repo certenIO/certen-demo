@@ -181,7 +181,7 @@ export class AiGuardrailsScenario extends BaseScenario {
         integrationHint: 'Partners wrap agent tools with certen_execute() instead of exposing direct transfer/delete tools.',
       },
       presenterCue: {
-        say: 'Now the agent wants $5 million. Its only tool routes through CERTEN, so it is blocked until a human signs.',
+        say: 'Now the agent wants $5 million. Its only tool routes through CERTEN, so it cannot execute until a human approval produces a proof.',
         waitFor: 'BLOCKED, 0 of 1',
         objection: 'Could the AI bypass CERTEN?',
         answer: 'No. Its only execution tool is certen_execute — there is no direct wallet or database tool.',
@@ -207,7 +207,7 @@ export class AiGuardrailsScenario extends BaseScenario {
         coordinationSummary: 'The AI cannot bypass the pending authorization queue. A human has been notified.',
       },
       evidence: pendingRecord({
-        plainMeaning: 'A high-value action is pending human approval — execution is impossible until a human signs.',
+        plainMeaning: 'A high-value action is held — execution is impossible until a human approval produces a verified proof.',
         auditFacts: ['Intent: transfer $5,000,000', 'Policy: human approval required', 'Agent cannot self-approve', 'Held in the authorization queue'],
         pendingTxHash: pendingTx,
       }),

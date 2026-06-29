@@ -133,7 +133,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
         coordinationSummary: 'Pending transfer is live on Accumulate. Security Council is the only missing signature.',
       },
       evidence: pendingRecord({
-        plainMeaning: 'A pending cross-chain transfer exists on Accumulate — no bridge legs are created until quorum is met.',
+        plainMeaning: 'A pending cross-chain transfer is live on Accumulate — no bridge legs are created without a verified proof of quorum.',
         auditFacts: ['2 of 3 authorities signed', 'Security Council notified', 'No bridge legs created yet'],
         pendingTxHash: this.pendingTx,
       }),
@@ -144,13 +144,13 @@ export class TreasuryProtectionScenario extends BaseScenario {
         integrationHint: 'Treasury tooling submits one transfer through the API Gateway.',
       },
       presenterCue: {
-        say: 'A DAO is moving $25M across chains. Two of three authorities have signed; CERTEN holds execution until the third signs.',
+        say: 'A DAO is moving $25M across chains. Two of three authorities have signed; CERTEN holds execution until a verified proof of quorum exists — the third signature produces it.',
         waitFor: 'BLOCKED, 2 of 3',
         objection: 'Why not just a multisig wallet?',
         answer: 'CERTEN coordinates the pending signatures, proves the quorum, and binds that proof to the actual cross-chain execution.',
       },
       proof: null,
-      execution: { status: 'idle', headline: 'Bridge transfer frozen until the quorum signs' },
+      execution: { status: 'idle', headline: 'Bridge transfer cannot run without a verified proof of quorum' },
       treasury: treasuryInitial(),
       banner: null,
       controls: [
@@ -364,7 +364,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
         answer: 'No. Authority lives on Accumulate; one key-page update re-secures every external account it controls.',
       },
       proof: null,
-      execution: { status: 'idle', headline: 'Key-page update frozen until the surviving authorities sign' },
+      execution: { status: 'idle', headline: 'Key-page update cannot run without a verified proof from the surviving authorities' },
       banner: { kind: 'info', text: 'The two surviving authorities can revoke the stolen key with one Accumulate key-page update — no funds at risk, and every chain it governs is re-secured at once.' },
       controls: [
         ctl('approve:foundation', 'Foundation approves rotation', 'approve', { role: 'foundation', emphasis: true }),

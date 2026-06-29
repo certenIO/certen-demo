@@ -4,6 +4,7 @@ import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import DoNotDisturbRoundedIcon from '@mui/icons-material/DoNotDisturbRounded';
 import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded';
+import LockRoundedIcon from '@mui/icons-material/LockRounded';
 import { Rail } from '../Rail';
 import { CERTEN_COLORS, MONO_FAMILY, NEUTRAL } from '../../theme';
 import type { ExecutionInfo, ExecutionLeg } from '../../types';
@@ -50,6 +51,19 @@ export function ExecutionRail({ execution }: { execution: ExecutionInfo | null }
     >
       <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
         <Box sx={{ pl: 4.75 }}>
+          {/* ④→⑤ binding — show that execution is downstream of, and conditional on, the proof in rail ④. */}
+          <Stack direction="row" alignItems="center" spacing={0.6} sx={{ mb: 0.6, flexWrap: 'wrap' }}>
+            <LockRoundedIcon sx={{ color: accent, fontSize: 13 }} />
+            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, fontSize: '0.68rem', fontWeight: 700, color: accent }}>
+              <Box component="span">
+                {never ? 'No valid proof in' : done ? 'Released only by the verified proof in' : 'Verifying the proof in'}
+              </Box>
+              <Box component="span" sx={{ display: 'grid', placeItems: 'center', width: 15, height: 15, borderRadius: '50%', bgcolor: alpha(accent, 0.18), fontSize: '0.6rem', fontWeight: 800, lineHeight: 1 }}>4</Box>
+              <Box component="span">
+                {never ? '— execution refused.' : done ? '— no proof, no execution.' : 'on-chain before release…'}
+              </Box>
+            </Box>
+          </Stack>
           <Stack direction="row" alignItems="center" spacing={1.25} sx={{ mb: execution.legs ? 0.5 : 0 }}>
             {never ? <DoNotDisturbRoundedIcon sx={{ color: accent, fontSize: 19 }} /> : done ? <CheckCircleRoundedIcon sx={{ color: accent, fontSize: 19 }} /> : <CircularProgress size={17} sx={{ color: accent }} />}
             <Box sx={{ minWidth: 0 }}>

@@ -45,7 +45,7 @@ const lsGetPace = (): Pace => {
 
 const RAIL_PLACEHOLDER: Record<number, [string, string]> = {
   1: ['Proposed Action', 'Waiting for an action to be proposed…'],
-  2: ['Policy', 'The policy engine evaluates the action automatically.'],
+  2: ['Policy', 'Your policy engine evaluates the action and returns the required authority.'],
   3: ['Approvals & Coordination', 'Required signatures are collected and coordinated here.'],
   4: ['Evidence', 'The proof (or refusal record) that authorizes — or denies — execution.'],
   5: ['Execution · gated 🔒', 'Executes ONLY on a verified proof — from an account with no private key. No proof, no movement.'],

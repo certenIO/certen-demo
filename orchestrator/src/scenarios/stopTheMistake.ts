@@ -41,7 +41,7 @@ export class StopTheMistakeScenario extends BaseScenario {
     return {
       id: 'stop-the-mistake',
       title: 'Stop the Production Mistake',
-      hook: 'A production change cannot run until every required authority signs.',
+      hook: 'No production change runs without proof that every required authority approved.',
       badge: 'Change Control',
       accent: 'primary',
     };
@@ -124,7 +124,7 @@ export class StopTheMistakeScenario extends BaseScenario {
         coordinationSummary: 'Pending transaction is live on Accumulate. Foundation is the only missing signature.',
       },
       evidence: pendingRecord({
-        plainMeaning: 'A pending authorization request exists on Accumulate — execution is impossible until quorum is met.',
+        plainMeaning: 'A pending authorization is live on Accumulate — until quorum produces a verified proof, execution is impossible.',
         auditFacts: [
           '2 of 3 signatures collected on-chain',
           'Foundation notified via inbox',
@@ -139,13 +139,13 @@ export class StopTheMistakeScenario extends BaseScenario {
         integrationHint: 'In production this starts from your CI/CD system or release-manager API.',
       },
       presenterCue: {
-        say: 'A release pipeline just tried to change a production contract. CERTEN turned it into a pending authorization — it cannot run until the Foundation signs.',
+        say: 'A release pipeline just tried to change a production contract. CERTEN made it executable only against a proof — until the Foundation signs, no such proof exists, so it cannot run.',
         waitFor: 'BLOCKED, 2 of 3 visible',
         objection: 'Is this just multisig?',
         answer: 'Multisig is one primitive. CERTEN discovers the pending action, coordinates the signers, proves the decision, and gates execution — through one API.',
       },
       proof: null,
-      execution: { status: 'idle', headline: 'Upgrade is frozen until policy is satisfied' },
+      execution: { status: 'idle', headline: 'Upgrade cannot run without a verified proof of policy' },
       controls: [
         ctl('approve:foundation', 'Foundation approves', 'approve', { role: 'foundation', emphasis: true }),
         ctl('reset', 'Reset', 'reset'),

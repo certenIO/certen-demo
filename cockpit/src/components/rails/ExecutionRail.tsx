@@ -28,7 +28,7 @@ function Leg({ leg }: { leg: ExecutionLeg }) {
 
 export function ExecutionRail({ execution }: { execution: ExecutionInfo | null }) {
   if (!execution || execution.status === 'idle') {
-    return <Rail index={5} title="Execution" dim placeholder={execution?.headline ?? 'Fires only after the proof is minted.'} />;
+    return <Rail index={5} title="Execution" dim placeholder={execution?.headline ?? 'Fires only after the proof is verified on-chain.'} />;
   }
   const never = execution.status === 'never';
   const done = execution.status === 'done';

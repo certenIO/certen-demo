@@ -292,7 +292,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
       }),
       explainer: {
         pain: 'An attacker has a real, valid treasurer key.',
-        certenMove: 'CERTEN records the stolen signature but refuses execution — one key is not quorum.',
+        certenMove: 'CERTEN records the stolen signature but refuses execution — one key cannot produce a valid proof.',
         buyerTakeaway: 'A stolen key becomes evidence, not a drain — and the vault account has no key to steal in the first place.',
         integrationHint: 'Custodians and bridges submit the same protected flow; the API gate is identical.',
       },

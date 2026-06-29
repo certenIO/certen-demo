@@ -58,11 +58,14 @@ export function Launcher({
           <Typography variant="h5" sx={{ color: 'text.secondary', fontWeight: 500, maxWidth: 720 }}>
             {BRAND.tagline}
           </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1.5, maxWidth: 760 }}>
+          <Typography variant="body1" sx={{ color: 'text.primary', fontWeight: 600, mt: 1.5, maxWidth: 760 }}>
+            Most systems record who approved. {BRAND.name} makes execution impossible without proving it.
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1, maxWidth: 760 }}>
             How it works: any actor proposes an action, your policy engine decides, the required
             authorities sign, {BRAND.name} computes a cryptographic proof — and execution happens only
-            then. It&rsquo;s not an approval log: the proof is bound to the exact action and verified
-            on-chain, from an account with no private key to steal.
+            then, bound to the exact action and verified on-chain, from an account with no private key
+            to steal.
           </Typography>
         </motion.div>
 
@@ -88,6 +91,10 @@ export function Launcher({
             One engine. Only the action changes.
           </Typography>
         </Stack>
+        <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1.5, maxWidth: 820 }}>
+          Governance is the first application. The same engine secures treasury moves, lending, AI
+          agents, custody, insurance, and cross-chain ops — only the action changes.
+        </Typography>
       </Box>
 
       {/* scenario cards */}

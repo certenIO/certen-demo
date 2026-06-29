@@ -158,7 +158,7 @@ export abstract class BaseScenario {
       evidence: {
         kind: 'execution-proof',
         title: 'Execution Proof',
-        plainMeaning: 'Proof of who approved what — and that the executed outcome matched the approved action.',
+        plainMeaning: 'A verifiable proof that the right authority approved under the right policy — and that the executed outcome matched what was approved.',
         proofLevel: level,
         proofLevelMeaning: G_MEANING[level],
         auditFacts: [

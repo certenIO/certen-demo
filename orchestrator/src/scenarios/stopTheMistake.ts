@@ -65,9 +65,9 @@ export class StopTheMistakeScenario extends BaseScenario {
       proof: null,
       execution: null,
       explainer: {
-        pain: 'A production change is proposed. It cannot run until every required authority signs.',
-        certenMove: 'CERTEN turns the release into a pending on-chain authorization request.',
-        buyerTakeaway: 'Approvals become a hard execution gate, not a checklist.',
+        pain: 'A production change is proposed. It cannot run without a verifiable proof that every required authority approved.',
+        certenMove: 'CERTEN makes the release executable only against a verified proof that policy was satisfied.',
+        buyerTakeaway: 'Execution becomes conditional on proof — not a checklist someone can skip.',
         integrationHint: 'Triggered by CI/CD via the API Gateway.',
       },
       coordination: null,
@@ -134,7 +134,7 @@ export class StopTheMistakeScenario extends BaseScenario {
       }),
       explainer: {
         pain: 'A production pipeline is trying to change a critical contract.',
-        certenMove: 'CERTEN records the request as a pending authorization and freezes execution until the Foundation signs.',
+        certenMove: 'CERTEN holds execution: with no proof of full authorization yet, the change cannot run until the Foundation signs.',
         buyerTakeaway: 'A missing approval becomes a hard execution stop, not a process reminder.',
         integrationHint: 'In production this starts from your CI/CD system or release-manager API.',
       },

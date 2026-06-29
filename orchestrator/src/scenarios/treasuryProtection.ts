@@ -20,7 +20,7 @@ const FRESH_KEY_HASH = 'f5'.repeat(32);
 
 const CONTRAST: ContrastInfo = {
   without: 'One stolen key can trigger an irreversible bridge transfer.',
-  with: 'A stolen key creates a recorded attempt, but no quorum means no execution.',
+  with: 'A stolen key only produces a recorded, refused attempt — funds move solely on a verified proof of quorum, and the vault account has no key to steal.',
 };
 
 const INTEGRATION: IntegrationTrace = {
@@ -86,7 +86,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
       evidence: null,
       explainer: {
         pain: 'A stolen key, a rogue admin, or a bridge exploit can drain a treasury in one transaction.',
-        certenMove: 'CERTEN turns every treasury move into a quorum-gated, provable authorization across chains.',
+        certenMove: 'CERTEN makes every treasury move executable only against a verifiable proof of authority — across chains.',
         buyerTakeaway: 'High-value cross-chain moves need independent quorum, not one admin.',
         integrationHint: 'Treasury tooling submits one transfer through the API Gateway.',
       },
@@ -139,7 +139,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
       }),
       explainer: {
         pain: 'A DAO wants to move $25M across chains.',
-        certenMove: 'CERTEN creates a pending authorization and notifies all three authorities; nothing moves until quorum signs.',
+        certenMove: 'CERTEN notifies all three authorities and holds execution; funds move only once a verifiable proof of quorum exists.',
         buyerTakeaway: 'High-value cross-chain moves require independent quorum, not one admin.',
         integrationHint: 'Treasury tooling submits one transfer through the API Gateway.',
       },

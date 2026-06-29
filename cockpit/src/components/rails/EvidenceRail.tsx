@@ -20,9 +20,13 @@ const KIND_CFG = {
 export function EvidenceRail({
   evidence,
   technical,
+  simulated = false,
+  onWhyDifferent,
 }: {
   evidence: EvidenceInfo | null | undefined;
   technical: boolean;
+  simulated?: boolean;
+  onWhyDifferent?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   if (!evidence) {
@@ -64,6 +68,13 @@ export function EvidenceRail({
             </Box>
           </Stack>
 
+          {evidence.kind === 'execution-proof' && (
+            <Typography sx={{ mt: 0.75, fontSize: '0.75rem', color: 'text.primary', fontWeight: 600, lineHeight: 1.35 }}>
+              Not an approval log — execution is cryptographically bound to this proof and verified
+              on-chain, from an account with no private key to steal. Anyone can verify it independently.
+            </Typography>
+          )}
+
           {hasExtras && (
             <Collapse in={showDetails}>
               <Box sx={{ mt: 1, p: 1, borderRadius: 1.5, border: `1px solid ${alpha(cfg.accent, 0.25)}`, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.75 }}>
@@ -75,15 +86,27 @@ export function EvidenceRail({
             </Collapse>
           )}
 
-          <Stack direction="row" spacing={1} sx={{ mt: 0.6 }} alignItems="center">
-            {evidence.explorerUrl && (
+          <Stack direction="row" sx={{ mt: 0.6, flexWrap: 'wrap', gap: 1 }} alignItems="center">
+            {/* Live mode: real, reachable proof links. Simulated: the public links aren't reachable,
+                so route "verify" to the real on-chain proof cycle inside the security model instead. */}
+            {!simulated && evidence.explorerUrl && (
               <Button size="small" variant="outlined" color="inherit" endIcon={<LaunchRoundedIcon />} href={evidence.explorerUrl} target="_blank" sx={{ py: 0.25, fontSize: '0.72rem', borderColor: alpha(cfg.accent, 0.4), color: cfg.accent }}>
                 Verify
               </Button>
             )}
-            {evidence.bundleUrl && (
+            {!simulated && evidence.bundleUrl && (
               <Button size="small" variant="text" endIcon={<DownloadRoundedIcon />} href={evidence.bundleUrl} target="_blank" sx={{ py: 0.25, fontSize: '0.72rem', color: cfg.accent }}>
                 Bundle
+              </Button>
+            )}
+            {simulated && evidence.kind === 'execution-proof' && onWhyDifferent && (
+              <Button size="small" variant="outlined" color="inherit" endIcon={<LaunchRoundedIcon />} onClick={onWhyDifferent} sx={{ py: 0.25, fontSize: '0.72rem', borderColor: alpha(cfg.accent, 0.4), color: cfg.accent }}>
+                Verify it&rsquo;s real
+              </Button>
+            )}
+            {onWhyDifferent && (evidence.kind === 'execution-proof' || evidence.kind === 'blocked-action-record') && (
+              <Button size="small" variant="text" onClick={onWhyDifferent} sx={{ py: 0.25, fontSize: '0.72rem', color: 'text.secondary' }}>
+                Why this isn&rsquo;t multisig →
               </Button>
             )}
             {hasExtras && !technical && (

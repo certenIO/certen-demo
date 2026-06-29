@@ -55,6 +55,12 @@ export function Launcher({
           <Typography variant="h5" sx={{ color: 'text.secondary', fontWeight: 500, maxWidth: 720 }}>
             {BRAND.tagline}
           </Typography>
+          <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1.5, maxWidth: 760 }}>
+            How it works: any actor proposes an action, your policy engine decides, the required
+            authorities sign, {BRAND.name} mints a cryptographic proof — and execution happens only
+            then. It&rsquo;s not an approval log: the proof is bound to the exact action and verified
+            on-chain, from an account with no private key to steal.
+          </Typography>
         </motion.div>
 
         {/* the one engine */}

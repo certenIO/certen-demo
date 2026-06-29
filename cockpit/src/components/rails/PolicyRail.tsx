@@ -12,7 +12,7 @@ export function PolicyRail({ policy }: { policy: PolicyInfo | null }) {
   return (
     <Rail
       index={2}
-      title="Policy · auto-evaluated"
+      title="Policy · your rules engine decides"
       active
       accent={accent}
       right={policy.rule ? <Chip size="small" label={policy.rule} sx={{ height: 20, bgcolor: alpha(accent, 0.10), color: accent, fontFamily: MONO_FAMILY, fontSize: '0.66rem' }} /> : undefined}
@@ -28,6 +28,10 @@ export function PolicyRail({ policy }: { policy: PolicyInfo | null }) {
               Triggered by: {policy.trigger}
             </Typography>
           )}
+          <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.72rem', mt: 0.5 }}>
+            Bring your own policy engine — OPA, Sentinel, fraud/AML, or homegrown. Your rules make the
+            decision; CERTEN turns its yes/no into a cryptographic gate enforced on-chain.
+          </Typography>
         </Stack>
       </Stack>
     </Rail>

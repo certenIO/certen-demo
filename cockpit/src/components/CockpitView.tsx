@@ -182,7 +182,7 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
       case 1: return <ActionRail action={state?.action ?? null} impacted={state?.impactedSystems} />;
       case 2: return <PolicyRail policy={state?.policy ?? null} />;
       case 3: return <ApprovalsRail approvals={state?.approvals ?? null} coordination={state?.coordination} onApprove={onApprove} busy={!!state?.busy} />;
-      case 4: return <EvidenceRail evidence={state?.evidence} technical={technical} />;
+      case 4: return <EvidenceRail evidence={state?.evidence} technical={technical} simulated={mode !== 'live'} onWhyDifferent={() => setSecurityOpen(true)} />;
       case 5: return <ExecutionRail execution={state?.execution ?? null} />;
       default: return null;
     }

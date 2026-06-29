@@ -240,7 +240,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
         },
         explainer: {
           pain: 'Without CERTEN, a treasury admin could push a cross-chain transfer alone.',
-          certenMove: 'All three authorities signed; CERTEN proved the quorum and executed both legs.',
+          certenMove: 'All three authorities signed; CERTEN computed an independently verifiable proof, and both bridge legs moved only because that proof verified on-chain.',
           buyerTakeaway: 'Funds move only after an independent, provable quorum.',
           integrationHint: 'The proof bundle + both leg tx hashes arrive via webhook.',
         },

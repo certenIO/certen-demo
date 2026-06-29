@@ -307,7 +307,7 @@ export class AiGuardrailsScenario extends BaseScenario {
     this.patch({
       explainer: {
         pain: 'Without CERTEN, the agent would have already moved the $5M.',
-        certenMove: 'A human approved; CERTEN minted a proof and only then executed.',
+        certenMove: 'A human approved; CERTEN computed an independently verifiable proof, and the $5M moved only because that proof verified on-chain.',
         buyerTakeaway: 'High-value autonomy stays under human authority — with proof of who approved.',
         integrationHint: 'The approval can come from your KMS/KeyVault via the API.',
       },

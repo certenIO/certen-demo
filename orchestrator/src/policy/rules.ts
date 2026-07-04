@@ -14,12 +14,12 @@ export const DEMO_RULES: PolicyRule[] = [
     describe: 'Production upgrade → requires {threshold} of {count}: {approvers}',
   },
 
-  // ── Demo 2 — destructive data action (catastrophic, dual senior control) ─────
+  // ── Demo 2 — privileged contract call (protocol upgrade, dual senior control) ─
   {
-    name: 'destructive-data',
-    when: { actionType: 'deleteDatabase' },
+    name: 'privileged-upgrade',
+    when: { actionType: 'upgradeTo' },
     require: { approvers: ['CTO', 'Security'], threshold: 2 },
-    describe: 'Destructive data action → requires {threshold} of {count}: {approvers}',
+    describe: 'Protocol upgrade → requires {threshold} of {count} senior keys: {approvers}',
   },
 
   // ── Demo 2 — large transfer needs a human ───────────────────────────────────

@@ -12,7 +12,7 @@ export function ToolBoundaryPanel({ boundary }: { boundary: ToolBoundary | null 
     <Card sx={{ p: 1.5, border: `1px solid ${alpha(CERTEN_COLORS.secondary.main, 0.35)}` }}>
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
         <LockRoundedIcon sx={{ color: CERTEN_COLORS.secondary.main, fontSize: 18 }} />
-        <Typography sx={{ fontWeight: 700, fontSize: '0.85rem' }}>Agent tool boundary</Typography>
+        <Typography sx={{ fontWeight: 700, fontSize: '0.85rem' }}>Agent authority boundary</Typography>
       </Stack>
       <Stack direction="row" spacing={0.75} sx={{ flexWrap: 'wrap', gap: 0.75, mb: 1 }}>
         {boundary.allowed.map((t) => (
@@ -27,7 +27,8 @@ export function ToolBoundaryPanel({ boundary }: { boundary: ToolBoundary | null 
         ))}
       </Stack>
       <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary', mt: 1 }}>
-        The agent has no direct wallet, database, or admin tool. Every action routes through CERTEN.
+        The agent can hold its own key and propose anything. On-chain, its account executes only the
+        exact call a validator quorum proved — a compromised key can’t deviate.
       </Typography>
     </Card>
   );

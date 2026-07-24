@@ -224,6 +224,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
       this.patch({
         execution: {
           status: 'done',
+          accountAddress: '0x5E19c73B…7A0d',
           shortLabel: '$25,000,000 moved',
           headline: '$25,000,000 moved Base → Arbitrum',
           detail: 'Both legs executed, bound to one CERTEN proof.',
@@ -246,7 +247,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
           integrationHint: 'The proof bundle + both leg tx hashes arrive via webhook.',
         },
       });
-    }, { governanceLevel: 'G2', validators: 9 });
+    }, { governanceLevel: 'G2', validators: 7 });
 
     this.patch({
       controls: [ctl('attack', 'Now: treasurer key is stolen', 'danger', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
@@ -304,11 +305,11 @@ export class TreasuryProtectionScenario extends BaseScenario {
         answer: 'The quorum lives on Accumulate, pending coordination is automated, and the proof can authorize or refuse execution across external chains.',
       },
       proof: null,
-      execution: { status: 'never', shortLabel: 'nothing moved', headline: 'Valid signature recorded, but the other authorities never signed. No funds moved.' },
+      execution: { status: 'never', accountAddress: '0x5E19c73B…7A0d', shortLabel: 'nothing moved', headline: 'Valid signature recorded, but the other authorities never signed. No funds moved.' },
       treasury: treasuryInitial(),
       banner: { kind: 'danger', text: 'Attacker holds the treasurer’s real key. Still only 1 of 3. CERTEN blocks it — the treasury is untouched.' },
       controls: [
-        ctl('act:3', 'Rotate out the compromised key (advanced)', 'primary', { emphasis: true }),
+        ctl('act:3', 'Now revoke the stolen key', 'primary', { emphasis: true }),
         ctl('reset', 'Reset scenario', 'reset'),
       ],
       message: 'BLOCKED — now revoke the stolen key',
@@ -324,15 +325,15 @@ export class TreasuryProtectionScenario extends BaseScenario {
     const decision = this.policyFor({ actionType: 'rotateKey' });
     this.patch({
       act: 3,
-      actLabel: 'Act 3 of 3 · key rotation (advanced)',
+      actLabel: 'Act 3 of 3 · revoking the stolen key',
       verdict: 'blocked',
       action: {
-        verb: 'Replace the stolen key',
+        verb: 'Replace key',
         summary: 'Accumulate key page · revoke compromised key, add a fresh key',
         principal: 'DAO treasury keys',
         // The headline slot needs a figure. This action moves no money, so it states the effect.
-        amountLabel: 'Lock the thief out',
-        note: 'every account, every chain, one action',
+        amountLabel: 'Lock out the thief',
+        note: 'one action, every chain',
         target: 'New key',
         initiator: 'Foundation + Security Council',
         icon: 'upgrade',
@@ -354,7 +355,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
       },
       evidence: pendingRecord({
         plainMeaning: 'A key-page rotation is pending the surviving authorities’ signatures.',
-        auditFacts: ['Target: acc://dao-treasury.acme/book/1', 'remove_key: compromised', 'add_key: fresh', 'Recovery threshold: 2 of 3'],
+        auditFacts: ['Target: DAO treasury keys', 'stolen key removed', 'fresh key added', 'Recovery threshold: 2 of 3'],
       }),
       explainer: {
         pain: 'The treasury is frozen but the compromised key is still in the set.',
@@ -414,6 +415,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
       this.patch({
         execution: {
           status: 'done',
+          accountAddress: '0x5E19c73B…7A0d',
           shortLabel: 'stolen key revoked',
           headline: 'Compromised key revoked — the authority set is healed',
           detail:
@@ -422,7 +424,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
           verified: out.verified,
           verifiedDetail: out.verifiedDetail,
           legs: [
-            { chain: 'accumulate', label: `Accumulate · ${KEY_PAGE}`, status: 'done', txHash: out.txHash, explorerUrl: out.explorerUrl },
+            { chain: 'accumulate', label: 'Accumulate', status: 'done', txHash: out.txHash, explorerUrl: out.explorerUrl },
           ],
           explorerUrl: out.explorerUrl,
         },
@@ -438,7 +440,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
         },
         message: 'Compromised key rotated out — resolved',
       });
-    }, { governanceLevel: 'G1', validators: 9 });
+    }, { governanceLevel: 'G1', validators: 7 });
 
     // enrich the execution-proof evidence with rotation-specific facts
     const ev = this.state.evidence;

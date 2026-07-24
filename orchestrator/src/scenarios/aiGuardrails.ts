@@ -178,7 +178,7 @@ export class AiGuardrailsScenario extends BaseScenario {
     await this.beat(600);
 
     await this.reveal(async () => {
-      this.patch({ execution: { status: 'executing', headline: 'Executing buy(XAUV, $250,000)…', legs: [{ chain: 'base-sepolia', label: `Base Sepolia · ${AGENT_ACCT}`, status: 'executing' }] } });
+      this.patch({ execution: { status: 'executing', headline: 'Executing buy(XAUV, $250,000)…', legs: [{ chain: 'base-sepolia', label: 'Base Sepolia', status: 'executing' }] } });
       await this.beat(900);
       const out = await execWithdraw('base-sepolia', 250000n, 'XAUV desk');
       this.patch({
@@ -191,7 +191,7 @@ export class AiGuardrailsScenario extends BaseScenario {
           verified: true,
           verifiedDetail: 'committed event Purchased(XAUV, $250,000) matched (proof-of-effect)',
           explorerUrl: out.explorerUrl,
-          legs: [{ chain: 'base-sepolia', label: `Base Sepolia · ${AGENT_ACCT}`, status: 'done', txHash: out.txHash, explorerUrl: out.explorerUrl }],
+          legs: [{ chain: 'base-sepolia', label: 'Base Sepolia', status: 'done', txHash: out.txHash, explorerUrl: out.explorerUrl }],
         },
       });
     }, { governanceLevel: 'G2', validators: 7 });
@@ -350,7 +350,7 @@ export class AiGuardrailsScenario extends BaseScenario {
     if (this.collected(this.human) < threshold) return;
 
     await this.reveal(async () => {
-      this.patch({ execution: { status: 'executing', headline: 'Executing subscribe($5,000,000)…', legs: [{ chain: 'base-sepolia', label: `Base Sepolia · ${AGENT_ACCT}`, status: 'executing' }] } });
+      this.patch({ execution: { status: 'executing', headline: 'Executing subscribe($5,000,000)…', legs: [{ chain: 'base-sepolia', label: 'Base Sepolia', status: 'executing' }] } });
       await this.beat(900);
       const out = await execWithdraw('base-sepolia', 5000000n, 'XAUV desk');
       this.patch({
@@ -363,7 +363,7 @@ export class AiGuardrailsScenario extends BaseScenario {
           verified: true,
           verifiedDetail: 'committed event Subscribed($5,000,000) matched (proof-of-effect)',
           explorerUrl: out.explorerUrl,
-          legs: [{ chain: 'base-sepolia', label: `Base Sepolia · ${AGENT_ACCT}`, status: 'done', txHash: out.txHash, explorerUrl: out.explorerUrl }],
+          legs: [{ chain: 'base-sepolia', label: 'Base Sepolia', status: 'done', txHash: out.txHash, explorerUrl: out.explorerUrl }],
         },
       });
     }, { governanceLevel: 'G2', validators: 7 });
@@ -387,6 +387,6 @@ export class AiGuardrailsScenario extends BaseScenario {
       },
     });
     this.appendAgent({ kind: 'result', text: 'A person co-signed. The proof formed, and the purchase went through.' });
-    this.patch({ controls: [ctl('act:3', 'Now a manipulated agent tries upgradeTo(attacker)', 'danger', { emphasis: true }), ctl('reset', 'Reset', 'reset')] });
+    this.patch({ controls: [ctl('act:3', 'Now the agent is manipulated', 'danger', { emphasis: true }), ctl('reset', 'Reset', 'reset')] });
   }
 }

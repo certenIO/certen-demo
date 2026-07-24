@@ -195,6 +195,7 @@ export class StopTheMistakeScenario extends BaseScenario {
       this.patch({
         execution: {
           status: 'done',
+          accountAddress: '0x3F8b91Ac…D42e',
           shortLabel: 'now running v6.1',
           headline: 'protocol version   6.0 → 6.1',
           detail: 'Upgrade executed only after the full quorum signed.',

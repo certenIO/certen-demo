@@ -45,6 +45,8 @@ interface AuthNode {
   status: NodeStatus;
   /** ≤4 plain words explaining the status, e.g. "not enough gold" */
   filmNote?: string;
+  /** policy cleared this with no human in the loop — drawn as a step, not a signer */
+  autoNode?: boolean;
   canApprove?: boolean;
   automated?: boolean;
 }
@@ -195,6 +197,7 @@ function AuthorityNode({ node, busy, onApprove }: { node: AuthNode; busy: boolea
   const Icon = entityIcon(`${node.kind} ${node.name}`);
   const StatusGlyph =
     node.status === 'satisfied' ? CheckRoundedIcon : node.status === 'refused' ? CloseRoundedIcon : node.status === 'compromised' ? WarningAmberRoundedIcon : null;
+  const Glyph = node.autoNode ? BoltRoundedIcon : Icon;
 
   return (
     // NB: the motion wrapper carries height:100% too — without it the grid row grows to fill the
@@ -204,7 +207,7 @@ function AuthorityNode({ node, busy, onApprove }: { node: AuthNode; busy: boolea
         {/* entity glyph in a status ring, with a verdict badge */}
         <Box sx={{ position: 'relative' }}>
           <Box sx={{ width: 76, height: 76, borderRadius: '50%', display: 'grid', placeItems: 'center', border: `3px solid ${color}`, color, bgcolor: alpha(color, 0.08) }}>
-            <Icon sx={{ fontSize: 40 }} />
+            <Glyph sx={{ fontSize: 40 }} />
           </Box>
           {StatusGlyph && (
             <motion.div
@@ -246,7 +249,7 @@ function AuthorityNode({ node, busy, onApprove }: { node: AuthNode; busy: boolea
         </Stack>
 
         <Typography sx={{ fontSize: '0.76rem', fontWeight: 800, letterSpacing: '0.08em', color, opacity: node.status === 'pending' ? 0.6 : 1 }}>
-          {STATUS_WORD[node.status]}
+          {node.autoNode ? 'AUTO-APPROVED' : STATUS_WORD[node.status]}
         </Typography>
         {node.filmNote && (
           <Typography align="center" sx={{ fontSize: '0.82rem', fontWeight: 600, color, lineHeight: 1.2, px: 0.5 }}>
@@ -429,9 +432,15 @@ export function FilmCanvas({
   onApprove: (role: string) => void;
 }) {
   if (!state) return null;
-  const nodes = toNodes(state);
+  const real = toNodes(state);
+  // A zero-threshold act has no signers, but it DOES have a step: policy cleared it. Drawing that
+  // as a node keeps the flow grammar intact — otherwise the canvas renders a hole where the
+  // authority row belongs and the diagram looks broken rather than permissive.
+  const auto = real.length === 0 && !!state.policy && state.policy.threshold === 0;
+  const nodes: AuthNode[] = auto
+    ? [{ role: 'auto', name: 'Within policy', kind: 'No human needed', keys: [], threshold: 0, status: 'satisfied', autoNode: true }]
+    : real;
   const filled = nodes.filter((n) => n.status === 'satisfied' || n.status === 'compromised').length;
-  const auto = nodes.length === 0 && !!state.policy && state.policy.threshold === 0;
 
   return (
     // The diagram OWNS the frame: fixed-height bands top and bottom, and the authority row plus
@@ -445,11 +454,13 @@ export function FilmCanvas({
         <>
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mt: 2, mb: 1, px: 0.5, flexShrink: 0 }}>
             <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.14em', color: 'text.secondary' }}>
-              REQUIRED AUTHORITY
+              {auto ? 'POLICY DECISION' : 'REQUIRED AUTHORITY'}
             </Typography>
-            <Typography sx={{ fontFamily: MONO_FAMILY, fontSize: '1.15rem', fontWeight: 800, color: filled === nodes.length ? CERTEN_COLORS.success.main : 'text.secondary' }}>
-              {filled} / {nodes.length}
-            </Typography>
+            {!auto && (
+              <Typography sx={{ fontFamily: MONO_FAMILY, fontSize: '1.15rem', fontWeight: 800, color: filled === nodes.length ? CERTEN_COLORS.success.main : 'text.secondary' }}>
+                {filled} / {nodes.length}
+              </Typography>
+            )}
           </Stack>
           <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${nodes.length}, 1fr)`, gap: 1.5, alignItems: 'stretch', flex: '3 1 auto', minHeight: 196, maxHeight: 300 }}>
             {nodes.map((n) => (
@@ -460,14 +471,6 @@ export function FilmCanvas({
         </>
       )}
 
-      {auto && (
-        <Stack alignItems="center" justifyContent="center" sx={{ flex: '1 1 auto' }}>
-          <Typography sx={{ fontSize: '0.9rem', fontWeight: 800, letterSpacing: '0.1em', color: CERTEN_COLORS.success.main }}>
-            <BoltRoundedIcon sx={{ fontSize: 19, verticalAlign: 'text-bottom', mr: 0.5 }} />
-            WITHIN POLICY · NO HUMAN REQUIRED
-          </Typography>
-        </Stack>
-      )}
 
       <Stack alignItems="center" spacing={0.75} sx={{ flexShrink: 0, pb: 0.5 }}>
         <ProofNode state={state} />

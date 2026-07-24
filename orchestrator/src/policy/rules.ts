@@ -9,19 +9,19 @@ import type { PolicyConstraint, PolicyRule } from './engine.js';
  */
 const WITHIN_ATTESTED_CUSTODY: PolicyConstraint = {
   id: 'within-attested-custody',
-  short: 'Within custody',
-  describe: 'Tokens outstanding after mint must not exceed custodian-attested reserves',
+  short: 'Enough gold in the vault',
+  describe: 'Tokens created must never exceed the gold the custodian has counted',
   check: (ctx) => {
     const mint = ctx.mintUsd ?? 0;
     const outstanding = ctx.outstandingUsd ?? 0;
     const attested = ctx.attestedReservesUsd ?? 0;
     const after = mint + outstanding;
     if (after <= attested) {
-      return { satisfied: true, detail: `${usd(after)} outstanding after mint ≤ ${usd(attested)} attested` };
+      return { satisfied: true, detail: `${usd(after)} of tokens, backed by ${usd(attested)} of gold` };
     }
     return {
       satisfied: false,
-      detail: `${usd(after)} would be outstanding · ${usd(attested)} attested · excess ${usd(after - attested)}`,
+      detail: `${usd(after)} of tokens vs ${usd(attested)} of gold — ${usd(after - attested)} short`,
     };
   },
 };
@@ -29,25 +29,25 @@ const WITHIN_ATTESTED_CUSTODY: PolicyConstraint = {
 /** A stale reserve attestation is no attestation. */
 const FRESH_ATTESTATION: PolicyConstraint = {
   id: 'fresh-attestation',
-  short: 'Fresh attestation',
-  describe: 'Reserve attestation must be less than 24 hours old',
+  short: 'Gold count is current',
+  describe: 'The vault must have been counted within the last 24 hours',
   check: (ctx) => {
     const age = ctx.attestationAgeHours ?? 0;
     return age < 24
-      ? { satisfied: true, detail: `attestation signed ${age < 1 ? `${Math.round(age * 60)} min` : `${age} h`} ago` }
-      : { satisfied: false, detail: `attestation is ${age} h old — stale` };
+      ? { satisfied: true, detail: `the vault was counted ${age < 1 ? `${Math.round(age * 60)} minutes` : `${age} hours`} ago` }
+      : { satisfied: false, detail: `the vault has not been counted for ${age} hours` };
   },
 };
 
 /** The transfer agent's registry check: you cannot issue to an address that isn't a holder of record. */
 const REGISTERED_DESTINATION: PolicyConstraint = {
   id: 'registered-destination',
-  short: 'Registered holder',
-  describe: 'Destination must be a holder of record on the transfer agent registry',
+  short: 'Recipient is approved',
+  describe: 'The recipient must be on the approved-recipient list',
   check: (ctx) =>
     ctx.destinationRegistered
-      ? { satisfied: true, detail: 'destination is a registered holder (KYC current)' }
-      : { satisfied: false, detail: 'destination is not on the holder registry' },
+      ? { satisfied: true, detail: 'this wallet is on the approved-recipient list' }
+      : { satisfied: false, detail: 'this wallet is not on the approved-recipient list' },
 };
 
 /**

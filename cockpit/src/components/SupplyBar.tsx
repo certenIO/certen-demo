@@ -56,8 +56,8 @@ export function SupplyBar({ supply, film = false }: { supply: SupplyPanelInfo; f
   const overBy = attestedUsd > 0 ? after / attestedUsd : 0;
   const overLabel =
     overBy >= 1000
-      ? `${Math.round(overBy).toLocaleString('en-US')}× attested custody`
-      : `${overBy.toFixed(2)}× attested custody`;
+      ? `${Math.round(overBy).toLocaleString('en-US')}× more tokens than gold`
+      : `${overBy.toFixed(2)}× more tokens than gold`;
 
   const barH = film ? 40 : 22;
 
@@ -76,7 +76,7 @@ export function SupplyBar({ supply, film = false }: { supply: SupplyPanelInfo; f
         {breached && (
           <Chip
             size="small"
-            label="EXCEEDS CUSTODY"
+            label="MORE TOKENS THAN GOLD"
             sx={{ height: film ? 22 : 19, fontSize: film ? '0.68rem' : '0.6rem', fontWeight: 800, bgcolor: alpha(CERTEN_COLORS.error.main, 0.12), color: CERTEN_COLORS.error.main }}
           />
         )}
@@ -84,9 +84,9 @@ export function SupplyBar({ supply, film = false }: { supply: SupplyPanelInfo; f
 
       {/* the three numbers that matter */}
       <Stack spacing={film ? 0.5 : 0.2} sx={{ mb: 1 }}>
-        <Stat label="Outstanding" value={supply.outstandingLabel} color={CERTEN_COLORS.primary.main} film={film} />
-        <Stat label="This mint" value={supply.proposedLabel} color={proposedUsd ? proposedColor : NEUTRAL[400]} film={film} />
-        <Stat label="Attested custody" value={supply.attestedLabel} color={CERTEN_COLORS.success.main} film={film} />
+        <Stat label="Tokens issued" value={supply.outstandingLabel} color={CERTEN_COLORS.primary.main} film={film} />
+        <Stat label="This issuance" value={supply.proposedLabel} color={proposedUsd ? proposedColor : NEUTRAL[400]} film={film} />
+        <Stat label="Gold in the vault" value={supply.attestedLabel} color={CERTEN_COLORS.success.main} film={film} />
       </Stack>
 
       {/* the bar — scaled to custody, so a breach visibly leaves the chart */}
@@ -109,7 +109,7 @@ export function SupplyBar({ supply, film = false }: { supply: SupplyPanelInfo; f
         </Box>
 
         {/* the custody ceiling — a signed number, not a setting */}
-        <Tooltip title={`Attested custody ceiling — ${supply.attestedLabel}`}>
+        <Tooltip title={`Gold actually in the vault — ${supply.attestedLabel}`}>
           <Box
             sx={{
               position: 'absolute',
@@ -142,8 +142,8 @@ export function SupplyBar({ supply, film = false }: { supply: SupplyPanelInfo; f
           <Typography sx={{ fontWeight: 800, fontSize: film ? '0.95rem' : '0.82rem', color: CERTEN_COLORS.error.main }}>
             {overLabel}
           </Typography>
-          {supply.breach && (
-            <Typography sx={{ fontFamily: MONO_FAMILY, fontSize: film ? '0.72rem' : '0.64rem', color: 'text.secondary' }}>
+          {supply.breach && !film && (
+            <Typography sx={{ fontFamily: MONO_FAMILY, fontSize: '0.64rem', color: 'text.secondary' }}>
               {supply.breach}
             </Typography>
           )}

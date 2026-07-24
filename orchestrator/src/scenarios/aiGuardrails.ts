@@ -61,7 +61,7 @@ export class AiGuardrailsScenario extends BaseScenario {
     return {
       id: 'ai-guardrails',
       title: 'AI Agent Guardrails',
-      hook: 'An AI agent can propose anything. Only the exact call a quorum proved can execute.',
+      hook: 'Give an AI agent its own key. It still cannot run anything it cannot prove.',
       badge: 'AI Safety',
       accent: 'secondary',
     };

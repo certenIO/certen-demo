@@ -102,7 +102,7 @@ const MONO = "'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', 'Consol
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 export const CERTEN_BRAND: BrandConfig = {
   name: 'CERTEN',
-  productLabel: 'Authorization Cockpit',
+  productLabel: 'Execution Cockpit',
   tagline:
     'Nothing high-value executes until a proof says it can — whether the actor is a person, a policy engine, or an AI agent.',
   markIcon: VerifiedUserRoundedIcon,

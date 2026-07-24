@@ -292,6 +292,8 @@ export interface AuthorityOrg {
   scope?: string;
   /** one-line status reason, e.g. "mint exceeds attested custody" */
   note?: string;
+  /** ≤4 plain words for the diagram, e.g. "not enough gold" */
+  filmNote?: string;
   /** render an approve affordance for this org */
   canApprove?: boolean;
   /** this seat is satisfied by a policy engine, not a human clicking */

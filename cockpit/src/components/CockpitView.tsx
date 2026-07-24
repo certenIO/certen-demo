@@ -241,8 +241,13 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
                 <Chip size="small" label={state.actLabel} sx={{ height: 20, bgcolor: alpha(CERTEN_COLORS.primary.main, 0.12), color: CERTEN_COLORS.primary.dark, fontSize: '0.66rem' }} />
               )}
             </Stack>
-            {/* Truncating the hook looks like a bug on camera — in film mode drop it entirely. */}
-            {!film && (
+            {/* In the diagram view the subtitle slot carries the thesis instead of the demo hook —
+                five words that should be on screen for every second of the film. */}
+            {film ? (
+              <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: CERTEN_COLORS.primary.main, display: 'block' }}>
+                Execution is conditional on proof
+              </Typography>
+            ) : (
               <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 320 }}>
                 {meta.hook}
               </Typography>

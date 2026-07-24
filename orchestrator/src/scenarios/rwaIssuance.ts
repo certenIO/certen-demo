@@ -14,10 +14,10 @@ import type {
 } from '../types.js';
 
 // ── The asset ────────────────────────────────────────────────────────────────
-const ASSET = 'XAUV · tokenized vaulted gold';
-const TOKEN = '0x4b12…A77e · XAUV';
-const FUND_ADDR = '0xC81f…9d02'; // the registered issuance destination
-const ATTACKER_ADDR = '0xA9c4…dEaD'; // not on the holder registry
+const ASSET = 'Tokenized gold';
+const TOKEN = 'Gold token · XAUV';
+const FUND_ADDR = 'Fund wallet'; // the registered issuance destination
+const ATTACKER_ADDR = "Attacker's wallet"; // not on the holder registry
 
 // Reserve ceiling, in USD. Act 2 opens with a new bar delivery that raises it.
 const ATTESTED_OPENING = 312_400_000;
@@ -29,8 +29,8 @@ const MINT_INTENDED = 300_000_000; // what the operator meant to type in Act 2
 const MINT_FATFINGER = 300_000_000_000_000; // what they actually typed — six extra zeros
 const MINT_ATTACK = 2_000_000_000;
 
-const BARS_OPENING = '1,614 bars · vault ZRH-3 · assay root 0x9f2c…41b8';
-const BARS_AFTER_DELIVERY = '3,166 bars · vault ZRH-3 · assay root 0x5ea7…c390';
+const BARS_OPENING = '1,614 gold bars · Zurich vault';
+const BARS_AFTER_DELIVERY = '3,166 gold bars · Zurich vault';
 
 // ── The three organizations ──────────────────────────────────────────────────
 // Each is a separate legal entity with its OWN root identity and its OWN key hierarchy.
@@ -97,7 +97,7 @@ export class RwaIssuanceScenario extends BaseScenario {
     return {
       role: 'issuer',
       org: 'Meridian Bullion Corp',
-      kind: 'Issuer',
+      kind: 'Issues the token',
       adi: ISSUER_ADI,
       keyBook: 'book/board · page 1',
       threshold: 2,
@@ -117,7 +117,7 @@ export class RwaIssuanceScenario extends BaseScenario {
     return {
       role: 'custodian',
       org: 'Helvetia Vault AG',
-      kind: 'Custodian',
+      kind: 'Holds the gold',
       adi: CUSTODY_ADI,
       keyBook: 'book/attestation · page 1',
       threshold: 2,
@@ -125,7 +125,7 @@ export class RwaIssuanceScenario extends BaseScenario {
       scope: 'mint · burn only',
       signers: [
         { label: 'Vault Controller', detail: 'YubiHSM · Zürich', signed: false },
-        { label: 'Reserve Policy Engine', detail: 'automated · signs only if custody covers it', signed: false },
+        { label: 'Automatic gold check', detail: 'automated · signs only if the gold is there', signed: false },
       ],
       status: 'pending',
       canApprove: true,
@@ -137,7 +137,7 @@ export class RwaIssuanceScenario extends BaseScenario {
     return {
       role: 'transfer-agent',
       org: 'Ledgerline Transfer Agency',
-      kind: 'Transfer Agent',
+      kind: 'Keeps the register',
       adi: TA_ADI,
       keyBook: 'book/ops · page 1',
       threshold: 2,
@@ -145,7 +145,7 @@ export class RwaIssuanceScenario extends BaseScenario {
       scope: 'mint · burn only',
       signers: [
         { label: 'Compliance Officer', detail: 'KMS · Chicago', signed: false },
-        { label: 'Registrar', detail: 'automated · holder registry check', signed: false },
+        { label: 'Automatic recipient check', detail: 'automated · approved-recipient list', signed: false },
       ],
       status: 'pending',
       canApprove: true,
@@ -178,7 +178,7 @@ export class RwaIssuanceScenario extends BaseScenario {
       attestation: {
         custodian: 'Helvetia Vault AG',
         detail: this.barList,
-        ageLabel: opts.ageLabel ?? 'signed 22 min ago',
+        ageLabel: opts.ageLabel ?? 'counted 22 min ago',
         fresh: true,
       },
       breach: opts.breach,
@@ -299,7 +299,7 @@ export class RwaIssuanceScenario extends BaseScenario {
         pendingTxHash: this.pendingTx,
       }),
       action: {
-        verb: 'Mint',
+        verb: 'Issue tokens',
         summary: `${usd(MINT_ACT1)} of XAUV → ${FUND_ADDR}`,
         principal: TOKEN,
         initiator: 'Meridian Issuance',
@@ -372,7 +372,7 @@ export class RwaIssuanceScenario extends BaseScenario {
       policy: null,
       authorities: null,
       approvals: null,
-      supply: this.supply({ ageLabel: 'signed 4 min ago' }),
+      supply: this.supply({ ageLabel: 'counted 4 min ago' }),
       explainer: {
         pain: 'A new delivery arrives, the custodian re-attests, and an operator types the mint by hand.',
         certenMove: 'CERTEN binds the mint to the signed custody figure, so the arithmetic is checked before any proof can form.',
@@ -398,7 +398,7 @@ export class RwaIssuanceScenario extends BaseScenario {
     this.patch({
       verdict: 'blocked',
       action: {
-        verb: 'Mint',
+        verb: 'Issue tokens',
         summary: `${usd(MINT_FATFINGER)} of XAUV → ${FUND_ADDR}   (intended: ${usd(MINT_INTENDED)})`,
         principal: TOKEN,
         initiator: 'Meridian Operator',
@@ -416,7 +416,7 @@ export class RwaIssuanceScenario extends BaseScenario {
         required: decision.required,
         constraints: decision.constraints,
       },
-      supply: this.supply({ breach: custody?.detail, ageLabel: 'signed 4 min ago' }),
+      supply: this.supply({ breach: custody?.detail, ageLabel: 'counted 4 min ago' }),
       coordination: {
         pendingTxHash: this.pendingTx,
         notificationsSent: 2,
@@ -514,7 +514,7 @@ export class RwaIssuanceScenario extends BaseScenario {
       policy: null,
       authorities: null,
       approvals: null,
-      supply: this.supply({ ageLabel: 'signed 4 min ago' }),
+      supply: this.supply({ ageLabel: 'counted 4 min ago' }),
       banner: {
         kind: 'danger',
         text: 'Meridian’s issuance identity is fully compromised. The attacker holds all three officer keys and is signing valid, correctly-formed requests.',
@@ -546,7 +546,7 @@ export class RwaIssuanceScenario extends BaseScenario {
       verdict: 'blocked',
       busy: true,
       action: {
-        verb: 'Mint',
+        verb: 'Issue tokens',
         summary: `${usd(MINT_ATTACK)} of XAUV → ${ATTACKER_ADDR}`,
         principal: TOKEN,
         initiator: 'Attacker · stolen keys',
@@ -564,7 +564,7 @@ export class RwaIssuanceScenario extends BaseScenario {
         required: decision.required,
         constraints: decision.constraints,
       },
-      supply: this.supply({ breach: custody?.detail, ageLabel: 'signed 4 min ago' }),
+      supply: this.supply({ breach: custody?.detail, ageLabel: 'counted 4 min ago' }),
       execution: { status: 'idle', headline: 'Supply cannot change without a proof from all three companies' },
       message: 'Attacker submitting with valid issuer credentials…',
     });
@@ -582,6 +582,7 @@ export class RwaIssuanceScenario extends BaseScenario {
     issuer.status = 'compromised';
     issuer.canApprove = false;
     issuer.note = 'All 3 officer keys signed — the attacker holds every one of them.';
+    issuer.filmNote = 'signed with stolen keys';
     this.syncAuthorities('1 of 3 organizations · issuer seat filled by stolen keys');
     await this.beat(900);
 
@@ -591,6 +592,7 @@ export class RwaIssuanceScenario extends BaseScenario {
     custodian.status = 'refused';
     custodian.canApprove = false;
     custodian.note = custody?.detail ?? 'mint exceeds attested custody';
+    custodian.filmNote = 'not enough gold';
     this.syncAuthorities('1 of 3 organizations · custodian refused');
     await this.beat(800);
 
@@ -598,6 +600,7 @@ export class RwaIssuanceScenario extends BaseScenario {
     ta.status = 'refused';
     ta.canApprove = false;
     ta.note = registry?.detail ?? 'destination is not a holder of record';
+    ta.filmNote = 'unknown recipient';
     this.syncAuthorities(
       '1 of 3 organizations · no proof can form',
       'The attacker owns one company. The other two are not reachable from a stolen issuer key.',
@@ -676,12 +679,13 @@ export class RwaIssuanceScenario extends BaseScenario {
 
       // The custodian's Reserve Policy Engine is not a rubber stamp: it signs only if custody
       // covers the mint. In Act 2 the human above it signs and the engine refuses.
-      const isReserveEngine = org.role === 'custodian' && s.label === 'Reserve Policy Engine';
+      const isReserveEngine = org.role === 'custodian' && s.label === 'Automatic gold check';
       if (isReserveEngine && breachedAct2) {
         await this.beat(700);
         org.status = 'refused';
         org.canApprove = false;
         org.note = `Refused — ${this.constraint(this.state.policy?.constraints, 'within-attested-custody')?.detail ?? 'mint exceeds attested custody'}`;
+        org.filmNote = 'not enough gold';
         this.syncAuthorities('2 of 3 organizations · custodian refused');
         await this.finishAct2Refusal();
         return;

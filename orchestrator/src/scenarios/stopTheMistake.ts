@@ -41,7 +41,7 @@ export class StopTheMistakeScenario extends BaseScenario {
     return {
       id: 'stop-the-mistake',
       title: 'Stop the Production Mistake',
-      hook: 'No production change runs without proof that every required authority approved.',
+      hook: 'No change reaches production without proof that everyone required signed off.',
       badge: 'Change Control',
       accent: 'primary',
     };

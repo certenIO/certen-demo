@@ -23,6 +23,8 @@ export interface ActionInfo {
   amountLabel?: string;
   target?: string;
   note?: string;
+  /** ≤4 plain words for the diagram, e.g. "not enough gold" */
+  filmNote?: string;
   icon?: 'upgrade' | 'transfer' | 'delete' | 'bridge' | 'mint' | 'burn';
   destructive?: boolean;
 }

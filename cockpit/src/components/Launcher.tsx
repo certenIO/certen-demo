@@ -46,19 +46,25 @@ export function Launcher({
       {/* hero */}
       <Box sx={{ maxWidth: 900 }}>
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <Typography variant="h1" sx={{ mb: 1 }}>
-            The execution{' '}
+          {/* The five words ARE the headline. Everything else on this page is support. */}
+          <Typography variant="h1" sx={{ mb: 1.5 }}>
+            Execution is{' '}
             <Box component="span" sx={{ color: CERTEN_COLORS.primary.main }}>
-              authorization layer
+              conditional on proof
             </Box>
           </Typography>
-          <Typography variant="h5" sx={{ color: 'text.secondary', fontWeight: 500, maxWidth: 760, mb: 2 }}>
-            {BRAND.tagline}
+          <Typography variant="h5" sx={{ color: 'text.secondary', fontWeight: 500, maxWidth: 800, mb: 2 }}>
+            {BRAND.name} is an execution enforcement layer that sits between intent and action.
           </Typography>
-          <Typography variant="body1" sx={{ color: 'text.primary', fontWeight: 600, maxWidth: 780 }}>
-            Most systems record who approved. {BRAND.name} makes execution impossible without proving it —
-            bound to the exact action, verified on-chain, from an account with no private key to steal.
-          </Typography>
+          {/* The differentiator, stated as a contrast — "unique", not "better". */}
+          <Box sx={{ display: 'inline-block', px: 2, py: 1.25, borderRadius: 2, border: '1px solid', borderColor: alpha(CERTEN_COLORS.primary.main, 0.3), bgcolor: alpha(CERTEN_COLORS.primary.main, 0.04), maxWidth: 820 }}>
+            <Typography variant="body1" sx={{ color: 'text.primary', fontWeight: 700 }}>
+              Everyone else records who approved, then trusts a key to execute.
+            </Typography>
+            <Typography variant="body1" sx={{ color: CERTEN_COLORS.primary.main, fontWeight: 700 }}>
+              We removed the key. Without a valid proof, the action is not blocked — it is impossible.
+            </Typography>
+          </Box>
         </motion.div>
 
         {/* the one engine */}
@@ -80,12 +86,25 @@ export function Launcher({
             </Stack>
           ))}
           <Typography variant="caption" sx={{ color: 'text.secondary', ml: 1 }}>
-            One engine. Execution is conditional on proof.
+            One engine. Only the action changes.
           </Typography>
         </Stack>
-        <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1.5, maxWidth: 820 }}>
-          Asset issuance, AI agents, treasury, change control — one engine. Only the action changes.
-        </Typography>
+        {/* The spine. Not "identity → authorization → governance" — that sells it short by making
+            governance the product. Policy decides, and EXECUTION is what we enforce. */}
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 2, flexWrap: 'wrap', gap: 0.5 }}>
+          {['Identity', 'Policy', 'Execution'].map((s, i) => (
+            <Stack key={s} direction="row" alignItems="center" spacing={1}>
+              <Typography sx={{ fontSize: '1.05rem', fontWeight: 700, color: i === 2 ? CERTEN_COLORS.primary.main : 'text.primary' }}>
+                {s}
+              </Typography>
+              {i < 2 && <ArrowForwardRoundedIcon sx={{ fontSize: 18, color: 'text.secondary', opacity: 0.6 }} />}
+            </Stack>
+          ))}
+          <Typography variant="body2" sx={{ color: 'text.secondary', ml: 1.5 }}>
+            Governance is one application. So are asset issuance, treasury, lending, AI agents,
+            custody, insurance and cross-chain ops.
+          </Typography>
+        </Stack>
       </Box>
 
       {/* scenario cards */}

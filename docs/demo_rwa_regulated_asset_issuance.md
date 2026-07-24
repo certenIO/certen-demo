@@ -1,5 +1,31 @@
 # Demo — Regulated Asset Issuance (RWA)
 
+## Language rules (read first)
+
+The audience is YC partners, not Accumulate users. **Nothing on screen uses our vocabulary**, and
+neither should the narration. If a word only makes sense to someone who already knows the product,
+it is banned.
+
+| Never say | Say instead |
+|---|---|
+| G0 / G1 / G2, proof level | "the action that ran is the action they approved" |
+| ADI, identity URL, `acc://…` | the company's name |
+| key book, key page, threshold | "2 of 3 approvers" |
+| attestation, attested reserves | "the gold in the vault", "the vault was counted" |
+| outstanding supply, mint | "tokens issued", "issue tokens" |
+| quorum, authority set | "all three companies" |
+| hashes, `0x…` addresses | "Fund wallet", "Attacker's wallet" |
+| custodian, transfer agent | "holds the gold", "keeps the register" |
+
+**The one line the video must land** — everyone else records who approved and then trusts a key to
+execute. Certen removed the key. Without a valid proof the action isn't blocked, it is *impossible*.
+That sentence is on screen permanently under the outcome node, and it is the only claim here that
+no competitor can make.
+
+**The spine is identity → policy → execution.** Not identity → authorization → governance —
+governance is one application of the engine, not the product.
+
+
 **Scenario id:** `rwa-issuance` · **Launcher position:** Demo 1 · **Acts:** 3
 **Filming mode:** press `F` for film mode, set pace to **Cinematic**, recap **off**.
 

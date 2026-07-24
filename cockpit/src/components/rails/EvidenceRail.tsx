@@ -49,7 +49,7 @@ export function EvidenceRail({
         evidence.proofLevel ? (
           <Chip
             size="small"
-            label={`${evidence.proofLevel} · ${evidence.proofLevelMeaning ?? ''}`}
+            label={evidence.proofLevelMeaning ?? evidence.proofLevel}
             sx={{ height: 20, maxWidth: 300, bgcolor: alpha(cfg.accent, 0.10), color: cfg.accent, fontWeight: 700, '& .MuiChip-label': { fontSize: '0.64rem' } }}
           />
         ) : (

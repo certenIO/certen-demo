@@ -2,12 +2,13 @@ import { Box, Stack, Typography, alpha } from '@mui/material';
 import { motion } from 'framer-motion';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
-import { CERTEN_COLORS, MONO_FAMILY } from '../../theme';
+import { CERTEN_COLORS } from '../../theme';
 import type { PolicyInfo } from '../../types';
 
 /**
- * The non-quorum half of the policy, as a checklist rather than prose: two or three words and a
- * tick. Only a FAILING check earns its arithmetic — that's the one the narrator is pointing at.
+ * The non-quorum half of the policy, as a checklist rather than prose: a few plain words and a
+ * tick or a cross. No figures — the magnitude of a failure is stated on the supply chart in words
+ * ("489,876× more tokens than gold"), which is the form that survives a video bitrate.
  */
 export function PolicyChecks({ policy }: { policy: PolicyInfo | null | undefined }) {
   const cs = policy?.constraints;
@@ -32,11 +33,8 @@ export function PolicyChecks({ policy }: { policy: PolicyInfo | null | undefined
                   {c.short ?? c.describe}
                 </Typography>
               </Stack>
-              {!c.satisfied && (
-                <Typography sx={{ fontFamily: MONO_FAMILY, fontSize: '0.68rem', color, pl: 3.6, lineHeight: 1.3 }}>
-                  {c.detail}
-                </Typography>
-              )}
+              {/* No arithmetic here. Fifteen-digit figures are unreadable at video bitrates, and
+                  the magnitude is already stated on the supply chart in words. */}
             </motion.div>
           );
         })}

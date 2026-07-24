@@ -19,6 +19,7 @@ import CompareArrowsRoundedIcon from '@mui/icons-material/CompareArrowsRounded';
 import DeleteForeverRoundedIcon from '@mui/icons-material/DeleteForeverRounded';
 import LocalFireDepartmentRoundedIcon from '@mui/icons-material/LocalFireDepartmentRounded';
 import ArrowDownwardRoundedIcon from '@mui/icons-material/ArrowDownwardRounded';
+import KeyOffRoundedIcon from '@mui/icons-material/KeyOffRounded';
 import { CERTEN_COLORS, MONO_FAMILY, NEUTRAL } from '../../theme';
 import type { ScenarioState } from '../../types';
 
@@ -41,6 +42,8 @@ interface AuthNode {
   keys: { signed: boolean; automated?: boolean }[];
   threshold: number;
   status: NodeStatus;
+  /** ≤4 plain words explaining the status, e.g. "not enough gold" */
+  filmNote?: string;
   canApprove?: boolean;
   automated?: boolean;
 }
@@ -68,13 +71,20 @@ const ACTION_ICON = {
   delete: DeleteForeverRoundedIcon,
 };
 
-/** Entity glyph chosen from the org's role words — a bank, a vault, a register, a person, a bot. */
-function entityIcon(kind: string) {
-  const k = kind.toLowerCase();
-  if (k.includes('custod') || k.includes('vault')) return LockRoundedIcon;
-  if (k.includes('transfer agent') || k.includes('registr')) return MenuBookRoundedIcon;
-  if (k.includes('issuer') || k.includes('foundation') || k.includes('treasur')) return AccountBalanceRoundedIcon;
-  if (k.includes('agent') || k.includes('ai')) return SmartToyRoundedIcon;
+/**
+ * Entity glyph — a vault, a register, a bank, a bot, a person — matched against the entity's
+ * NAME AND ROLE TOGETHER. Matching is on stems, not whole words, because the roles are written in
+ * plain English for the audience ("holds the gold", "keeps the register") rather than in the
+ * finance vocabulary the icons were originally keyed to.
+ */
+function entityIcon(text: string) {
+  const k = text.toLowerCase();
+  // Order matters: the issuer is "Meridian BULLION Corp", so the gold/bullion test has to run
+  // after the issuer test or the issuer is drawn as a vault.
+  if (/(issu|bank|treasur|foundation|bullion|corp)/.test(k)) return AccountBalanceRoundedIcon;
+  if (/(vault|custod|gold|holds)/.test(k)) return LockRoundedIcon;
+  if (/(regist|transfer|agenc|record|ledger)/.test(k)) return MenuBookRoundedIcon;
+  if (/(\bai\b|robot|bot|autonomous)/.test(k)) return SmartToyRoundedIcon;
   return PersonRoundedIcon;
 }
 
@@ -88,6 +98,7 @@ function toNodes(state: ScenarioState | null): AuthNode[] {
       keys: o.signers.map((s) => ({ signed: s.signed, automated: s.detail?.startsWith('automated') })),
       threshold: o.threshold,
       status: (o.status === 'not-required' ? 'pending' : o.status) as NodeStatus,
+      filmNote: o.filmNote,
       canApprove: o.canApprove,
       automated: o.automated,
     }));
@@ -226,14 +237,19 @@ function AuthorityNode({ node, busy, onApprove }: { node: AuthNode; busy: boolea
               )}
             </motion.div>
           ))}
-          <Typography sx={{ fontFamily: MONO_FAMILY, fontSize: '0.86rem', color: 'text.secondary', ml: 0.5 }}>
-            {node.keys.filter((k) => k.signed).length}/{node.keys.length}
+          <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary', ml: 0.6 }}>
+            {node.keys.filter((k) => k.signed).length} of {node.keys.length} approvers
           </Typography>
         </Stack>
 
         <Typography sx={{ fontSize: '0.76rem', fontWeight: 800, letterSpacing: '0.08em', color, opacity: node.status === 'pending' ? 0.6 : 1 }}>
           {STATUS_WORD[node.status]}
         </Typography>
+        {node.filmNote && (
+          <Typography align="center" sx={{ fontSize: '0.82rem', fontWeight: 600, color, lineHeight: 1.2, px: 0.5 }}>
+            {node.filmNote}
+          </Typography>
+        )}
 
         {node.canApprove && (
           <Button size="small" variant="contained" color="success" disabled={busy} onClick={() => onApprove(node.role)} sx={{ mt: 0.6, py: 0.45, px: 2.25, fontSize: '0.9rem' }}>
@@ -310,7 +326,14 @@ function ProofNode({ state }: { state: ScenarioState }) {
   const refused = ev?.kind === 'blocked-action-record' || state.execution?.status === 'never';
   const color = proven ? CERTEN_COLORS.success.main : refused ? CERTEN_COLORS.error.main : NEUTRAL[400];
   const Icon = refused ? GppBadRoundedIcon : ShieldRoundedIcon;
-  const label = proven ? `PROOF · ${ev?.proofLevel ?? 'G2'}` : refused ? 'NO PROOF' : 'PROOF';
+  const label = proven ? 'PROOF' : refused ? 'NO PROOF' : 'PROOF';
+  // Never show the governance level here. "G2" is our word; nobody outside the company knows it.
+  // Say what G2 MEANS instead — that the thing that ran is the thing that was approved.
+  const caption = proven
+    ? 'the action that ran is the action they approved'
+    : refused
+      ? 'this action cannot be proven'
+      : 'nothing executes until this exists';
   const total = ev?.validators ?? state.proof?.validators ?? 7;
   const got = proven ? (ev?.attestations ?? total) : 0;
 
@@ -328,13 +351,18 @@ function ProofNode({ state }: { state: ScenarioState }) {
       >
         <Icon sx={{ fontSize: 42, color }} />
         <Box>
-          <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', letterSpacing: '0.06em', color, lineHeight: 1.1 }}>
-            {label}
-          </Typography>
+          <Stack direction="row" alignItems="baseline" spacing={1.25}>
+            <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', letterSpacing: '0.06em', color, lineHeight: 1.1 }}>
+              {label}
+            </Typography>
+            <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, color: proven || refused ? color : 'text.secondary', opacity: proven || refused ? 0.9 : 0.75 }}>
+              {caption}
+            </Typography>
+          </Stack>
           {/* Validator attestations as pips — a quorum you can count. Only when one actually
               formed: a row of empty circles under "NO PROOF" is noise, not information. */}
           {proven && (
-            <Stack direction="row" spacing={0.4} sx={{ mt: 0.4 }}>
+            <Stack direction="row" alignItems="center" spacing={0.4} sx={{ mt: 0.5 }}>
               {Array.from({ length: total }).map((_, i) => (
                 <motion.div
                   key={i}
@@ -346,6 +374,9 @@ function ProofNode({ state }: { state: ScenarioState }) {
                   <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: i < got ? color : 'transparent', border: `1.5px solid ${i < got ? color : NEUTRAL[300]}` }} />
                 </motion.div>
               ))}
+              <Typography sx={{ fontSize: '0.78rem', color: 'text.secondary', ml: 0.6 }}>
+                checked independently by {got}
+              </Typography>
             </Stack>
           )}
         </Box>
@@ -436,6 +467,15 @@ export function FilmCanvas({
         <ProofNode state={state} />
         <ArrowDownwardRoundedIcon sx={{ fontSize: 28, color: 'text.secondary', opacity: 0.45 }} />
         <ExecutionNode state={state} />
+        {/* THE differentiator, permanently on screen. Everyone else records who approved and then
+            trusts a key to execute. This account has no key — the proof is the only way in. That
+            sentence is the entire moat, so it never scrolls away and never has to be narrated. */}
+        <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mt: 0.6 }}>
+          <KeyOffRoundedIcon sx={{ fontSize: 19, color: 'text.secondary' }} />
+          <Typography sx={{ fontSize: '0.92rem', fontWeight: 700, color: 'text.secondary', textAlign: 'center' }}>
+            This account has no key. A proof is the only way in.
+          </Typography>
+        </Stack>
       </Stack>
     </Stack>
   );

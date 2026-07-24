@@ -93,9 +93,11 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
   const [recap, setRecap] = useState(() => lsGet('certen.recap', true));
   const [recapOpen, setRecapOpen] = useState(false);
   const shownRecapKey = useRef('');
-  // Film mode: strip every teaching/selling surface so the presenter narrates over a clean
-  // instrument. Nothing is deleted — the sales layout is one toggle away.
-  const [film, setFilm] = useState(() => lsGet('certen.film', false));
+  // The diagram is the DEFAULT view — it's the one that reads on camera and across a room.
+  // The prose rails are the opt-in "Detail" mode for buyers reading at their own pace.
+  // Note the v2 key: the old `certen.film` wrote a literal '0' for every visitor under the
+  // previous default, and that stale value would otherwise pin them to the text layout forever.
+  const [film, setFilm] = useState(() => lsGet('certen.view.v2', true));
 
   // ── reveal cursor: how many of the 5 rails are currently shown ──
   const [revealed, setRevealed] = useState(0);
@@ -111,7 +113,7 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
   useEffect(() => lsSet('certen.cues', cues), [cues]);
   useEffect(() => lsSet('certen.step', stepMode), [stepMode]);
   useEffect(() => lsSet('certen.recap', recap), [recap]);
-  useEffect(() => lsSet('certen.film', film), [film]);
+  useEffect(() => lsSet('certen.view.v2', film), [film]);
 
   // "F" toggles film mode — reachable mid-take without opening the settings popover.
   useEffect(() => {
@@ -249,6 +251,11 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
         </Stack>
 
         <Stack direction="row" alignItems="center" spacing={1} sx={{ flexWrap: { xs: 'wrap', lg: 'nowrap' }, justifyContent: { xs: 'flex-start', lg: 'flex-end' }, rowGap: 1 }}>
+          {/* Always visible in BOTH modes — this is the switch people actually reach for. */}
+          <ToggleButtonGroup size="small" exclusive value={film ? 'diagram' : 'detail'} onChange={(_, v) => v && setFilm(v === 'diagram')}>
+            <ToggleButton value="diagram" sx={{ py: 0.25, px: 1.25, fontSize: '0.66rem' }}>Diagram</ToggleButton>
+            <ToggleButton value="detail" sx={{ py: 0.25, px: 1.25, fontSize: '0.66rem' }}>Detail</ToggleButton>
+          </ToggleButtonGroup>
           {!film && (
             <>
               <ToggleButtonGroup size="small" exclusive value={builder ? 'builder' : 'story'} onChange={(_, v) => v && setBuilder(v === 'builder')} sx={{ display: { xs: 'none', md: 'flex' } }}>
@@ -289,10 +296,10 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
         <Box sx={{ p: 2, minWidth: 240 }}>
           <FormControlLabel
             control={<Switch size="small" checked={film} onChange={(e) => setFilm(e.target.checked)} />}
-            label={<Typography variant="body2" sx={{ fontWeight: 700 }}>Film mode — minimal screen (F)</Typography>}
+            label={<Typography variant="body2" sx={{ fontWeight: 700 }}>Diagram view (F)</Typography>}
           />
           <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1 }}>
-            Hides the explainer and contrast panels so you can narrate.
+            The flow chart, for narrating. Off = the detailed rails, for reading.
           </Typography>
           <Divider sx={{ my: 1 }} />
           <Typography variant="overline" sx={{ color: 'text.secondary' }}>Reveal pace</Typography>

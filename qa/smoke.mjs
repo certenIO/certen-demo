@@ -18,7 +18,7 @@ await ctx.addInitScript(() => {
   localStorage.setItem('certen.pace', 'instant');
   localStorage.setItem('certen.step', '0');
   localStorage.setItem('certen.recap', '0');
-  localStorage.setItem('certen.film', '1');
+  localStorage.setItem('certen.view.v2', '1');
 });
 
 const errors = [];

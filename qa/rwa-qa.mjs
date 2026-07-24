@@ -12,13 +12,16 @@ mkdirSync(OUT, { recursive: true });
 const FILM = process.env.FILM !== '0';
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: Number(process.env.VW ?? 1600), height: Number(process.env.VH ?? 900) }, deviceScaleFactor: 1 });
-await ctx.addInitScript((film) => {
-  localStorage.setItem('certen.pace', 'instant');
-  localStorage.setItem('certen.step', '0');
-  localStorage.setItem('certen.builder', '0');
-  localStorage.setItem('certen.recap', '0');
-  localStorage.setItem('certen.film', film ? '1' : '0');
-}, FILM);
+// DEFAULTS=1 primes nothing, so the shots show exactly what a first-time visitor gets.
+if (!process.env.DEFAULTS) {
+  await ctx.addInitScript((film) => {
+    localStorage.setItem('certen.pace', 'instant');
+    localStorage.setItem('certen.step', '0');
+    localStorage.setItem('certen.builder', '0');
+    localStorage.setItem('certen.recap', '0');
+    localStorage.setItem('certen.view.v2', film ? '1' : '0');
+  }, FILM);
+}
 
 const page = await ctx.newPage();
 page.on('console', (m) => { if (m.type() === 'error') console.log('PAGE ERROR:', m.text()); });

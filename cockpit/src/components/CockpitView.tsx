@@ -28,6 +28,8 @@ import { ContrastStrip } from './ContrastStrip';
 import { IntegrationPanel } from './IntegrationPanel';
 import { PresenterCuePanel } from './PresenterCuePanel';
 import { ToolBoundaryPanel } from './ToolBoundaryPanel';
+import { FilmCanvas } from './film/FilmCanvas';
+import { PolicyChecks } from './film/PolicyChecks';
 import { SecurityDrawer, SecurityThesisChip } from './SecurityDrawer';
 import { CertaintyRecap } from './CertaintyRecap';
 import { HealthChip } from './HealthChip';
@@ -323,8 +325,10 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
       )}
 
       {/* ── Banner ── */}
+      {/* The banner restates in prose what the diagram already shows in colour — on camera that's
+          the narrator's line, not the screen's. */}
       <AnimatePresence>
-        {state?.banner && (
+        {state?.banner && !film && (
           <Box sx={{ flexShrink: 0, mb: 0.5 }}>
             <Banner kind={state.banner.kind} text={state.banner.text} />
           </Box>
@@ -333,20 +337,30 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
 
       {/* ── Body: rails | right column ── */}
       <Box sx={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: { xs: '1fr', lg: film ? '1.85fr 1fr' : '1.5fr 1fr' }, gap: 2, alignItems: 'stretch', alignContent: { xs: 'start', lg: 'stretch' } }}>
-        <Stack data-qa="rails" spacing={film ? 0.6 : 0.4} sx={{ minHeight: 0, overflowY: { xs: 'visible', lg: 'auto' }, pr: 0.5 }}>
-          {[1, 2, 3, 4, 5].map((i) => {
-            const show = ready[i] && i <= revealed;
-            if (!show) {
-              const [title, ph] = RAIL_PLACEHOLDER[i];
-              return <Rail key={i} index={i} title={title} dim placeholder={ph} />;
-            }
-            return (
-              <Spotlight key={i} active={i === revealed}>
-                {railNode(i)}
-              </Spotlight>
-            );
-          })}
-        </Stack>
+        {/* Film mode renders the SAME state as one diagram; the numbered rails are the
+            read-at-your-own-pace form for buyers, not the on-camera form. */}
+        {film ? (
+          <Box data-qa="rails" sx={{ minHeight: 0, overflowY: { xs: 'visible', lg: 'auto' }, pr: 0.5, display: 'flex', alignItems: 'center' }}>
+            <Box sx={{ width: '100%' }}>
+              <FilmCanvas state={state} busy={!!state?.busy} onApprove={onApprove} />
+            </Box>
+          </Box>
+        ) : (
+          <Stack data-qa="rails" spacing={0.4} sx={{ minHeight: 0, overflowY: { xs: 'visible', lg: 'auto' }, pr: 0.5 }}>
+            {[1, 2, 3, 4, 5].map((i) => {
+              const show = ready[i] && i <= revealed;
+              if (!show) {
+                const [title, ph] = RAIL_PLACEHOLDER[i];
+                return <Rail key={i} index={i} title={title} dim placeholder={ph} />;
+              }
+              return (
+                <Spotlight key={i} active={i === revealed}>
+                  {railNode(i)}
+                </Spotlight>
+              );
+            })}
+          </Stack>
+        )}
 
         {/* In film mode this column often holds a single panel; centring it reads as composed
             rather than as a page that failed to fill. */}
@@ -366,6 +380,7 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
               {/* Supply vs. attested custody leads the column — it's the one panel that reads
                   from across a room and needs no narration. */}
               {state?.supply && <SupplyBar supply={state.supply} film={film} />}
+              {film && <PolicyChecks policy={state?.policy} />}
               {!film && <ContrastStrip contrast={state?.contrast} />}
               {!film && state?.toolBoundary && <ToolBoundaryPanel boundary={state.toolBoundary} />}
               {state?.agent && <Box sx={{ flex: 1, minHeight: 180 }}><AgentConsole agent={state.agent} /></Box>}

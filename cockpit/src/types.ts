@@ -21,6 +21,8 @@ export interface ActionInfo {
   principal?: string;
   initiator: string;
   amountLabel?: string;
+  target?: string;
+  note?: string;
   icon?: 'upgrade' | 'transfer' | 'delete' | 'bridge' | 'mint' | 'burn';
   destructive?: boolean;
 }
@@ -29,6 +31,7 @@ export interface ActionInfo {
 export interface PolicyConstraintResult {
   id: string;
   describe: string;
+  short?: string;
   satisfied: boolean;
   detail: string;
 }
@@ -69,6 +72,7 @@ export interface ExecutionLeg {
 }
 
 export interface ExecutionInfo {
+  shortLabel?: string;
   status: 'idle' | 'pending' | 'executing' | 'done' | 'failed' | 'never';
   headline: string;
   detail?: string;

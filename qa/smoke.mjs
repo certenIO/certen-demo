@@ -40,7 +40,7 @@ for (const title of titles) {
   // Authorize / Evaluate buttons, until nothing advances.
   let steps = 0;
   for (; steps < 14; steps++) {
-    const inRail = page.getByRole('button', { name: /^(Authorize|Evaluate & sign|Approve)/ }).first();
+    const inRail = page.getByRole('button', { name: /^(Authorize|Evaluate|Approve)/ }).first();
     if (await inRail.count()) { await inRail.click(); await page.waitForTimeout(3200); continue; }
     const deck = page.getByRole('button', { name: /^(?!Reset|Details|Bundle|Verify|Why|tx).+/ }).last();
     if (!(await deck.count())) break;

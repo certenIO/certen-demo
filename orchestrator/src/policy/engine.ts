@@ -50,6 +50,8 @@ export interface PolicyConstraint {
   id: string;
   /** the rule as a sentence, rendered in rail ② */
   describe: string;
+  /** two-or-three-word form for the film diagram */
+  short?: string;
   /** returns whether the action satisfies it, plus the evaluated arithmetic */
   check: (ctx: ActionContext) => { satisfied: boolean; detail: string };
 }
@@ -57,6 +59,7 @@ export interface PolicyConstraint {
 export interface ConstraintResult {
   id: string;
   describe: string;
+  short?: string;
   satisfied: boolean;
   detail: string;
 }
@@ -136,7 +139,7 @@ export function evaluate(rules: PolicyRule[], ctx: ActionContext): PolicyDecisio
 
     const constraints: ConstraintResult[] = (rule.require.constraints ?? []).map((c) => {
       const r = c.check(ctx);
-      return { id: c.id, describe: c.describe, satisfied: r.satisfied, detail: r.detail };
+      return { id: c.id, describe: c.describe, short: c.short, satisfied: r.satisfied, detail: r.detail };
     });
     const constraintsSatisfied = constraints.every((c) => c.satisfied);
 

@@ -262,8 +262,8 @@ export class AiGuardrailsScenario extends BaseScenario {
   // ── Act 3 — manipulated agent tries a malicious upgrade → refused ───────────
   private async actMaliciousUpgrade() {
     const reviewers = this.makeApprovers([
-      { role: 'cto', label: 'CTO', detail: 'Not in the quorum', approved: false },
-      { role: 'security', label: 'Security', detail: 'Not in the quorum', approved: false },
+      { role: 'cto', label: 'CTO', detail: 'Senior key', approved: false },
+      { role: 'security', label: 'Security', detail: 'Senior key', approved: false },
     ]).map((a) => ({ ...a, canApprove: false })); // no approve buttons — the agent can’t summon them
     const pendingTx = hash32();
 

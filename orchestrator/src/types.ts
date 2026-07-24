@@ -40,6 +40,10 @@ export interface ActionInfo {
   initiator: string;
   /** big money label, e.g. "$25,000,000" */
   amountLabel?: string;
+  /** short destination for the film diagram, e.g. "0xC81f…9d02" (falls back to `summary`) */
+  target?: string;
+  /** short qualifier under the amount, e.g. "intended $300,000,000" */
+  note?: string;
   /** semantic icon key the cockpit maps to an icon */
   icon?: 'upgrade' | 'transfer' | 'delete' | 'bridge' | 'mint' | 'burn';
   /** destructive actions render in red */
@@ -55,6 +59,8 @@ export interface PolicyConstraintResult {
   id: string;
   /** the rule sentence, e.g. "Mint must not exceed attested custody" */
   describe: string;
+  /** two-or-three-word form for the film diagram, e.g. "Within custody" */
+  short?: string;
   satisfied: boolean;
   /** the evaluated arithmetic, e.g. "$300,000,000 ≤ $312,400,000 attested" */
   detail: string;
@@ -110,6 +116,8 @@ export interface ExecutionLeg {
 
 /** Rail ⑤ — on-chain execution (fires only after the proof is minted). */
 export interface ExecutionInfo {
+  /** ≤4 words for the film diagram's terminal node, e.g. "$50M issued" */
+  shortLabel?: string;
   /** "never" = this action can never execute by design (Demo 2 delete-db) */
   status: 'idle' | 'pending' | 'executing' | 'done' | 'failed' | 'never';
   /** headline result, e.g. "protocol version  6.0 → 6.1" */

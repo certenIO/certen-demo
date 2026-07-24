@@ -48,7 +48,7 @@ await page.waitForTimeout(1500);
 await shot('02-act1-proposed');
 
 for (const [i, name] of [['a', 'issuer'], ['b', 'custodian'], ['c', 'ta']]) {
-  const btn = page.getByRole('button', { name: /Authorize|Evaluate & sign/ }).first();
+  const btn = page.getByRole('button', { name: /Authorize|Evaluate/ }).first();
   if (await btn.count()) { await btn.click(); await page.waitForTimeout(2600); }
   await shot(`03-act1-org-${i}-${name}`);
 }
@@ -60,7 +60,7 @@ if (await click(/an operator makes a mistake/, 'act2')) await page.waitForTimeou
 await shot('05-act2-delivery');
 if (await click(/Operator keys in the mint/, 'act2-submit')) await page.waitForTimeout(6000);
 await shot('06-act2-breach-pending');
-if (await click(/Evaluate & sign|Authorize/, 'custodian')) await page.waitForTimeout(3500);
+if (await click(/Evaluate|Authorize/, 'custodian')) await page.waitForTimeout(3500);
 await shot('07-act2-refused');
 
 // ── Act 3 ──

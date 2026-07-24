@@ -9,6 +9,7 @@ import type { PolicyConstraint, PolicyRule } from './engine.js';
  */
 const WITHIN_ATTESTED_CUSTODY: PolicyConstraint = {
   id: 'within-attested-custody',
+  short: 'Within custody',
   describe: 'Tokens outstanding after mint must not exceed custodian-attested reserves',
   check: (ctx) => {
     const mint = ctx.mintUsd ?? 0;
@@ -28,6 +29,7 @@ const WITHIN_ATTESTED_CUSTODY: PolicyConstraint = {
 /** A stale reserve attestation is no attestation. */
 const FRESH_ATTESTATION: PolicyConstraint = {
   id: 'fresh-attestation',
+  short: 'Fresh attestation',
   describe: 'Reserve attestation must be less than 24 hours old',
   check: (ctx) => {
     const age = ctx.attestationAgeHours ?? 0;
@@ -40,6 +42,7 @@ const FRESH_ATTESTATION: PolicyConstraint = {
 /** The transfer agent's registry check: you cannot issue to an address that isn't a holder of record. */
 const REGISTERED_DESTINATION: PolicyConstraint = {
   id: 'registered-destination',
+  short: 'Registered holder',
   describe: 'Destination must be a holder of record on the transfer agent registry',
   check: (ctx) =>
     ctx.destinationRegistered

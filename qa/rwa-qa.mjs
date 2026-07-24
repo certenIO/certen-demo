@@ -11,7 +11,7 @@ mkdirSync(OUT, { recursive: true });
 
 const FILM = process.env.FILM !== '0';
 const browser = await chromium.launch();
-const ctx = await browser.newContext({ viewport: { width: 1600, height: 900 }, deviceScaleFactor: 1 });
+const ctx = await browser.newContext({ viewport: { width: Number(process.env.VW ?? 1600), height: Number(process.env.VH ?? 900) }, deviceScaleFactor: 1 });
 await ctx.addInitScript((film) => {
   localStorage.setItem('certen.pace', 'instant');
   localStorage.setItem('certen.step', '0');

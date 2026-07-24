@@ -340,8 +340,8 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
         {/* Film mode renders the SAME state as one diagram; the numbered rails are the
             read-at-your-own-pace form for buyers, not the on-camera form. */}
         {film ? (
-          <Box data-qa="rails" sx={{ minHeight: 0, overflowY: { xs: 'visible', lg: 'auto' }, pr: 0.5, display: 'flex', alignItems: 'center' }}>
-            <Box sx={{ width: '100%' }}>
+          <Box data-qa="rails" sx={{ minHeight: { xs: 520, lg: 0 }, pr: 0.5, display: 'flex', alignItems: 'stretch' }}>
+            <Box sx={{ width: '100%', minHeight: 0 }}>
               <FilmCanvas state={state} busy={!!state?.busy} onApprove={onApprove} />
             </Box>
           </Box>
@@ -370,7 +370,9 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
             minHeight: 0,
             overflowY: { xs: 'visible', lg: 'auto' },
             pr: 0.5,
-            justifyContent: { xs: 'flex-start', lg: film && !state?.agent ? 'center' : 'flex-start' },
+            // Film: spread the side panels so the top one aligns with the action band and the
+            // bottom one with the execution node, matching the diagram's own top-and-tail rhythm.
+            justifyContent: { xs: 'flex-start', lg: film && !state?.agent ? 'space-between' : 'flex-start' },
           }}
         >
           {builder && !film ? (

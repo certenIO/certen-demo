@@ -113,29 +113,37 @@ function ActionBand({ state }: { state: ScenarioState }) {
   const color = danger ? CERTEN_COLORS.error.main : CERTEN_COLORS.primary.main;
   const Icon = ACTION_ICON[a.icon ?? 'transfer'];
   const amount = a.amountLabel ?? '';
-  // The headline figure spans nine orders of magnitude across acts; shrink rather than truncate.
-  const size = amount.length > 22 ? '1.5rem' : amount.length > 15 ? '1.9rem' : '2.4rem';
 
   // Who is asking. An AI agent, a compromised key and a person are three different stories, so
   // the actor gets its own glyph and sits at the head of the band: actor → action → target.
   const init = a.initiator ?? '';
+
+  // The headline figure spans nine orders of magnitude across acts ($50M → $300T) while sharing a
+  // row with variable-width actor and target chips. It is set in mono, so character count predicts
+  // width reliably: pick a step from the digit count, then drop one more step when a long actor
+  // label eats into the same row. This figure must never clip — in Act 2 it IS the story.
+  const n = amount.length;
+  const STEPS = [2.9, 2.4, 2.0, 1.7, 1.45];
+  let step = n >= 20 ? 3 : n >= 16 ? 2 : n >= 12 ? 1 : 0;
+  if (init.length > 20) step += 1;
+  const size = `${STEPS[Math.min(step, STEPS.length - 1)]}rem`;
   const compromised = /compromis|stolen|attacker/i.test(init);
   const ActorIcon = /agent|ai|bot/i.test(init) ? SmartToyRoundedIcon : compromised ? WarningAmberRoundedIcon : PersonRoundedIcon;
   const actorColor = compromised ? CERTEN_COLORS.error.main : NEUTRAL[600];
 
   return (
-    <Stack direction="row" alignItems="center" spacing={1.5} sx={{ px: 2, py: 1.25, borderRadius: 2, border: `1.5px solid ${alpha(color, 0.4)}`, bgcolor: alpha(color, 0.05) }}>
+    <Stack direction="row" alignItems="center" spacing={1.5} sx={{ px: 2.25, py: 1.6, borderRadius: 2, border: `1.5px solid ${alpha(color, 0.4)}`, bgcolor: alpha(color, 0.05) }}>
       {init && (
         <>
           <Stack direction="row" alignItems="center" spacing={0.75} sx={{ px: 1.25, py: 0.7, borderRadius: 1.5, border: '1px solid', borderColor: alpha(actorColor, 0.4), bgcolor: alpha(actorColor, 0.06), flexShrink: 0 }}>
-            <ActorIcon sx={{ fontSize: 19, color: actorColor }} />
-            <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: actorColor, whiteSpace: 'nowrap' }}>{init}</Typography>
+            <ActorIcon sx={{ fontSize: 22, color: actorColor }} />
+            <Typography sx={{ fontSize: '0.92rem', fontWeight: 700, color: actorColor, whiteSpace: 'nowrap' }}>{init}</Typography>
           </Stack>
           <Box sx={{ color: 'text.secondary', fontSize: '1.2rem', flexShrink: 0, lineHeight: 1, opacity: 0.6 }}>→</Box>
         </>
       )}
-      <Box sx={{ width: 46, height: 46, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: alpha(color, 0.12), color, flexShrink: 0 }}>
-        <Icon sx={{ fontSize: 28 }} />
+      <Box sx={{ width: 54, height: 54, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: alpha(color, 0.12), color, flexShrink: 0 }}>
+        <Icon sx={{ fontSize: 33 }} />
       </Box>
       <Box sx={{ flexShrink: 0 }}>
         <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.12em', color, lineHeight: 1 }}>
@@ -145,7 +153,9 @@ function ActionBand({ state }: { state: ScenarioState }) {
           {a.principal ?? ''}
         </Typography>
       </Box>
-      <Box sx={{ flexGrow: 1, minWidth: 0, textAlign: 'right' }}>
+      {/* overflow:hidden is the backstop — if a future label defeats the sizing above, the figure
+          clips at the boundary instead of running underneath the target chip */}
+      <Box sx={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden', textAlign: 'right' }}>
         <Typography sx={{ fontFamily: MONO_FAMILY, fontSize: size, fontWeight: 800, color, lineHeight: 1.05, whiteSpace: 'nowrap' }}>
           {amount}
         </Typography>
@@ -159,7 +169,7 @@ function ActionBand({ state }: { state: ScenarioState }) {
         <>
           <Box sx={{ color: 'text.secondary', fontSize: '1.4rem', flexShrink: 0, lineHeight: 1 }}>→</Box>
           <Box sx={{ px: 1.25, py: 0.6, borderRadius: 1.5, border: '1px solid', borderColor: alpha(color, 0.35), flexShrink: 0 }}>
-            <Typography sx={{ fontFamily: MONO_FAMILY, fontSize: '0.88rem', fontWeight: 700, color }}>{a.target}</Typography>
+            <Typography sx={{ fontFamily: MONO_FAMILY, fontSize: '1rem', fontWeight: 700, color }}>{a.target}</Typography>
           </Box>
         </>
       )}
@@ -175,12 +185,14 @@ function AuthorityNode({ node, busy, onApprove }: { node: AuthNode; busy: boolea
     node.status === 'satisfied' ? CheckRoundedIcon : node.status === 'refused' ? CloseRoundedIcon : node.status === 'compromised' ? WarningAmberRoundedIcon : null;
 
   return (
-    <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-      <Stack alignItems="center" spacing={0.6} sx={{ px: 1, py: 1.75, borderRadius: 2, border: `1.5px solid ${alpha(color, node.status === 'pending' ? 0.3 : 0.65)}`, bgcolor: alpha(color, node.status === 'pending' ? 0.02 : 0.08), height: '100%' }}>
+    // NB: the motion wrapper carries height:100% too — without it the grid row grows to fill the
+    // frame while the card stays at content height, leaving a gap that reads as a broken connector.
+    <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} style={{ height: '100%' }}>
+      <Stack alignItems="center" justifyContent="center" spacing={0.7} sx={{ px: 1, py: 1.75, borderRadius: 2, border: `1.5px solid ${alpha(color, node.status === 'pending' ? 0.3 : 0.65)}`, bgcolor: alpha(color, node.status === 'pending' ? 0.02 : 0.08), height: '100%' }}>
         {/* entity glyph in a status ring, with a verdict badge */}
         <Box sx={{ position: 'relative' }}>
-          <Box sx={{ width: 64, height: 64, borderRadius: '50%', display: 'grid', placeItems: 'center', border: `3px solid ${color}`, color, bgcolor: alpha(color, 0.08) }}>
-            <Icon sx={{ fontSize: 33 }} />
+          <Box sx={{ width: 76, height: 76, borderRadius: '50%', display: 'grid', placeItems: 'center', border: `3px solid ${color}`, color, bgcolor: alpha(color, 0.08) }}>
+            <Icon sx={{ fontSize: 40 }} />
           </Box>
           {StatusGlyph && (
             <motion.div
@@ -189,17 +201,17 @@ function AuthorityNode({ node, busy, onApprove }: { node: AuthNode; busy: boolea
               transition={{ type: 'spring', stiffness: 400, damping: 18 }}
               style={{ position: 'absolute', right: -5, bottom: -3 }}
             >
-              <Box sx={{ width: 26, height: 26, borderRadius: '50%', display: 'grid', placeItems: 'center', bgcolor: color, color: '#fff', border: '2px solid', borderColor: 'background.paper' }}>
-                <StatusGlyph sx={{ fontSize: 17 }} />
+              <Box sx={{ width: 30, height: 30, borderRadius: '50%', display: 'grid', placeItems: 'center', bgcolor: color, color: '#fff', border: '2.5px solid', borderColor: 'background.paper' }}>
+                <StatusGlyph sx={{ fontSize: 20 }} />
               </Box>
             </motion.div>
           )}
         </Box>
 
-        <Typography align="center" sx={{ fontWeight: 700, fontSize: '1.05rem', lineHeight: 1.15 }}>
+        <Typography align="center" sx={{ fontWeight: 700, fontSize: '1.18rem', lineHeight: 1.15 }}>
           {node.name}
         </Typography>
-        <Typography align="center" sx={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.09em', color, textTransform: 'uppercase', lineHeight: 1 }}>
+        <Typography align="center" sx={{ fontSize: '0.78rem', fontWeight: 800, letterSpacing: '0.09em', color, textTransform: 'uppercase', lineHeight: 1 }}>
           {node.kind}
         </Typography>
 
@@ -208,23 +220,23 @@ function AuthorityNode({ node, busy, onApprove }: { node: AuthNode; busy: boolea
           {node.keys.map((k, i) => (
             <motion.div key={i} initial={false} animate={{ scale: k.signed ? [1, 1.5, 1] : 1 }} transition={{ duration: 0.4 }} style={{ display: 'flex' }}>
               {k.automated ? (
-                <MemoryRoundedIcon sx={{ fontSize: 18, color: k.signed ? color : NEUTRAL[300] }} />
+                <MemoryRoundedIcon sx={{ fontSize: 21, color: k.signed ? color : NEUTRAL[300] }} />
               ) : (
-                <Box sx={{ width: 13, height: 13, borderRadius: '50%', bgcolor: k.signed ? color : 'transparent', border: `2px solid ${k.signed ? color : NEUTRAL[300]}` }} />
+                <Box sx={{ width: 15, height: 15, borderRadius: '50%', bgcolor: k.signed ? color : 'transparent', border: `2.5px solid ${k.signed ? color : NEUTRAL[300]}` }} />
               )}
             </motion.div>
           ))}
-          <Typography sx={{ fontFamily: MONO_FAMILY, fontSize: '0.76rem', color: 'text.secondary', ml: 0.5 }}>
+          <Typography sx={{ fontFamily: MONO_FAMILY, fontSize: '0.86rem', color: 'text.secondary', ml: 0.5 }}>
             {node.keys.filter((k) => k.signed).length}/{node.keys.length}
           </Typography>
         </Stack>
 
-        <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.08em', color, opacity: node.status === 'pending' ? 0.6 : 1 }}>
+        <Typography sx={{ fontSize: '0.76rem', fontWeight: 800, letterSpacing: '0.08em', color, opacity: node.status === 'pending' ? 0.6 : 1 }}>
           {STATUS_WORD[node.status]}
         </Typography>
 
         {node.canApprove && (
-          <Button size="small" variant="contained" color="success" disabled={busy} onClick={() => onApprove(node.role)} sx={{ mt: 0.5, py: 0.35, px: 2, fontSize: '0.82rem' }}>
+          <Button size="small" variant="contained" color="success" disabled={busy} onClick={() => onApprove(node.role)} sx={{ mt: 0.6, py: 0.45, px: 2.25, fontSize: '0.9rem' }}>
             {node.automated ? 'Evaluate' : 'Authorize'}
           </Button>
         )}
@@ -243,9 +255,13 @@ function AuthorityNode({ node, busy, onApprove }: { node: AuthNode; busy: boolea
  * Node centres come from the equal-width grid, never from DOM measurement, so the field can't
  * desync while the row animates.
  */
-function ConnectorField({ nodes, height = 78 }: { nodes: AuthNode[]; height?: number }) {
+function ConnectorField({ nodes }: { nodes: AuthNode[] }) {
   const n = nodes.length || 1;
-  const busY = height * 0.52;
+  // A normalized 100×100 viewBox stretched by `preserveAspectRatio="none"`, so the field fills
+  // whatever vertical space the frame leaves it. Only straight segments survive that stretch —
+  // which is exactly what this connector is made of.
+  const height = 100;
+  const busY = height * 0.5;
   const xs = nodes.map((_, i) => ((i + 0.5) / n) * 100);
   const anyRefused = nodes.some((x) => x.status === 'refused');
   const allLive = nodes.every((x) => x.status === 'satisfied' || x.status === 'compromised');
@@ -271,8 +287,8 @@ function ConnectorField({ nodes, height = 78 }: { nodes: AuthNode[]; height?: nu
   );
 
   return (
-    <Box sx={{ height, width: '100%' }}>
-      <svg width="100%" height={height} viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" style={{ display: 'block' }}>
+    <Box sx={{ flex: '1 1 auto', minHeight: 56, maxHeight: 260, width: '100%' }}>
+      <svg width="100%" height="100%" viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" style={{ display: 'block' }}>
         {/* the shared bus */}
         {seg('bus', `M ${Math.min(...xs)} ${busY} L ${Math.max(...xs)} ${busY}`, trunkColor, trunkLive)}
         {/* one drop per authority, in that authority's own colour */}
@@ -305,14 +321,14 @@ function ProofNode({ state }: { state: ScenarioState }) {
         alignItems="center"
         spacing={1.5}
         sx={{
-          px: 3, py: 1.35, borderRadius: 999,
+          px: 3.5, py: 1.6, borderRadius: 999,
           border: `2.5px ${proven || refused ? 'solid' : 'dashed'} ${alpha(color, proven || refused ? 0.8 : 0.45)}`,
           bgcolor: alpha(color, proven || refused ? 0.1 : 0.02),
         }}
       >
-        <Icon sx={{ fontSize: 36, color }} />
+        <Icon sx={{ fontSize: 42, color }} />
         <Box>
-          <Typography sx={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '0.06em', color, lineHeight: 1.1 }}>
+          <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', letterSpacing: '0.06em', color, lineHeight: 1.1 }}>
             {label}
           </Typography>
           {/* Validator attestations as pips — a quorum you can count. Only when one actually
@@ -351,13 +367,13 @@ function ExecutionNode({ state }: { state: ScenarioState }) {
 
   return (
     <motion.div layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-      <Stack direction="row" alignItems="center" spacing={1.5} sx={{ px: 3.25, py: 1.4, borderRadius: 2, border: `2px solid ${alpha(color, done || never ? 0.75 : 0.35)}`, bgcolor: alpha(color, done || never ? 0.1 : 0.03) }}>
-        <Box sx={{ width: 40, height: 40, borderRadius: '50%', display: 'grid', placeItems: 'center', bgcolor: alpha(color, 0.15), color }}>
-          {running ? <CircularProgress size={18} sx={{ color }} /> : <Glyph sx={{ fontSize: 25 }} />}
+      <Stack direction="row" alignItems="center" spacing={1.5} sx={{ px: 3.75, py: 1.7, borderRadius: 2, border: `2px solid ${alpha(color, done || never ? 0.75 : 0.35)}`, bgcolor: alpha(color, done || never ? 0.1 : 0.03) }}>
+        <Box sx={{ width: 46, height: 46, borderRadius: '50%', display: 'grid', placeItems: 'center', bgcolor: alpha(color, 0.15), color }}>
+          {running ? <CircularProgress size={18} sx={{ color }} /> : <Glyph sx={{ fontSize: 29 }} />}
         </Box>
-        <Typography sx={{ fontWeight: 800, fontSize: '1.35rem', letterSpacing: '0.05em', color }}>{word}</Typography>
+        <Typography sx={{ fontWeight: 800, fontSize: '1.6rem', letterSpacing: '0.05em', color }}>{word}</Typography>
         {ex?.shortLabel && (
-          <Typography sx={{ fontFamily: MONO_FAMILY, fontSize: '1.05rem', fontWeight: 700, color: 'text.primary', borderLeft: '1px solid', borderColor: 'divider', pl: 2 }}>
+          <Typography sx={{ fontFamily: MONO_FAMILY, fontSize: '1.2rem', fontWeight: 700, color: 'text.primary', borderLeft: '1px solid', borderColor: 'divider', pl: 2.25 }}>
             {ex.shortLabel}
           </Typography>
         )}
@@ -381,20 +397,24 @@ export function FilmCanvas({
   const auto = nodes.length === 0 && !!state.policy && state.policy.threshold === 0;
 
   return (
-    <Stack spacing={0} sx={{ height: '100%' }}>
-      <ActionBand state={state} />
+    // The diagram OWNS the frame: fixed-height bands top and bottom, and the authority row plus
+    // the connector absorb whatever is left, so it fills a 900px capture and a 1080p one alike.
+    <Stack spacing={0} sx={{ height: '100%', minHeight: 0 }}>
+      <Box sx={{ flexShrink: 0 }}>
+        <ActionBand state={state} />
+      </Box>
 
       {nodes.length > 0 && (
         <>
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mt: 1.75, mb: 0.75, px: 0.5 }}>
-            <Typography sx={{ fontSize: '0.66rem', fontWeight: 800, letterSpacing: '0.12em', color: 'text.secondary' }}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mt: 2, mb: 1, px: 0.5, flexShrink: 0 }}>
+            <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.14em', color: 'text.secondary' }}>
               REQUIRED AUTHORITY
             </Typography>
-            <Typography sx={{ fontFamily: MONO_FAMILY, fontSize: '0.95rem', fontWeight: 800, color: filled === nodes.length ? CERTEN_COLORS.success.main : 'text.secondary' }}>
+            <Typography sx={{ fontFamily: MONO_FAMILY, fontSize: '1.15rem', fontWeight: 800, color: filled === nodes.length ? CERTEN_COLORS.success.main : 'text.secondary' }}>
               {filled} / {nodes.length}
             </Typography>
           </Stack>
-          <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${nodes.length}, 1fr)`, gap: 1.25, alignItems: 'stretch' }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${nodes.length}, 1fr)`, gap: 1.5, alignItems: 'stretch', flex: '3 1 auto', minHeight: 196, maxHeight: 300 }}>
             {nodes.map((n) => (
               <AuthorityNode key={n.role} node={n} busy={busy} onApprove={onApprove} />
             ))}
@@ -404,17 +424,17 @@ export function FilmCanvas({
       )}
 
       {auto && (
-        <Stack alignItems="center" sx={{ my: 2 }}>
-          <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.1em', color: CERTEN_COLORS.success.main }}>
-            <BoltRoundedIcon sx={{ fontSize: 15, verticalAlign: 'text-bottom', mr: 0.4 }} />
+        <Stack alignItems="center" justifyContent="center" sx={{ flex: '1 1 auto' }}>
+          <Typography sx={{ fontSize: '0.9rem', fontWeight: 800, letterSpacing: '0.1em', color: CERTEN_COLORS.success.main }}>
+            <BoltRoundedIcon sx={{ fontSize: 19, verticalAlign: 'text-bottom', mr: 0.5 }} />
             WITHIN POLICY · NO HUMAN REQUIRED
           </Typography>
         </Stack>
       )}
 
-      <Stack alignItems="center" spacing={0.5}>
+      <Stack alignItems="center" spacing={0.75} sx={{ flexShrink: 0, pb: 0.5 }}>
         <ProofNode state={state} />
-        <ArrowDownwardRoundedIcon sx={{ fontSize: 26, color: 'text.secondary', opacity: 0.45 }} />
+        <ArrowDownwardRoundedIcon sx={{ fontSize: 28, color: 'text.secondary', opacity: 0.45 }} />
         <ExecutionNode state={state} />
       </Stack>
     </Stack>

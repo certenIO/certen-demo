@@ -549,7 +549,7 @@ export class RwaIssuanceScenario extends BaseScenario {
         verb: 'Mint',
         summary: `${usd(MINT_ATTACK)} of XAUV → ${ATTACKER_ADDR}`,
         principal: TOKEN,
-        initiator: 'Attacker · stolen issuer keys',
+        initiator: 'Attacker · stolen keys',
         amountLabel: usd(MINT_ATTACK),
         target: ATTACKER_ADDR,
         note: 'attacker address',

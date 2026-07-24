@@ -367,7 +367,7 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
         {film ? (
           <Box data-qa="rails" sx={{ minHeight: { xs: 520, lg: 0 }, pr: 0.5, display: 'flex', alignItems: 'stretch' }}>
             <Box sx={{ width: '100%', minHeight: 0 }}>
-              <FilmCanvas state={state} busy={!!state?.busy} onApprove={onApprove} />
+              <FilmCanvas state={state} busy={!!state?.busy} simulated={mode !== 'live'} onApprove={onApprove} />
             </Box>
           </Box>
         ) : (

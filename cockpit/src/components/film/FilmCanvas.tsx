@@ -20,6 +20,7 @@ import DeleteForeverRoundedIcon from '@mui/icons-material/DeleteForeverRounded';
 import LocalFireDepartmentRoundedIcon from '@mui/icons-material/LocalFireDepartmentRounded';
 import ArrowDownwardRoundedIcon from '@mui/icons-material/ArrowDownwardRounded';
 import KeyOffRoundedIcon from '@mui/icons-material/KeyOffRounded';
+import { ProofArtifact, ExecutionArtifact } from './ProofArtifacts';
 import { CERTEN_COLORS, MONO_FAMILY, NEUTRAL } from '../../theme';
 import type { ScenarioState } from '../../types';
 
@@ -418,10 +419,13 @@ function ExecutionNode({ state }: { state: ScenarioState }) {
 export function FilmCanvas({
   state,
   busy,
+  simulated = false,
   onApprove,
 }: {
   state: ScenarioState | null;
   busy: boolean;
+  /** simulated runs mark their hashes, so a sample is never filmed as a live transaction */
+  simulated?: boolean;
   onApprove: (role: string) => void;
 }) {
   if (!state) return null;
@@ -467,8 +471,11 @@ export function FilmCanvas({
 
       <Stack alignItems="center" spacing={0.75} sx={{ flexShrink: 0, pb: 0.5 }}>
         <ProofNode state={state} />
-        <ArrowDownwardRoundedIcon sx={{ fontSize: 28, color: 'text.secondary', opacity: 0.45 }} />
+        {/* receipts sit directly under the claim they substantiate */}
+        <ProofArtifact state={state} simulated={simulated} />
+        <ArrowDownwardRoundedIcon sx={{ fontSize: 24, color: 'text.secondary', opacity: 0.45 }} />
         <ExecutionNode state={state} />
+        <ExecutionArtifact state={state} simulated={simulated} />
         {/* THE differentiator, permanently on screen. Everyone else records who approved and then
             trusts a key to execute. This account has no key — the proof is the only way in. That
             sentence is the entire moat, so it never scrolls away and never has to be narrated. */}

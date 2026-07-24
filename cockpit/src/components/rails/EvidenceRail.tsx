@@ -21,11 +21,14 @@ export function EvidenceRail({
   evidence,
   technical,
   simulated = false,
+  film = false,
   onWhyDifferent,
 }: {
   evidence: EvidenceInfo | null | undefined;
   technical: boolean;
   simulated?: boolean;
+  /** film mode drops the explanatory prose and the verify/details controls — the narrator covers them */
+  film?: boolean;
   onWhyDifferent?: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -61,14 +64,14 @@ export function EvidenceRail({
             <Box sx={{ flexGrow: 1, minWidth: 0 }}>
               <Typography sx={{ fontWeight: 600, fontSize: '0.8rem', lineHeight: 1.25 }}>{evidence.plainMeaning}</Typography>
               <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 0.4, mt: 0.5 }}>
-                {evidence.auditFacts.slice(0, 4).map((f) => (
+                {evidence.auditFacts.slice(0, film ? 3 : 4).map((f) => (
                   <Chip key={f} label={f} size="small" sx={{ height: 18, fontSize: '0.64rem', bgcolor: alpha(cfg.accent, 0.1), color: cfg.accent }} />
                 ))}
               </Stack>
             </Box>
           </Stack>
 
-          {evidence.kind === 'execution-proof' && (
+          {evidence.kind === 'execution-proof' && !film && (
             <Typography sx={{ mt: 0.75, fontSize: '0.75rem', color: 'text.primary', fontWeight: 600, lineHeight: 1.35 }}>
               Not an approval log — CERTEN computes an independently verifiable, tamper-evident proof
               (Merkle + BLS) that the right authority approved, every policy was satisfied, and the
@@ -88,7 +91,7 @@ export function EvidenceRail({
             </Collapse>
           )}
 
-          <Stack direction="row" sx={{ mt: 0.6, flexWrap: 'wrap', gap: 1 }} alignItems="center">
+          <Stack direction="row" sx={{ mt: 0.6, flexWrap: 'wrap', gap: 1, display: film ? 'none' : 'flex' }} alignItems="center">
             {/* Live mode: real, reachable proof links. Simulated: the public links aren't reachable,
                 so route "verify" to the real on-chain proof cycle inside the security model instead. */}
             {!simulated && evidence.explorerUrl && (

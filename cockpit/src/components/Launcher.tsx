@@ -52,20 +52,12 @@ export function Launcher({
               authorization layer
             </Box>
           </Typography>
-          <Typography sx={{ fontSize: { xs: '1.1rem', md: '1.35rem' }, fontWeight: 600, color: 'text.primary', letterSpacing: '-0.01em', mb: 1.75 }}>
-            Cryptographically enforced change control
-          </Typography>
-          <Typography variant="h5" sx={{ color: 'text.secondary', fontWeight: 500, maxWidth: 720 }}>
+          <Typography variant="h5" sx={{ color: 'text.secondary', fontWeight: 500, maxWidth: 760, mb: 2 }}>
             {BRAND.tagline}
           </Typography>
-          <Typography variant="body1" sx={{ color: 'text.primary', fontWeight: 600, mt: 1.5, maxWidth: 760 }}>
-            Most systems record who approved. {BRAND.name} makes execution impossible without proving it.
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1, maxWidth: 760 }}>
-            How it works: any actor proposes an action, your policy engine decides, the required
-            authorities sign, {BRAND.name} computes a cryptographic proof — and execution happens only
-            then, bound to the exact action and verified on-chain, from an account with no private key
-            to steal.
+          <Typography variant="body1" sx={{ color: 'text.primary', fontWeight: 600, maxWidth: 780 }}>
+            Most systems record who approved. {BRAND.name} makes execution impossible without proving it —
+            bound to the exact action, verified on-chain, from an account with no private key to steal.
           </Typography>
         </motion.div>
 
@@ -92,8 +84,7 @@ export function Launcher({
           </Typography>
         </Stack>
         <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1.5, maxWidth: 820 }}>
-          Governance is the first application. The same engine secures treasury moves, lending, AI
-          agents, custody, insurance, and cross-chain ops — only the action changes.
+          Asset issuance, AI agents, treasury, change control — one engine. Only the action changes.
         </Typography>
       </Box>
 
@@ -102,7 +93,7 @@ export function Launcher({
         sx={{
           display: 'grid',
           gap: 3,
-          gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
+          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: `repeat(${Math.min(scenarios.length, 4)}, 1fr)` },
           mt: 1,
         }}
       >

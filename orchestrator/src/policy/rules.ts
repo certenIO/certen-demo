@@ -1,4 +1,51 @@
-import type { PolicyRule } from './engine.js';
+import { usd } from '../lib/util.js';
+import type { PolicyConstraint, PolicyRule } from './engine.js';
+
+/**
+ * Proof of reserves, enforced at mint time instead of audited quarterly.
+ * Tokens outstanding + this mint must not exceed what the custodian has signed for. This is the
+ * predicate that kills a fat-fingered mint and an attacker-issued mint identically — neither can
+ * produce arithmetic that closes, so neither can produce a proof.
+ */
+const WITHIN_ATTESTED_CUSTODY: PolicyConstraint = {
+  id: 'within-attested-custody',
+  describe: 'Tokens outstanding after mint must not exceed custodian-attested reserves',
+  check: (ctx) => {
+    const mint = ctx.mintUsd ?? 0;
+    const outstanding = ctx.outstandingUsd ?? 0;
+    const attested = ctx.attestedReservesUsd ?? 0;
+    const after = mint + outstanding;
+    if (after <= attested) {
+      return { satisfied: true, detail: `${usd(after)} outstanding after mint ≤ ${usd(attested)} attested` };
+    }
+    return {
+      satisfied: false,
+      detail: `${usd(after)} would be outstanding · ${usd(attested)} attested · excess ${usd(after - attested)}`,
+    };
+  },
+};
+
+/** A stale reserve attestation is no attestation. */
+const FRESH_ATTESTATION: PolicyConstraint = {
+  id: 'fresh-attestation',
+  describe: 'Reserve attestation must be less than 24 hours old',
+  check: (ctx) => {
+    const age = ctx.attestationAgeHours ?? 0;
+    return age < 24
+      ? { satisfied: true, detail: `attestation signed ${age < 1 ? `${Math.round(age * 60)} min` : `${age} h`} ago` }
+      : { satisfied: false, detail: `attestation is ${age} h old — stale` };
+  },
+};
+
+/** The transfer agent's registry check: you cannot issue to an address that isn't a holder of record. */
+const REGISTERED_DESTINATION: PolicyConstraint = {
+  id: 'registered-destination',
+  describe: 'Destination must be a holder of record on the transfer agent registry',
+  check: (ctx) =>
+    ctx.destinationRegistered
+      ? { satisfied: true, detail: 'destination is a registered holder (KYC current)' }
+      : { satisfied: false, detail: 'destination is not on the holder registry' },
+};
 
 /**
  * The demo ruleset. One ordered list drives all three scenarios — the whole point is that
@@ -6,6 +53,36 @@ import type { PolicyRule } from './engine.js';
  * (and therefore which rule fires) changes.
  */
 export const DEMO_RULES: PolicyRule[] = [
+  // ── RWA — regulated asset issuance (mint) ───────────────────────────────────
+  // Three SEPARATE COMPANIES must each satisfy their own internal quorum, and the arithmetic
+  // must close against signed custody. Quorum alone is not enough; constraints alone are not
+  // enough. This is the rule the infinite-mint exploits needed.
+  {
+    name: 'regulated-asset-mint',
+    when: { actionType: 'assetMint' },
+    require: {
+      approvers: ['Issuer', 'Custodian', 'Transfer Agent'],
+      threshold: 3,
+      constraints: [WITHIN_ATTESTED_CUSTODY, FRESH_ATTESTATION, REGISTERED_DESTINATION],
+    },
+    describe: 'Asset issuance → all {count} organizations must authorize: {approvers}',
+  },
+  // Redemption burns the token and releases the bar — same three-company gate, reversed.
+  {
+    name: 'regulated-asset-burn',
+    when: { actionType: 'assetBurn' },
+    require: { approvers: ['Issuer', 'Custodian', 'Transfer Agent'], threshold: 3 },
+    describe: 'Redemption / burn → requires all {count} organizations: {approvers}',
+  },
+  // The point of scoping: routine secondary transfers do NOT touch custody, so the custodian
+  // and transfer agent are not in the path. The gate is on supply, not on trading.
+  {
+    name: 'regulated-asset-transfer',
+    when: { actionType: 'assetTransfer' },
+    require: { approvers: [], threshold: 0 },
+    describe: 'Secondary transfer → supply unchanged, custodian and transfer agent not in the path (auto)',
+  },
+
   // ── Demo 1 — production contract upgrade ────────────────────────────────────
   {
     name: 'production-upgrade',
@@ -19,7 +96,7 @@ export const DEMO_RULES: PolicyRule[] = [
     name: 'privileged-upgrade',
     when: { actionType: 'upgradeTo' },
     require: { approvers: ['CTO', 'Security'], threshold: 2 },
-    describe: 'Protocol upgrade → requires {threshold} of {count} senior keys: {approvers}',
+    describe: 'Contract upgrade → requires {threshold} of {count} senior keys: {approvers}',
   },
 
   // ── Demo 2 — large transfer needs a human ───────────────────────────────────

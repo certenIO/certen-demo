@@ -21,8 +21,16 @@ export interface ActionInfo {
   principal?: string;
   initiator: string;
   amountLabel?: string;
-  icon?: 'upgrade' | 'transfer' | 'delete' | 'bridge';
+  icon?: 'upgrade' | 'transfer' | 'delete' | 'bridge' | 'mint' | 'burn';
   destructive?: boolean;
+}
+
+/** A non-quorum policy predicate — the part M-of-N cannot express. */
+export interface PolicyConstraintResult {
+  id: string;
+  describe: string;
+  satisfied: boolean;
+  detail: string;
 }
 
 export interface PolicyInfo {
@@ -31,6 +39,7 @@ export interface PolicyInfo {
   trigger?: string;
   threshold: number;
   required: string[];
+  constraints?: PolicyConstraintResult[];
 }
 
 export interface ApprovalsInfo {
@@ -178,6 +187,54 @@ export interface ToolBoundary {
   denied: string[];
 }
 
+// ── Multi-party authority (Regulated Asset Issuance) ──────────────────────────
+export type OrgStatus = 'pending' | 'satisfied' | 'refused' | 'not-required' | 'compromised';
+
+export interface AuthoritySigner {
+  label: string;
+  detail?: string;
+  signed: boolean;
+}
+
+export interface AuthorityOrg {
+  role: string;
+  org: string;
+  kind: string;
+  adi: string;
+  keyBook: string;
+  threshold: number;
+  total: number;
+  signers: AuthoritySigner[];
+  status: OrgStatus;
+  scope?: string;
+  note?: string;
+  canApprove?: boolean;
+  automated?: boolean;
+}
+
+export interface AuthorityGraphInfo {
+  headline: string;
+  orgs: AuthorityOrg[];
+  footnote?: string;
+}
+
+export interface SupplyPanelInfo {
+  assetLabel: string;
+  attestedUsd: number;
+  attestedLabel: string;
+  outstandingUsd: number;
+  outstandingLabel: string;
+  proposedUsd: number;
+  proposedLabel: string;
+  attestation: {
+    custodian: string;
+    detail: string;
+    ageLabel: string;
+    fresh: boolean;
+  };
+  breach?: string;
+}
+
 export interface Control {
   id: string;
   label: string;
@@ -213,6 +270,8 @@ export interface ScenarioState {
   presenterCue?: PresenterCue | null;
   toolBoundary?: ToolBoundary | null;
   impactedSystems?: string[] | null;
+  authorities?: AuthorityGraphInfo | null;
+  supply?: SupplyPanelInfo | null;
   controls: Control[];
   busy: boolean;
   message?: string;

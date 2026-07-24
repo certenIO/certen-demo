@@ -104,7 +104,7 @@ export const CERTEN_BRAND: BrandConfig = {
   name: 'CERTEN',
   productLabel: 'Authorization Cockpit',
   tagline:
-    'Nothing high-value executes until policy correctness is verified and proven — whether the actor is a person, a policy engine, or an AI Agent. Execution is conditional on proof.',
+    'Nothing high-value executes until a proof says it can — whether the actor is a person, a policy engine, or an AI agent.',
   markIcon: VerifiedUserRoundedIcon,
 
   // Deep, desaturated navy — the accent of financial/security infrastructure. Used SPARINGLY:

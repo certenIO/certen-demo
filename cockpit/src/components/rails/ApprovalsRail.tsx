@@ -5,8 +5,15 @@ import HourglassEmptyRoundedIcon from '@mui/icons-material/HourglassEmptyRounded
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
 import { Rail } from '../Rail';
+import { AuthorityGraph } from '../AuthorityGraph';
 import { CERTEN_COLORS, MONO_FAMILY } from '../../theme';
-import type { ApprovalsInfo, Approver, CoordinationInboxItem, CoordinationInfo } from '../../types';
+import type {
+  ApprovalsInfo,
+  Approver,
+  AuthorityGraphInfo,
+  CoordinationInboxItem,
+  CoordinationInfo,
+} from '../../types';
 
 function coordChip(item: CoordinationInboxItem | undefined) {
   if (!item) return null;
@@ -76,18 +83,69 @@ function Tile({
 export function ApprovalsRail({
   approvals,
   coordination,
+  authorities,
+  film = false,
   onApprove,
   busy,
 }: {
   approvals: ApprovalsInfo | null;
   coordination?: CoordinationInfo | null;
+  /** when present, render the cross-company authority graph instead of flat approver tiles */
+  authorities?: AuthorityGraphInfo | null;
+  film?: boolean;
   onApprove: (role: string) => void;
   busy: boolean;
 }) {
-  if (!approvals) {
+  if (!approvals && !authorities) {
     return <Rail index={3} title="Approvals & Coordination" placeholder="Required signatures are collected and coordinated here." />;
   }
-  const { collected, threshold, approvers } = approvals;
+
+  // ── multi-party mode: separate companies, each with its own key hierarchy ──
+  if (authorities) {
+    // A compromised seat is a FILLED seat — the stolen keys did satisfy that company's quorum.
+    const satisfied = authorities.orgs.filter((o) => o.status === 'satisfied' || o.status === 'compromised').length;
+    const refused = authorities.orgs.some((o) => o.status === 'refused');
+    const total = authorities.orgs.length;
+    const accent = refused
+      ? CERTEN_COLORS.error.main
+      : satisfied === total
+        ? CERTEN_COLORS.success.main
+        : CERTEN_COLORS.primary.main;
+    return (
+      <Rail
+        index={3}
+        title="Authority · three companies, three key hierarchies"
+        active
+        accent={accent}
+        right={
+          <Stack direction="row" spacing={0.75} alignItems="center">
+            {coordination?.pendingTxHash && !film && (
+              <Chip
+                size="small"
+                label={`pending ${coordination.pendingTxHash.slice(0, 8)}…`}
+                sx={{ height: 20, fontFamily: MONO_FAMILY, fontSize: '0.62rem', bgcolor: alpha(CERTEN_COLORS.info.main, 0.10), color: CERTEN_COLORS.info.dark }}
+              />
+            )}
+            <Chip
+              label={`${satisfied} of ${total} orgs`}
+              sx={{ height: 22, fontWeight: 700, fontSize: '0.82rem', bgcolor: alpha(accent, 0.10), color: accent }}
+            />
+          </Stack>
+        }
+      >
+        <Box sx={{ pl: film ? 0 : 4.25 }}>
+          <AuthorityGraph authorities={authorities} film={film} busy={busy} onApprove={onApprove} />
+          {coordination?.coordinationSummary && !film && (
+            <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', mt: 0.5 }}>
+              {coordination.coordinationSummary}
+            </Typography>
+          )}
+        </Box>
+      </Rail>
+    );
+  }
+
+  const { collected, threshold, approvers } = approvals!;
   const auto = threshold === 0;
   const satisfied = collected >= threshold;
   const accent = satisfied ? CERTEN_COLORS.success.main : CERTEN_COLORS.error.main;

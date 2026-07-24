@@ -1,13 +1,17 @@
 import { config } from '../config.js';
 import type { BaseScenario } from './base.js';
+import { RwaIssuanceScenario } from './rwaIssuance.js';
 import { StopTheMistakeScenario } from './stopTheMistake.js';
 import { AiGuardrailsScenario } from './aiGuardrails.js';
 import { TreasuryProtectionScenario } from './treasuryProtection.js';
 import type { ScenarioMeta } from '../types.js';
 
+// Order is the launcher order. Regulated asset issuance leads, with the AI agent demo
+// second — that pairing is the filmed narrative (an asset is issued, then an agent trades it).
 const instances: BaseScenario[] = [
-  new StopTheMistakeScenario(),
+  new RwaIssuanceScenario(),
   new AiGuardrailsScenario(),
+  new StopTheMistakeScenario(),
   new TreasuryProtectionScenario(),
 ];
 

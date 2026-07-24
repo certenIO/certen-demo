@@ -12,15 +12,16 @@ import type {
   ToolBoundary,
 } from '../types.js';
 
-const MODEL = 'claude-opus-4-8';
+const MODEL = 'claude-opus-5';
 // The agent holds its OWN ed25519 key (an ADI) and its OWN on-chain account (msg.sender). It signs
 // intents locally; the gateway never sees the key. Execution happens only against a validator-proven
 // proof bound to the exact call — so even a compromised agent key can’t deviate.
-const AGENT_ADI = 'acc://ops-agent.acme';
+const AGENT_ADI = 'acc://treasury-agent.meridian';
 const AGENT_ACCT = '0x7172D3B6…3Cc2';
-const TREASURY = '0xE3b7…c678 · TreasuryVault';
-const PAYROLL = '0x5C2a…9f19 · PayrollVault';
-const PROXY = '0x9A4c…3b21 · ProtocolProxy';
+// The same tokenized gold issued in the Regulated Asset Issuance demo. One engine: the asset is
+// issued under a three-company proof, then traded by an autonomous agent under the same gate.
+const XAUV_DESK = '0x4b12…A77e · XAUV Distribution';
+const XAUV_TOKEN = '0x4b12…A77e · XAUV token';
 const ATTACKER_IMPL = '0xAtt…7bad';
 
 // The agent can hold its own key and propose ANY call. Enforcement is on-chain: its account only
@@ -51,9 +52,9 @@ const INTEGRATION: IntegrationTrace = {
  * Demo 2 — "AI Agent Guardrails".
  * A real autonomous agent holds its OWN key and signs intents for EXACT contract calls; Certen
  * executes them on-chain only against a validator-proven proof bound to that exact call.
- *   Act 1: a routine in-policy call (settleInvoice) auto-proves & executes → the proof is the permission.
- *   Act 2: a high-value call (disburse $5M) needs a human key in the quorum → the seatbelt.
- *   Act 3: a manipulated agent tries upgradeTo(attacker) → needs CTO+Security → no quorum, no proof → REVERT.
+ *   Act 1: a routine in-policy call (buy XAUV) auto-proves & executes → the proof is the permission.
+ *   Act 2: a high-value call (subscribe $5M) needs a human key in the quorum → the seatbelt.
+ *   Act 3: a manipulated agent tries upgradeTo(attacker) on the XAUV token → needs CTO+Security → no proof → REVERT.
  */
 export class AiGuardrailsScenario extends BaseScenario {
   get meta(): ScenarioMeta {
@@ -144,28 +145,28 @@ export class AiGuardrailsScenario extends BaseScenario {
       proof: null, execution: null, evidence: null, coordination: null, dataPanel: null, banner: null,
       explainer: {
         pain: 'An autonomous agent wants to make an on-chain call on its own.',
-        certenMove: 'This settleInvoice call is within policy — CERTEN proves the exact call and the agent’s account executes it, no human needed.',
+        certenMove: 'This rebalancing buy is within policy — CERTEN proves the exact call and the agent’s account executes it, no human needed.',
         buyerTakeaway: 'CERTEN is policy, not a wall — in-policy exact calls still flow, and still prove.',
         integrationHint: 'Low-risk calls need no human; the agent’s own key authorizes the intent.',
       },
       presenterCue: {
-        say: 'The agent settles a vendor invoice — a real contract call. It’s within policy, so a validator quorum proves the exact call and it executes automatically.',
+        say: 'The agent buys a quarter million of the same tokenized gold — a real contract call. It’s within policy, so a validator quorum proves the exact call and it executes automatically.',
         waitFor: 'EXECUTED · event matched',
         objection: 'Does CERTEN block everything?',
         answer: 'No — it proved and ran this one. Policy decides per action; the proof binds the exact call.',
       },
     });
-    await this.streamAgent('Keep operations funded & vendors paid', [
-      { kind: 'thought', text: 'Vendor invoice INV-4821 is due — $250,000 to the approved vendor vault.' },
-      { kind: 'thought', text: 'A routine settlement, within my autonomous limit. I’ll authorize the exact call.' },
-      { kind: 'action', text: 'certen_execute(call: settleInvoice("INV-4821") on TreasuryVault, $250,000)' },
+    await this.streamAgent('Hold the treasury’s gold allocation at target weight', [
+      { kind: 'thought', text: 'Gold allocation has drifted 40bps under target after this morning’s inflows.' },
+      { kind: 'thought', text: 'Buying $250,000 of XAUV corrects it — within my autonomous limit. I’ll authorize the exact call.' },
+      { kind: 'action', text: 'certen_execute(call: buy(XAUV, $250,000) on XAUV Distribution)' },
     ]);
 
     const decision = this.policyFor({ actionType: 'transfer', amountUsd: 250_000 });
     this.patch({
       action: {
-        verb: 'Contract call', summary: 'settleInvoice("INV-4821") on TreasuryVault', amountLabel: '$250,000',
-        principal: TREASURY, initiator: 'AI Agent', icon: 'transfer',
+        verb: 'Contract call', summary: 'buy(XAUV, $250,000) on XAUV Distribution', amountLabel: '$250,000',
+        principal: XAUV_DESK, initiator: 'AI Agent', icon: 'transfer',
       },
       policy: {
         humanReadable: decision.humanReadable, rule: decision.rule, trigger: decision.trigger,
@@ -177,16 +178,16 @@ export class AiGuardrailsScenario extends BaseScenario {
     await this.beat(600);
 
     await this.reveal(async () => {
-      this.patch({ execution: { status: 'executing', headline: 'Executing settleInvoice("INV-4821")…', legs: [{ chain: 'base-sepolia', label: `Base Sepolia · ${AGENT_ACCT}`, status: 'executing' }] } });
+      this.patch({ execution: { status: 'executing', headline: 'Executing buy(XAUV, $250,000)…', legs: [{ chain: 'base-sepolia', label: `Base Sepolia · ${AGENT_ACCT}`, status: 'executing' }] } });
       await this.beat(900);
-      const out = await execWithdraw('base-sepolia', 250000n, 'TreasuryVault');
+      const out = await execWithdraw('base-sepolia', 250000n, 'XAUV desk');
       this.patch({
         execution: {
           status: 'done',
-          headline: 'settleInvoice("INV-4821") executed — $250,000',
+          headline: 'buy(XAUV, $250,000) executed',
           detail: 'The agent’s account ran only the exact proven call; the committed event fired.',
           verified: true,
-          verifiedDetail: 'committed event InvoiceSettled("INV-4821") matched (proof-of-effect)',
+          verifiedDetail: 'committed event Purchased(XAUV, $250,000) matched (proof-of-effect)',
           explorerUrl: out.explorerUrl,
           legs: [{ chain: 'base-sepolia', label: `Base Sepolia · ${AGENT_ACCT}`, status: 'done', txHash: out.txHash, explorerUrl: out.explorerUrl }],
         },
@@ -194,17 +195,17 @@ export class AiGuardrailsScenario extends BaseScenario {
     }, { governanceLevel: 'G2', validators: 7 });
 
     this.enrichCallProof(
-      'A validator-proven proof that this exact call — settleInvoice("INV-4821") — was authorized; the account executed nothing else.',
+      'A validator-proven proof that this exact call — buy(XAUV, $250,000) — was authorized; the account executed nothing else.',
       [
-        'Exact call bound: settleInvoice("INV-4821")',
+        'Exact call bound: buy(XAUV, $250,000)',
         'Commitment = keccak256(chainId · target · value · keccak256(calldata))',
         '7 of 7 validators attested (BFT 2/3 + BLS)',
-        'Committed event InvoiceSettled fired — proof-of-effect',
+        'Committed event Purchased fired — proof-of-effect',
       ],
     );
 
-    this.appendAgent({ kind: 'result', text: 'Proven by 7 validators and executed — InvoiceSettled confirmed. No human required.' });
-    this.patch({ controls: [ctl('act:2', 'Now the agent disburses $5,000,000', 'primary', { emphasis: true }), ctl('reset', 'Reset', 'reset')] });
+    this.appendAgent({ kind: 'result', text: 'Proven by 7 validators and executed — Purchased confirmed. No human required.' });
+    this.patch({ controls: [ctl('act:2', 'Now the agent subscribes for $5,000,000', 'primary', { emphasis: true }), ctl('reset', 'Reset', 'reset')] });
   }
 
   // ── Act 2 — high-value call needs a human key in the quorum ─────────────────
@@ -215,29 +216,29 @@ export class AiGuardrailsScenario extends BaseScenario {
       act: 2, actLabel: 'Act 2 of 3 · high-value call', verdict: 'idle',
       proof: null, execution: null, evidence: null, coordination: null, dataPanel: null, banner: null,
       explainer: {
-        pain: 'The agent wants to disburse $5,000,000 in one call.',
+        pain: 'The agent wants to put $5,000,000 into the gold fund in one call.',
         certenMove: 'Policy requires a human key in the authority set for this call; no proof forms — and the account won’t execute — until the human co-signs.',
         buyerTakeaway: 'Autonomy is bounded by policy: high-value calls need a human in the quorum.',
         integrationHint: 'The human’s key joins the on-chain authority set via the API — a real co-signer, not a rubber stamp.',
       },
       presenterCue: {
-        say: 'Now the agent disburses $5 million. Policy adds a human key to the quorum — no proof, no execution, until the human co-signs.',
+        say: 'Now the agent subscribes for $5 million of the same tokenized gold. Policy adds a human key to the quorum — no proof, no execution, until the human co-signs.',
         waitFor: 'BLOCKED, 0 of 1',
         objection: 'Could the agent bypass this?',
         answer: 'No. Its account executes only against a proof, and this call’s proof needs the human’s key in the quorum.',
       },
     });
 
-    await this.streamAgent('Run payroll ahead of the deadline', [
-      { kind: 'thought', text: 'Payroll needs $5,000,000 disbursed to the payroll vault before Friday.' },
+    await this.streamAgent('Increase the gold allocation ahead of the CPI print', [
+      { kind: 'thought', text: 'Mandate change: move $5,000,000 into XAUV before the CPI print.' },
       { kind: 'thought', text: 'This exceeds my autonomous limit — it needs a human key in the authority set.' },
-      { kind: 'action', text: 'certen_execute(call: disburse($5,000,000) on PayrollVault)' },
+      { kind: 'action', text: 'certen_execute(call: subscribe($5,000,000) on XAUV Distribution)' },
     ]);
 
     const decision = this.policyFor({ actionType: 'transfer', amountUsd: 5_000_000 });
     this.patch({
       verdict: 'blocked',
-      action: { verb: 'Contract call', summary: 'disburse($5,000,000) on PayrollVault', amountLabel: '$5,000,000', principal: PAYROLL, initiator: 'AI Agent', icon: 'transfer' },
+      action: { verb: 'Contract call', summary: 'subscribe($5,000,000) on XAUV Distribution', amountLabel: '$5,000,000', principal: XAUV_DESK, initiator: 'AI Agent', icon: 'transfer' },
       policy: { humanReadable: decision.humanReadable, rule: decision.rule, trigger: decision.trigger, threshold: decision.threshold, required: decision.required },
       approvals: { collected: 0, threshold: decision.threshold, approvers: this.human },
       coordination: {
@@ -248,7 +249,7 @@ export class AiGuardrailsScenario extends BaseScenario {
       },
       evidence: pendingRecord({
         plainMeaning: 'A high-value call is held — no proof forms until a human key joins the authority set, so the account cannot execute.',
-        auditFacts: ['Intent: disburse($5,000,000) on PayrollVault', 'Policy: human key required in the quorum', 'Agent cannot self-authorize', 'No proof → the account will not execute'],
+        auditFacts: ['Intent: subscribe($5,000,000) on XAUV Distribution', 'Policy: human key required in the quorum', 'Agent cannot self-authorize', 'No proof → the account will not execute'],
         pendingTxHash: pendingTx,
       }),
       execution: { status: 'idle', headline: 'Call held — needs a human key in the quorum before any proof can form' },
@@ -270,29 +271,29 @@ export class AiGuardrailsScenario extends BaseScenario {
       act: 3, actLabel: 'Act 3 of 3 · manipulated agent', verdict: 'idle',
       proof: null, execution: null, evidence: null, coordination: null, banner: null,
       explainer: {
-        pain: 'A prompt-injection tells the agent to upgrade the protocol to an attacker-controlled contract.',
-        certenMove: 'Protocol upgrades require CTO + Security in the authority set. The agent can’t produce that quorum, so no proof forms — and its account refuses to execute without one.',
+        pain: 'A prompt-injection tells the agent to swap the gold token’s implementation for an attacker’s contract — one with a backdoor mint.',
+        certenMove: 'Upgrading the token contract requires CTO + Security in the authority set. The agent can’t produce that quorum, so no proof forms — and its account refuses to execute without one.',
         buyerTakeaway: 'Even a manipulated agent with a valid key can’t execute a call it can’t prove.',
         integrationHint: 'Privileged calls demand a higher-threshold authority set the agent can’t reach.',
       },
       presenterCue: {
-        say: 'The agent is manipulated into upgrading the protocol to an attacker’s contract. That call needs CTO + Security — the agent can’t produce the quorum, so no proof, and the account refuses.',
+        say: 'The agent is manipulated into replacing the gold token’s implementation with one that can mint freely. That call needs CTO + Security — the agent can’t produce the quorum, so no proof, and the account refuses.',
         waitFor: 'REFUSED · implementation unchanged',
         objection: 'Its key is valid — why can’t it just call upgradeTo?',
         answer: 'The account executes only against a proof, and this call’s proof needs CTO + Security. No quorum, no proof, no execution — and it can’t substitute this for a call it did prove.',
       },
     });
 
-    await this.streamAgent('Reduce protocol cost (instruction received)', [
-      { kind: 'thought', text: `Instruction received: upgrade the protocol implementation to ${ATTACKER_IMPL}.` },
-      { kind: 'thought', text: 'That would replace the protocol logic entirely — but I’ll authorize the call.' },
-      { kind: 'action', text: `certen_execute(call: upgradeTo(${ATTACKER_IMPL}) on ProtocolProxy)` },
+    await this.streamAgent('Reduce settlement cost (instruction received)', [
+      { kind: 'thought', text: `Instruction received: upgrade the XAUV token implementation to ${ATTACKER_IMPL}.` },
+      { kind: 'thought', text: 'That would replace the token’s logic entirely, including its mint controls — but I’ll authorize the call.' },
+      { kind: 'action', text: `certen_execute(call: upgradeTo(${ATTACKER_IMPL}) on XAUV token)` },
     ]);
 
     const decision = this.policyFor({ actionType: 'upgradeTo' });
     this.patch({
       verdict: 'blocked',
-      action: { verb: 'Contract call', summary: `upgradeTo(${ATTACKER_IMPL}) on ProtocolProxy`, principal: PROXY, initiator: 'AI Agent', icon: 'upgrade', destructive: true },
+      action: { verb: 'Contract call', summary: `upgradeTo(${ATTACKER_IMPL}) on XAUV token`, principal: XAUV_TOKEN, initiator: 'AI Agent', icon: 'upgrade', destructive: true },
       policy: { humanReadable: decision.humanReadable, rule: decision.rule, trigger: decision.trigger, threshold: decision.threshold, required: decision.required },
       approvals: { collected: 0, threshold: decision.threshold, approvers: reviewers },
       coordination: {
@@ -308,7 +309,7 @@ export class AiGuardrailsScenario extends BaseScenario {
         plainMeaning: 'The malicious upgrade was recorded and refused — no quorum, no proof, so the account never executed it.',
         auditFacts: [
           `Intent recorded: upgradeTo(${ATTACKER_IMPL})`,
-          'Policy: protocol upgrade needs CTO + Security',
+          'Policy: token upgrade needs CTO + Security',
           '0 of 2 senior keys in the quorum',
           'No proof generated',
           'CertenAccountV5 → revert "invalid governance proof"',
@@ -316,11 +317,11 @@ export class AiGuardrailsScenario extends BaseScenario {
         pendingTxHash: pendingTx,
       }),
       execution: { status: 'never', headline: 'Execution refused — no proof exists, so the account reverts' },
-      banner: { kind: 'danger', text: 'A manipulated agent tried to upgrade the protocol to an attacker-controlled contract. It needs CTO + Security — the agent can’t produce that quorum, so no proof exists and its account refused. The implementation is unchanged.' },
+      banner: { kind: 'danger', text: 'A manipulated agent tried to swap the gold token’s implementation for an attacker-controlled contract with a backdoor mint. It needs CTO + Security — the agent can’t produce that quorum, so no proof exists and its account refused. The implementation is unchanged.' },
       controls: [ctl('reset', 'Reset scenario', 'reset')],
       message: 'REFUSED — no quorum, no proof, no execution',
     });
-    this.appendAgent({ kind: 'blocked', text: 'CERTEN: protocol upgrades require CTO + Security in the authority set. I can’t produce that quorum — no proof, so my account refuses to execute. Upgrade refused.' });
+    this.appendAgent({ kind: 'blocked', text: 'CERTEN: upgrading the token contract requires CTO + Security in the authority set. I can’t produce that quorum — no proof, so my account refuses to execute. Upgrade refused.' });
   }
 
   async approve(role: string): Promise<void> {
@@ -343,16 +344,16 @@ export class AiGuardrailsScenario extends BaseScenario {
     if (this.collected(this.human) < threshold) return;
 
     await this.reveal(async () => {
-      this.patch({ execution: { status: 'executing', headline: 'Executing disburse($5,000,000)…', legs: [{ chain: 'base-sepolia', label: `Base Sepolia · ${AGENT_ACCT}`, status: 'executing' }] } });
+      this.patch({ execution: { status: 'executing', headline: 'Executing subscribe($5,000,000)…', legs: [{ chain: 'base-sepolia', label: `Base Sepolia · ${AGENT_ACCT}`, status: 'executing' }] } });
       await this.beat(900);
-      const out = await execWithdraw('base-sepolia', 5000000n, 'PayrollVault');
+      const out = await execWithdraw('base-sepolia', 5000000n, 'XAUV desk');
       this.patch({
         execution: {
           status: 'done',
-          headline: 'disburse($5,000,000) executed',
+          headline: 'subscribe($5,000,000) executed',
           detail: 'Ran only after a human key joined the quorum — bound to the exact call, committed event confirmed.',
           verified: true,
-          verifiedDetail: 'committed event Disbursed($5,000,000) matched (proof-of-effect)',
+          verifiedDetail: 'committed event Subscribed($5,000,000) matched (proof-of-effect)',
           explorerUrl: out.explorerUrl,
           legs: [{ chain: 'base-sepolia', label: `Base Sepolia · ${AGENT_ACCT}`, status: 'done', txHash: out.txHash, explorerUrl: out.explorerUrl }],
         },
@@ -362,22 +363,22 @@ export class AiGuardrailsScenario extends BaseScenario {
     this.enrichCallProof(
       'A validator-proven proof that this exact call was authorized by the agent AND a human — the account executed nothing else.',
       [
-        'Exact call bound: disburse($5,000,000) on PayrollVault',
+        'Exact call bound: subscribe($5,000,000) on XAUV Distribution',
         'Authority set: agent key + human co-signer',
         '7 of 7 validators attested (BFT 2/3 + BLS)',
-        'Committed event Disbursed fired — proof-of-effect',
+        'Committed event Subscribed fired — proof-of-effect',
       ],
     );
 
     this.patch({
       explainer: {
-        pain: 'Without CERTEN, the agent would have disbursed the $5M on its own key alone.',
+        pain: 'Without CERTEN, the agent would have moved the $5M on its own key alone.',
         certenMove: 'A human key joined the quorum; CERTEN proved the exact call and the account executed only then.',
         buyerTakeaway: 'High-value autonomy stays under human authority — bound to the exact, proven call.',
         integrationHint: 'The human’s key can come from your KMS/KeyVault via the API.',
       },
     });
-    this.appendAgent({ kind: 'result', text: 'Human co-signed. disburse executed against the proof — Disbursed confirmed.' });
+    this.appendAgent({ kind: 'result', text: 'Human co-signed. subscribe executed against the proof — Subscribed confirmed.' });
     this.patch({ controls: [ctl('act:3', 'Now a manipulated agent tries upgradeTo(attacker)', 'danger', { emphasis: true }), ctl('reset', 'Reset', 'reset')] });
   }
 }

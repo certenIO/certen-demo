@@ -20,6 +20,7 @@ import { EvidenceRail } from './rails/EvidenceRail';
 import { ExecutionRail } from './rails/ExecutionRail';
 import { AgentConsole } from './AgentConsole';
 import { DataPanel } from './DataPanel';
+import { SupplyBar } from './SupplyBar';
 import { TreasuryBar } from './TreasuryBar';
 import { ControlDeck } from './ControlDeck';
 import { ExplainerStrip } from './ExplainerStrip';
@@ -90,6 +91,9 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
   const [recap, setRecap] = useState(() => lsGet('certen.recap', true));
   const [recapOpen, setRecapOpen] = useState(false);
   const shownRecapKey = useRef('');
+  // Film mode: strip every teaching/selling surface so the presenter narrates over a clean
+  // instrument. Nothing is deleted — the sales layout is one toggle away.
+  const [film, setFilm] = useState(() => lsGet('certen.film', false));
 
   // ── reveal cursor: how many of the 5 rails are currently shown ──
   const [revealed, setRevealed] = useState(0);
@@ -105,6 +109,18 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
   useEffect(() => lsSet('certen.cues', cues), [cues]);
   useEffect(() => lsSet('certen.step', stepMode), [stepMode]);
   useEffect(() => lsSet('certen.recap', recap), [recap]);
+  useEffect(() => lsSet('certen.film', film), [film]);
+
+  // "F" toggles film mode — reachable mid-take without opening the settings popover.
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el && /^(INPUT|TEXTAREA)$/.test(el.tagName)) return;
+      if (e.key === 'f' || e.key === 'F') setFilm((v) => !v);
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, []);
   useEffect(() => { try { localStorage.setItem('certen.pace', pace); } catch { /* ignore */ } }, [pace]);
 
   // ── certainty recap: auto-surface on the terminal state (safe / refused) ──
@@ -122,7 +138,13 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
       ? `required approvals absent (0 of ${ap.threshold})`
       : `quorum not met — ${ap.collected} of ${ap.threshold} signatures`
     : 'authority not satisfied';
-  const recapOutcome = state?.dataPanel ? 'The data is untouched.' : state?.treasury ? 'The treasury is untouched.' : 'Nothing moved.';
+  const recapOutcome = state?.supply
+    ? 'Token supply is unchanged.'
+    : state?.dataPanel
+      ? 'The data is untouched.'
+      : state?.treasury
+        ? 'The treasury is untouched.'
+        : 'Nothing moved.';
 
   useEffect(() => {
     if (!recap || !terminal) { setRecapOpen(false); return; }
@@ -135,7 +157,7 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
   const ready: Record<number, boolean> = {
     1: !!state?.action,
     2: !!state?.policy,
-    3: !!state?.approvals,
+    3: !!(state?.approvals || state?.authorities),
     4: !!state?.evidence,
     5: !!(state?.execution && state.execution.status !== 'idle'),
   };
@@ -179,10 +201,19 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
 
   const railNode = (i: number) => {
     switch (i) {
-      case 1: return <ActionRail action={state?.action ?? null} impacted={state?.impactedSystems} />;
-      case 2: return <PolicyRail policy={state?.policy ?? null} />;
-      case 3: return <ApprovalsRail approvals={state?.approvals ?? null} coordination={state?.coordination} onApprove={onApprove} busy={!!state?.busy} />;
-      case 4: return <EvidenceRail evidence={state?.evidence} technical={technical} simulated={mode !== 'live'} onWhyDifferent={() => setSecurityOpen(true)} />;
+      case 1: return <ActionRail action={state?.action ?? null} impacted={film ? null : state?.impactedSystems} />;
+      case 2: return <PolicyRail policy={state?.policy ?? null} film={film} />;
+      case 3: return (
+        <ApprovalsRail
+          approvals={state?.approvals ?? null}
+          coordination={state?.coordination}
+          authorities={state?.authorities}
+          film={film}
+          onApprove={onApprove}
+          busy={!!state?.busy}
+        />
+      );
+      case 4: return <EvidenceRail evidence={state?.evidence} technical={technical} simulated={mode !== 'live'} film={film} onWhyDifferent={() => setSecurityOpen(true)} />;
       case 5: return <ExecutionRail execution={state?.execution ?? null} />;
       default: return null;
     }
@@ -206,30 +237,41 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
                 <Chip size="small" label={state.actLabel} sx={{ height: 20, bgcolor: alpha(CERTEN_COLORS.primary.main, 0.12), color: CERTEN_COLORS.primary.dark, fontSize: '0.66rem' }} />
               )}
             </Stack>
-            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 320 }}>
-              {meta.hook}
-            </Typography>
+            {/* Truncating the hook looks like a bug on camera — in film mode drop it entirely. */}
+            {!film && (
+              <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 320 }}>
+                {meta.hook}
+              </Typography>
+            )}
           </Box>
         </Stack>
 
         <Stack direction="row" alignItems="center" spacing={1} sx={{ flexWrap: { xs: 'wrap', lg: 'nowrap' }, justifyContent: { xs: 'flex-start', lg: 'flex-end' }, rowGap: 1 }}>
-          <ToggleButtonGroup size="small" exclusive value={builder ? 'builder' : 'story'} onChange={(_, v) => v && setBuilder(v === 'builder')} sx={{ display: { xs: 'none', md: 'flex' } }}>
-            <ToggleButton value="story" sx={{ py: 0.25, px: 1, fontSize: '0.66rem' }}>Story</ToggleButton>
-            <ToggleButton value="builder" sx={{ py: 0.25, px: 1, fontSize: '0.66rem' }}>Builder</ToggleButton>
-          </ToggleButtonGroup>
-          <ToggleButtonGroup size="small" exclusive value={technical ? 'tech' : 'exec'} onChange={(_, v) => v && setTechnical(v === 'tech')} sx={{ display: { xs: 'none', md: 'flex' } }}>
-            <ToggleButton value="exec" sx={{ py: 0.25, px: 1, fontSize: '0.66rem' }}>Exec</ToggleButton>
-            <ToggleButton value="tech" sx={{ py: 0.25, px: 1, fontSize: '0.66rem' }}>Technical</ToggleButton>
-          </ToggleButtonGroup>
-          <Tooltip title="Presenter settings — pace, step mode, cues">
+          {!film && (
+            <>
+              <ToggleButtonGroup size="small" exclusive value={builder ? 'builder' : 'story'} onChange={(_, v) => v && setBuilder(v === 'builder')} sx={{ display: { xs: 'none', md: 'flex' } }}>
+                <ToggleButton value="story" sx={{ py: 0.25, px: 1, fontSize: '0.66rem' }}>Story</ToggleButton>
+                <ToggleButton value="builder" sx={{ py: 0.25, px: 1, fontSize: '0.66rem' }}>Builder</ToggleButton>
+              </ToggleButtonGroup>
+              <ToggleButtonGroup size="small" exclusive value={technical ? 'tech' : 'exec'} onChange={(_, v) => v && setTechnical(v === 'tech')} sx={{ display: { xs: 'none', md: 'flex' } }}>
+                <ToggleButton value="exec" sx={{ py: 0.25, px: 1, fontSize: '0.66rem' }}>Exec</ToggleButton>
+                <ToggleButton value="tech" sx={{ py: 0.25, px: 1, fontSize: '0.66rem' }}>Technical</ToggleButton>
+              </ToggleButtonGroup>
+            </>
+          )}
+          <Tooltip title="Presenter settings — pace, step mode, film mode (F)">
             <IconButton size="small" onClick={(e) => setSettingsEl(e.currentTarget)} sx={{ border: '1px solid', borderColor: (stepMode || cues) ? alpha(CERTEN_COLORS.warning.main, 0.5) : 'divider', color: (stepMode || cues) ? CERTEN_COLORS.warning.main : 'text.secondary' }}>
               <TuneRoundedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Funds move only on a BFT-committed, BLS-verified proof — from an account with no private key. Click for the full security model.">
-            <span><SecurityThesisChip onClick={() => setSecurityOpen(true)} /></span>
-          </Tooltip>
-          <HealthChip mode={mode} />
+          {!film && (
+            <>
+              <Tooltip title="Funds move only on a BFT-committed, BLS-verified proof — from an account with no private key. Click for the full security model.">
+                <span><SecurityThesisChip onClick={() => setSecurityOpen(true)} /></span>
+              </Tooltip>
+              <HealthChip mode={mode} />
+            </>
+          )}
           <VerdictStamp verdict={state?.verdict ?? 'idle'} armed={revealed >= 3} />
         </Stack>
       </Stack>
@@ -243,6 +285,14 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <Box sx={{ p: 2, minWidth: 240 }}>
+          <FormControlLabel
+            control={<Switch size="small" checked={film} onChange={(e) => setFilm(e.target.checked)} />}
+            label={<Typography variant="body2" sx={{ fontWeight: 700 }}>Film mode — minimal screen (F)</Typography>}
+          />
+          <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1 }}>
+            Hides the explainer and contrast panels so you can narrate.
+          </Typography>
+          <Divider sx={{ my: 1 }} />
           <Typography variant="overline" sx={{ color: 'text.secondary' }}>Reveal pace</Typography>
           <ToggleButtonGroup size="small" exclusive fullWidth value={pace} onChange={(_, v) => v && setPace(v)} sx={{ mt: 0.5, mb: 1.5 }}>
             <ToggleButton value="cinematic" sx={{ py: 0.4, fontSize: '0.7rem' }}>Cinematic</ToggleButton>
@@ -265,10 +315,12 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
         </Box>
       </Popover>
 
-      {/* ── Why-this-matters strip ── */}
-      <Box sx={{ flexShrink: 0, mb: 0.5 }}>
-        <ExplainerStrip explainer={state?.explainer} />
-      </Box>
+      {/* ── Why-this-matters strip (sales layout only — film mode leaves this to the narrator) ── */}
+      {!film && (
+        <Box sx={{ flexShrink: 0, mb: 0.5 }}>
+          <ExplainerStrip explainer={state?.explainer} />
+        </Box>
+      )}
 
       {/* ── Banner ── */}
       <AnimatePresence>
@@ -280,8 +332,8 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
       </AnimatePresence>
 
       {/* ── Body: rails | right column ── */}
-      <Box sx={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.5fr 1fr' }, gap: 2, alignItems: 'stretch', alignContent: { xs: 'start', lg: 'stretch' } }}>
-        <Stack data-qa="rails" spacing={0.4} sx={{ minHeight: 0, overflowY: { xs: 'visible', lg: 'auto' }, pr: 0.5 }}>
+      <Box sx={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: { xs: '1fr', lg: film ? '1.85fr 1fr' : '1.5fr 1fr' }, gap: 2, alignItems: 'stretch', alignContent: { xs: 'start', lg: 'stretch' } }}>
+        <Stack data-qa="rails" spacing={film ? 0.6 : 0.4} sx={{ minHeight: 0, overflowY: { xs: 'visible', lg: 'auto' }, pr: 0.5 }}>
           {[1, 2, 3, 4, 5].map((i) => {
             const show = ready[i] && i <= revealed;
             if (!show) {
@@ -296,13 +348,26 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
           })}
         </Stack>
 
-        <Stack spacing={1.25} sx={{ minHeight: 0, overflowY: { xs: 'visible', lg: 'auto' }, pr: 0.5 }}>
-          {builder ? (
+        {/* In film mode this column often holds a single panel; centring it reads as composed
+            rather than as a page that failed to fill. */}
+        <Stack
+          spacing={1.25}
+          sx={{
+            minHeight: 0,
+            overflowY: { xs: 'visible', lg: 'auto' },
+            pr: 0.5,
+            justifyContent: { xs: 'flex-start', lg: film && !state?.agent ? 'center' : 'flex-start' },
+          }}
+        >
+          {builder && !film ? (
             <IntegrationPanel integration={state?.integration} />
           ) : (
             <>
-              <ContrastStrip contrast={state?.contrast} />
-              {state?.toolBoundary && <ToolBoundaryPanel boundary={state.toolBoundary} />}
+              {/* Supply vs. attested custody leads the column — it's the one panel that reads
+                  from across a room and needs no narration. */}
+              {state?.supply && <SupplyBar supply={state.supply} film={film} />}
+              {!film && <ContrastStrip contrast={state?.contrast} />}
+              {!film && state?.toolBoundary && <ToolBoundaryPanel boundary={state.toolBoundary} />}
               {state?.agent && <Box sx={{ flex: 1, minHeight: 180 }}><AgentConsole agent={state.agent} /></Box>}
               {state?.treasury && <TreasuryBar treasury={state.treasury} />}
               {state?.dataPanel && <DataPanel data={state.dataPanel} />}

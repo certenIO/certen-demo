@@ -4,6 +4,8 @@ import SwapHorizRoundedIcon from '@mui/icons-material/SwapHorizRounded';
 import DeleteForeverRoundedIcon from '@mui/icons-material/DeleteForeverRounded';
 import CompareArrowsRoundedIcon from '@mui/icons-material/CompareArrowsRounded';
 import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
+import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
+import LocalFireDepartmentRoundedIcon from '@mui/icons-material/LocalFireDepartmentRounded';
 import { Rail } from '../Rail';
 import { CERTEN_COLORS, MONO_FAMILY } from '../../theme';
 import type { ActionInfo } from '../../types';
@@ -13,6 +15,8 @@ const ICONS = {
   transfer: SwapHorizRoundedIcon,
   delete: DeleteForeverRoundedIcon,
   bridge: CompareArrowsRoundedIcon,
+  mint: AddCircleOutlineRoundedIcon,
+  burn: LocalFireDepartmentRoundedIcon,
 };
 
 export function ActionRail({

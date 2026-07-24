@@ -41,9 +41,23 @@ export interface ActionInfo {
   /** big money label, e.g. "$25,000,000" */
   amountLabel?: string;
   /** semantic icon key the cockpit maps to an icon */
-  icon?: 'upgrade' | 'transfer' | 'delete' | 'bridge';
+  icon?: 'upgrade' | 'transfer' | 'delete' | 'bridge' | 'mint' | 'burn';
   /** destructive actions render in red */
   destructive?: boolean;
+}
+
+/**
+ * One non-quorum policy predicate — the part of a policy that M-of-N cannot express, e.g.
+ * "tokens outstanding after this mint must not exceed attested custody". A single unsatisfied
+ * constraint means no proof can form, no matter how many keys signed.
+ */
+export interface PolicyConstraintResult {
+  id: string;
+  /** the rule sentence, e.g. "Mint must not exceed attested custody" */
+  describe: string;
+  satisfied: boolean;
+  /** the evaluated arithmetic, e.g. "$300,000,000 ≤ $312,400,000 attested" */
+  detail: string;
 }
 
 /** Rail ② — the policy the engine evaluated. */
@@ -57,6 +71,8 @@ export interface PolicyInfo {
   threshold: number;
   /** required approver labels */
   required: string[];
+  /** predicates beyond M-of-N, evaluated against the action context */
+  constraints?: PolicyConstraintResult[];
 }
 
 /** Rail ③ — collected approvals. */
@@ -231,6 +247,84 @@ export interface ToolBoundary {
   denied: string[];
 }
 
+// ── Multi-party authority (Demo: Regulated Asset Issuance) ────────────────────
+// Certen's differentiator over multisig is that the authority set spans SEPARATE
+// ORGANIZATIONS, each with its own identity (ADI) and its own internal key hierarchy.
+// No shared admin, no common root. One org being fully compromised satisfies exactly
+// one seat — and one seat can never produce a proof.
+
+export type OrgStatus = 'pending' | 'satisfied' | 'refused' | 'not-required' | 'compromised';
+
+/** One key inside an organization's own key page. */
+export interface AuthoritySigner {
+  label: string;
+  /** e.g. "YubiHSM 2 · Zurich" */
+  detail?: string;
+  signed: boolean;
+}
+
+/** One organization's seat in a cross-company authority set. */
+export interface AuthorityOrg {
+  /** machine id used by controls, e.g. "custodian" */
+  role: string;
+  /** legal entity, e.g. "Helvetia Vault AG" */
+  org: string;
+  /** its function in the deal, e.g. "Custodian" */
+  kind: string;
+  /** its own root identity, e.g. "acc://helvetia.custody" */
+  adi: string;
+  /** its own key book/page, e.g. "book/attestation · page 1" */
+  keyBook: string;
+  /** internal quorum: `threshold` of `total` of ITS OWN keys */
+  threshold: number;
+  total: number;
+  signers: AuthoritySigner[];
+  status: OrgStatus;
+  /** which action classes this org gates, e.g. "mint · burn" */
+  scope?: string;
+  /** one-line status reason, e.g. "mint exceeds attested custody" */
+  note?: string;
+  /** render an approve affordance for this org */
+  canApprove?: boolean;
+  /** this seat is satisfied by a policy engine, not a human clicking */
+  automated?: boolean;
+}
+
+/** Rail ③ in multi-party mode — organizations, each satisfying its own hierarchy. */
+export interface AuthorityGraphInfo {
+  /** e.g. "3 of 3 organizations · each satisfying its own internal quorum" */
+  headline: string;
+  orgs: AuthorityOrg[];
+  /** the cross-company line, e.g. "No shared admin key exists across these three companies." */
+  footnote?: string;
+}
+
+/** The RWA money-shot: token supply measured against signed, physical custody. */
+export interface SupplyPanelInfo {
+  /** e.g. "XAUV · tokenized vaulted gold" */
+  assetLabel: string;
+  /** custody ceiling in USD — the signed attestation */
+  attestedUsd: number;
+  attestedLabel: string;
+  /** already minted */
+  outstandingUsd: number;
+  outstandingLabel: string;
+  /** what this action would add (0 when nothing is proposed) */
+  proposedUsd: number;
+  proposedLabel: string;
+  /** the custodian's signed reserve attestation backing the ceiling */
+  attestation: {
+    custodian: string;
+    /** e.g. "1,614 bars · vault ZRH-3 · assay root 0x9f2c…" */
+    detail: string;
+    /** e.g. "signed 22 min ago" */
+    ageLabel: string;
+    fresh: boolean;
+  };
+  /** set when the proposal exceeds custody — the panel renders the breach */
+  breach?: string;
+}
+
 /** A button the cockpit should render in its control deck. The scenario owns these. */
 export interface Control {
   /** e.g. "start", "approve:foundation", "attack", "reset", "act:2" */
@@ -271,6 +365,10 @@ export interface ScenarioState {
   presenterCue?: PresenterCue | null;
   toolBoundary?: ToolBoundary | null;
   impactedSystems?: string[] | null;
+  /** when present, rail ③ renders the cross-company authority graph instead of flat tiles */
+  authorities?: AuthorityGraphInfo | null;
+  /** RWA supply vs. attested custody panel */
+  supply?: SupplyPanelInfo | null;
   controls: Control[];
   /** an async choreography step is running — cockpit disables controls */
   busy: boolean;

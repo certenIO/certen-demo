@@ -11,7 +11,7 @@ import { usd } from '../lib/util.js';
  */
 
 export interface ActionContext {
-  /** e.g. "contractUpgrade", "transfer", "deleteDatabase", "bridgeTransfer" */
+  /** e.g. "contractUpgrade", "transfer", "deleteDatabase", "bridgeTransfer", "assetMint" */
   actionType: string;
   /** USD value of the action, when applicable */
   amountUsd?: number;
@@ -19,6 +19,18 @@ export interface ActionContext {
   env?: string;
   /** the target principal (acc url / contract) */
   principal?: string;
+
+  // ── asset-issuance context (RWA) ───────────────────────────────────────────
+  /** USD value of tokens this action would mint */
+  mintUsd?: number;
+  /** USD value of tokens already outstanding */
+  outstandingUsd?: number;
+  /** USD value the custodian has signed an attestation for */
+  attestedReservesUsd?: number;
+  /** age of that attestation, in hours */
+  attestationAgeHours?: number;
+  /** whether the destination address is on the transfer agent's holder registry */
+  destinationRegistered?: boolean;
 }
 
 export interface NumericCondition {
@@ -26,6 +38,27 @@ export interface NumericCondition {
   gte?: number;
   lt?: number;
   lte?: number;
+}
+
+/**
+ * A predicate the authority set cannot express. M-of-N answers "did enough of the right people
+ * sign?"; a constraint answers "is this action arithmetically permitted at all?" — e.g. a mint
+ * bounded by signed custody. An unsatisfied constraint means no proof can form regardless of how
+ * many keys signed, which is precisely how a fat-fingered or attacker-issued mint dies.
+ */
+export interface PolicyConstraint {
+  id: string;
+  /** the rule as a sentence, rendered in rail ② */
+  describe: string;
+  /** returns whether the action satisfies it, plus the evaluated arithmetic */
+  check: (ctx: ActionContext) => { satisfied: boolean; detail: string };
+}
+
+export interface ConstraintResult {
+  id: string;
+  describe: string;
+  satisfied: boolean;
+  detail: string;
 }
 
 export interface PolicyRule {
@@ -40,6 +73,8 @@ export interface PolicyRule {
   require: {
     approvers: string[];
     threshold: number;
+    /** predicates evaluated on top of the quorum; any failure blocks */
+    constraints?: PolicyConstraint[];
   };
   /** template for the rail ② sentence; {approvers} {threshold} {count} are substituted */
   describe: string;
@@ -53,6 +88,10 @@ export interface PolicyDecision {
   humanReadable: string;
   /** what in the action triggered this rule (for rail ② sub-text) */
   trigger?: string;
+  /** evaluated predicates, in rule order */
+  constraints?: ConstraintResult[];
+  /** true when every constraint passed (vacuously true when there are none) */
+  constraintsSatisfied: boolean;
 }
 
 function numMatch(cond: NumericCondition | undefined, value: number | undefined): boolean {
@@ -95,13 +134,23 @@ export function evaluate(rules: PolicyRule[], ctx: ActionContext): PolicyDecisio
     if (rule.when.env !== undefined && rule.when.env !== ctx.env) continue;
     if (!numMatch(rule.when.amountUsd, ctx.amountUsd)) continue;
 
+    const constraints: ConstraintResult[] = (rule.require.constraints ?? []).map((c) => {
+      const r = c.check(ctx);
+      return { id: c.id, describe: c.describe, satisfied: r.satisfied, detail: r.detail };
+    });
+    const constraintsSatisfied = constraints.every((c) => c.satisfied);
+
     return {
-      verdict: rule.require.threshold > 0 ? 'blocked' : 'allowed',
+      // A failed constraint blocks even a zero-threshold (auto) rule: the action is not
+      // permitted at all, so no quorum could rescue it.
+      verdict: rule.require.threshold > 0 || !constraintsSatisfied ? 'blocked' : 'allowed',
       rule: rule.name,
       threshold: rule.require.threshold,
       required: rule.require.approvers,
       humanReadable: render(rule.describe, rule),
       trigger: describeTrigger(rule, ctx),
+      constraints: constraints.length ? constraints : undefined,
+      constraintsSatisfied,
     };
   }
 
@@ -113,5 +162,6 @@ export function evaluate(rules: PolicyRule[], ctx: ActionContext): PolicyDecisio
     required: ['Authorizer A', 'Authorizer B'],
     humanReadable: 'No matching policy → requires 2 of 2 authorizers (default deny)',
     trigger: `unclassified action: ${ctx.actionType}`,
+    constraintsSatisfied: true,
   };
 }

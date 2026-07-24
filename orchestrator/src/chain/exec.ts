@@ -79,6 +79,16 @@ export async function execWithdraw(chain: evm.ChainKey, amount: bigint, label = 
   };
 }
 
+/**
+ * RWA — mint tokenized asset supply against attested custody (delta-verified).
+ *
+ * On the demo contract this is the same supply-increasing call as a deposit; what makes it a
+ * regulated issuance is the proof it must present, not the opcode it runs.
+ */
+export async function execAssetMint(chain: evm.ChainKey, amount: bigint, label = 'supply'): Promise<ExecOutcome> {
+  return execDeposit(chain, amount, label);
+}
+
 /** Demo 3 — credit the destination chain (delta-verified). */
 export async function execDeposit(chain: evm.ChainKey, amount: bigint, label = 'balance'): Promise<ExecOutcome> {
   if (!isLive()) return synth(chain, `${label} +${amount.toLocaleString('en-US')}`);

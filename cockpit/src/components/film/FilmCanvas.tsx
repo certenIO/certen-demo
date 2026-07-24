@@ -378,7 +378,7 @@ function ProofNode({ state }: { state: ScenarioState }) {
                 </motion.div>
               ))}
               <Typography sx={{ fontSize: '0.78rem', color: 'text.secondary', ml: 0.6 }}>
-                checked independently by {got}
+                {got} of {total} checked independently{ev?.requiredAttestations ? ` · ${ev.requiredAttestations} required` : ''}
               </Typography>
             </Stack>
           )}
@@ -484,6 +484,13 @@ export function FilmCanvas({
           <Typography sx={{ fontSize: '0.92rem', fontWeight: 700, color: 'text.secondary', textAlign: 'center' }}>
             This account has no key. A proof is the only way in.
           </Typography>
+          {/* Naming the account turns the claim into something checkable: it is ADI-derived
+              (owner = keccak256(adiURL)[-20:]) and no private key for it exists anywhere. */}
+          {state.execution?.accountAddress && (
+            <Typography sx={{ fontFamily: MONO_FAMILY, fontSize: '0.8rem', color: 'text.secondary', opacity: 0.8 }}>
+              {state.execution.accountAddress}
+            </Typography>
+          )}
         </Stack>
       </Stack>
     </Stack>

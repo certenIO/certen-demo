@@ -25,6 +25,35 @@ no competitor can make.
 **The spine is identity → policy → execution.** Not identity → authorization → governance —
 governance is one application of the engine, not the product.
 
+## Proof artifacts — what they are, and what you may say about them
+
+Small monospace lines sit under the proof and execution nodes. They exist to answer the unspoken
+question *"is this a real system or a mockup?"* — nobody needs to parse them.
+
+| On screen | What it is in the live system |
+|---|---|
+| `proof c87ab49f` | first 8 hex of the intent UUID, exactly how the V6.1 cycle abbreviates a run |
+| `commitment 0x6625b7…afaa` | the `executionCommitment` binding chainId · target · value · keccak256(calldata) — the reason the executed action *must* equal the approved one |
+| `7 of 7 checked independently · 5 required` | the live run reports `achieved 7 / total 7 / required 5 · met = true` |
+| `Base Sepolia · 0x81a0…aee6` | the execution transaction (TX3, `executeGovernanceProofDirect`) |
+| `refusal record … signed & permanent` | the artifact almost nobody else produces — evidence of what did **not** happen |
+| `0x9C4dA2f1…A81f` beside the no-key line | the ADI-derived abstract account. Owner is `keccak256(adiURL)[-20:]`; **no private key for it exists** |
+
+**You are filming in simulated mode, so every artifact carries a `SAMPLE` tag and no link.**
+The shapes, counts and vocabulary are faithful to the real Sepolia cycle, but these specific
+hashes are synthesized. Narrate accordingly:
+
+- ✅ *"Every action produces a proof and an on-chain transaction — that's the shape of a real run."*
+- ✅ *"Even the refusal is a signed, permanent record."*
+- ❌ *"Click that and you'll see it on Basescan."* — you can't, in this mode.
+
+To make them real, run the orchestrator with `DEMO_MODE=live` and a funded sponsor key; the
+`SAMPLE` tags disappear and the explorer links appear automatically.
+
+**Source of truth** for all of the above:
+`C:\Accumulate_Stuff\certen\onboarding_v6_1_proof_cycle.html` (the 9-phase V6.1 cycle) and
+`C:\Accumulate_Stuff\certen\agent_contract_call_proof_cycle.html` (the agent contract-call run).
+
 
 **Scenario id:** `rwa-issuance` · **Launcher position:** Demo 1 · **Acts:** 3
 **Filming mode:** press `F` for film mode, set pace to **Cinematic**, recap **off**.

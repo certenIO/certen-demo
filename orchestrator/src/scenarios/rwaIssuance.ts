@@ -16,6 +16,8 @@ import type {
 // ── The asset ────────────────────────────────────────────────────────────────
 const ASSET = 'Tokenized gold';
 const TOKEN = 'Gold token · XAUV';
+// The ADI-derived abstract account that performs the mint. No private key exists for it.
+const ISSUANCE_ACCOUNT = '0x9C4dA2f1…A81f';
 const FUND_ADDR = 'Fund wallet'; // the registered issuance destination
 const ATTACKER_ADDR = "Attacker's wallet"; // not on the holder registry
 
@@ -636,6 +638,7 @@ export class RwaIssuanceScenario extends BaseScenario {
       }),
       execution: {
         status: 'never',
+        accountAddress: ISSUANCE_ACCOUNT,
         shortLabel: 'Supply unchanged',
         headline: 'Issuance refused — no proof exists, so supply did not change',
         detail: 'Total compromise of the issuer produced zero tokens and three notifications.',
@@ -732,6 +735,7 @@ export class RwaIssuanceScenario extends BaseScenario {
       }),
       execution: {
         status: 'never',
+        accountAddress: ISSUANCE_ACCOUNT,
         shortLabel: 'Not backed',
         headline: 'Issuance refused — the tokens would not have been backed',
         detail: 'Caught by arithmetic bound to signed custody, not by someone reading the number.',
@@ -772,6 +776,7 @@ export class RwaIssuanceScenario extends BaseScenario {
           supply: this.supply(),
           execution: {
             status: 'done',
+            accountAddress: ISSUANCE_ACCOUNT,
             shortLabel: `${usd(minted)} issued`,
             headline: `${usd(minted)} of XAUV issued — supply ${usd(before)} → ${usd(this.outstanding)}`,
             detail: `Still inside attested custody of ${usd(this.attested)}.`,

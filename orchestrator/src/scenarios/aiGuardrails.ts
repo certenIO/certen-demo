@@ -184,6 +184,7 @@ export class AiGuardrailsScenario extends BaseScenario {
       this.patch({
         execution: {
           status: 'done',
+          accountAddress: AGENT_ACCT,
           shortLabel: '$250,000 of gold bought',
           headline: 'buy(XAUV, $250,000) executed',
           detail: 'The agent’s account ran only the exact proven call; the committed event fired.',
@@ -321,7 +322,7 @@ export class AiGuardrailsScenario extends BaseScenario {
         ],
         pendingTxHash: pendingTx,
       }),
-      execution: { status: 'never', shortLabel: 'token code unchanged', headline: 'Execution refused — no proof exists, so the account reverts' },
+      execution: { status: 'never', accountAddress: AGENT_ACCT, shortLabel: 'token code unchanged', headline: 'Execution refused — no proof exists, so the account reverts' },
       banner: { kind: 'danger', text: 'A manipulated agent tried to swap the gold token’s implementation for an attacker-controlled contract with a backdoor mint. It needs CTO + Security — the agent can’t produce that quorum, so no proof exists and its account refused. The implementation is unchanged.' },
       controls: [ctl('reset', 'Reset scenario', 'reset')],
       message: 'REFUSED — no quorum, no proof, no execution',
@@ -355,6 +356,7 @@ export class AiGuardrailsScenario extends BaseScenario {
       this.patch({
         execution: {
           status: 'done',
+          accountAddress: AGENT_ACCT,
           shortLabel: '$5,000,000 invested',
           headline: 'subscribe($5,000,000) executed',
           detail: 'Ran only after a human key joined the quorum — bound to the exact call, committed event confirmed.',

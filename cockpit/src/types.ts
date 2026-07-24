@@ -75,6 +75,7 @@ export interface ExecutionLeg {
 
 export interface ExecutionInfo {
   shortLabel?: string;
+  accountAddress?: string;
   status: 'idle' | 'pending' | 'executing' | 'done' | 'failed' | 'never';
   headline: string;
   detail?: string;
@@ -160,6 +161,7 @@ export interface EvidenceInfo {
   merkleRoot?: string;
   attestations?: number;
   validators?: number;
+  requiredAttestations?: number;
 }
 
 export interface ContrastInfo {

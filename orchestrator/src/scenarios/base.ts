@@ -162,7 +162,7 @@ export abstract class BaseScenario {
         proofLevel: level,
         proofLevelMeaning: G_MEANING[level],
         auditFacts: [
-          `${proof.attestations} of ${proof.validators} validators attested (≥ 2/3 quorum)`,
+          `${proof.attestations} of ${proof.validators} validators attested (${proof.requiredAttestations} required)`,
           'Proof bundle is independently verifiable offline',
         ],
         explorerUrl: proof.explorerUrl,
@@ -172,6 +172,7 @@ export abstract class BaseScenario {
         merkleRoot: proof.merkleRoot,
         attestations: proof.attestations,
         validators: proof.validators,
+        requiredAttestations: proof.requiredAttestations,
       },
       message: 'Certen proof generated',
     });

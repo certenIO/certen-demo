@@ -54,8 +54,11 @@ export function ProofArtifact({ state, simulated }: { state: ScenarioState; simu
   if (ev.kind === 'execution-proof') {
     return (
       <Line>
+        {/* The live cycle identifies a run by its intent UUID and abbreviates it to the first
+            8 hex; the binding is the executionCommitment (chainId · target · value · calldata),
+            which is literally why "the action that ran is the action they approved" holds. */}
         <span>proof {short(ev.proofId, 8, 0)}</span>
-        {ev.merkleRoot && <span>· root {short(ev.merkleRoot)}</span>}
+        {ev.merkleRoot && <span>· commitment {short(ev.merkleRoot)}</span>}
         {simulated && <SampleTag />}
       </Line>
     );

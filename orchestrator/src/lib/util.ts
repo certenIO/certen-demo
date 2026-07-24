@@ -56,7 +56,10 @@ export function explorerTx(
 export function synthProof(opts: { governanceLevel?: string; validators?: number; txHash?: string } = {}): ProofInfo {
   const id = uuid();
   const validators = opts.validators ?? 7;
-  const attestations = Math.max(Math.ceil((validators * 2) / 3) + 1, validators - 1); // >2/3 quorum
+  // The live V6.1 cycle reports `achieved 7 / total 7 / required 5 · met = true`, so a healthy
+  // run is FULL attestation against a 2/3 floor — not a bare pass.
+  const requiredAttestations = Math.ceil((validators * 2) / 3);
+  const attestations = validators;
   const txHash = opts.txHash ?? hash32();
   return {
     id,
@@ -65,6 +68,7 @@ export function synthProof(opts: { governanceLevel?: string; validators?: number
     governanceLevel: opts.governanceLevel ?? 'G1',
     attestations: Math.min(attestations, validators),
     validators,
+    requiredAttestations,
     bundleUrl: `${config.proofsUrl}/api/v1/proofs/${id}/bundle`,
     explorerUrl: `${config.proofsUrl.replace(/:\d+$/, ':3000')}/proof/${id}`,
     generatedAt: new Date().toISOString(),

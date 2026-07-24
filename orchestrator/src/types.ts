@@ -99,6 +99,8 @@ export interface ProofInfo {
   attestations: number;
   /** total validators in the set */
   validators: number;
+  /** ≥2/3 threshold the real cycle reports as `required` (7 validators → 5) */
+  requiredAttestations?: number;
   /** proof bundle download url (proofs_service) */
   bundleUrl?: string;
   /** deep link into the proof explorer */
@@ -118,6 +120,12 @@ export interface ExecutionLeg {
 export interface ExecutionInfo {
   /** ≤4 words for the film diagram's terminal node, e.g. "$50M issued" */
   shortLabel?: string;
+  /**
+   * The ADI-derived abstract account that executes. Owner is keccak256(adiURL)[-20:] and there
+   * is NO private key for it — it is controlled solely by the key book via validated proofs.
+   * Shown beside the no-key claim so the claim carries an artifact instead of just a sentence.
+   */
+  accountAddress?: string;
   /** "never" = this action can never execute by design (Demo 2 delete-db) */
   status: 'idle' | 'pending' | 'executing' | 'done' | 'failed' | 'never';
   /** headline result, e.g. "protocol version  6.0 → 6.1" */
@@ -218,6 +226,7 @@ export interface EvidenceInfo {
   merkleRoot?: string;
   attestations?: number;
   validators?: number;
+  requiredAttestations?: number;
 }
 
 /** Before/after contrast beat (Runbook 5). */

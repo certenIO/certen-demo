@@ -114,7 +114,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
       actLabel: 'Act 1 of 3 · legitimate transfer',
       verdict: 'blocked',
       action: {
-        verb: 'Bridge transfer', summary: 'Base → Arbitrum   ·   DAO Treasury', amountLabel: '$25,000,000',
+        verb: 'Move funds', summary: 'Base → Arbitrum   ·   DAO Treasury', amountLabel: '$25,000,000', target: 'Arbitrum', note: 'DAO treasury',
         initiator: 'DAO Treasury proposal', icon: 'bridge',
       },
       policy: {
@@ -224,6 +224,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
       this.patch({
         execution: {
           status: 'done',
+          shortLabel: '$25,000,000 moved',
           headline: '$25,000,000 moved Base → Arbitrum',
           detail: 'Both legs executed, bound to one CERTEN proof.',
           verified: src.verified && dst.verified,
@@ -267,7 +268,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
       actLabel: 'Act 2 of 3 · stolen-key attack',
       verdict: 'blocked',
       action: {
-        verb: 'Bridge transfer', summary: 'Base → attacker wallet', amountLabel: '$25,000,000',
+        verb: 'Move funds', summary: 'Base → attacker wallet', amountLabel: '$25,000,000', target: "Attacker's wallet",
         initiator: 'Treasurer (key compromised)', icon: 'bridge', destructive: true,
       },
       policy: {
@@ -303,7 +304,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
         answer: 'The quorum lives on Accumulate, pending coordination is automated, and the proof can authorize or refuse execution across external chains.',
       },
       proof: null,
-      execution: { status: 'never', headline: 'Valid signature recorded. Quorum failed. No bridge legs created.' },
+      execution: { status: 'never', shortLabel: 'nothing moved', headline: 'Valid signature recorded, but the other authorities never signed. No funds moved.' },
       treasury: treasuryInitial(),
       banner: { kind: 'danger', text: 'Attacker holds the treasurer’s real key. Still only 1 of 3. CERTEN blocks it — the treasury is untouched.' },
       controls: [
@@ -326,9 +327,13 @@ export class TreasuryProtectionScenario extends BaseScenario {
       actLabel: 'Act 3 of 3 · key rotation (advanced)',
       verdict: 'blocked',
       action: {
-        verb: 'Rotate authority keys',
+        verb: 'Replace the stolen key',
         summary: 'Accumulate key page · revoke compromised key, add a fresh key',
-        principal: KEY_PAGE,
+        principal: 'DAO treasury keys',
+        // The headline slot needs a figure. This action moves no money, so it states the effect.
+        amountLabel: 'Lock the thief out',
+        note: 'every account, every chain, one action',
+        target: 'New key',
         initiator: 'Foundation + Security Council',
         icon: 'upgrade',
       },
@@ -409,7 +414,8 @@ export class TreasuryProtectionScenario extends BaseScenario {
       this.patch({
         execution: {
           status: 'done',
-          headline: 'Compromised key revoked on Accumulate — authority set healed',
+          shortLabel: 'stolen key revoked',
+          headline: 'Compromised key revoked — the authority set is healed',
           detail:
             'One key-page update on Accumulate. Every external account it controls (Base, Arbitrum, …) ' +
             'is now governed by the new key set — with no per-chain transaction.',

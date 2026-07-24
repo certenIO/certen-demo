@@ -30,6 +30,7 @@ import { PresenterCuePanel } from './PresenterCuePanel';
 import { ToolBoundaryPanel } from './ToolBoundaryPanel';
 import { FilmCanvas } from './film/FilmCanvas';
 import { PolicyChecks } from './film/PolicyChecks';
+import { ImpactPanel } from './film/ImpactPanel';
 import { SecurityDrawer, SecurityThesisChip } from './SecurityDrawer';
 import { CertaintyRecap } from './CertaintyRecap';
 import { HealthChip } from './HealthChip';
@@ -198,6 +199,18 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
     return () => window.removeEventListener('keydown', h);
   }, [stepMode, readyCount]);
 
+  // In diagram view the side column is optional. Work out whether ANYTHING will land in it, so a
+  // scenario with no supply chart, agent transcript or treasury bar doesn't render a third of the
+  // frame as blank white.
+  const sideHasContent = !!(
+    state?.supply ||
+    state?.agent ||
+    state?.treasury ||
+    state?.dataPanel ||
+    state?.policy?.constraints?.length ||
+    state?.impactedSystems?.length
+  );
+
   const onControl = (id: string) => sendControl(meta.id, id, pace);
   const onApprove = (role: string) => sendControl(meta.id, `approve:${role}`, pace);
   const deckControls = (state?.controls ?? []).filter((c) => !c.id.startsWith('approve:'));
@@ -348,7 +361,7 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
       </AnimatePresence>
 
       {/* ── Body: rails | right column ── */}
-      <Box sx={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: { xs: '1fr', lg: film ? '1.85fr 1fr' : '1.5fr 1fr' }, gap: 2, alignItems: 'stretch', alignContent: { xs: 'start', lg: 'stretch' } }}>
+      <Box sx={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: { xs: '1fr', lg: film ? (sideHasContent ? '1.85fr 1fr' : '1fr') : '1.5fr 1fr' }, gap: 2, alignItems: 'stretch', alignContent: { xs: 'start', lg: 'stretch' } }}>
         {/* Film mode renders the SAME state as one diagram; the numbered rails are the
             read-at-your-own-pace form for buyers, not the on-camera form. */}
         {film ? (
@@ -395,9 +408,12 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
                   from across a room and needs no narration. */}
               {state?.supply && <SupplyBar supply={state.supply} film={film} />}
               {film && <PolicyChecks policy={state?.policy} />}
+              {film && !state?.supply && !state?.agent && !state?.treasury && !!state?.impactedSystems?.length && (
+                <ImpactPanel systems={state.impactedSystems} refused={state?.execution?.status === 'never'} />
+              )}
               {!film && <ContrastStrip contrast={state?.contrast} />}
               {!film && state?.toolBoundary && <ToolBoundaryPanel boundary={state.toolBoundary} />}
-              {state?.agent && <Box sx={{ flex: 1, minHeight: 180 }}><AgentConsole agent={state.agent} /></Box>}
+              {state?.agent && <Box sx={{ flex: 1, minHeight: 180 }}><AgentConsole agent={state.agent} film={film} /></Box>}
               {state?.treasury && <TreasuryBar treasury={state.treasury} />}
               {state?.dataPanel && <DataPanel data={state.dataPanel} />}
             </>

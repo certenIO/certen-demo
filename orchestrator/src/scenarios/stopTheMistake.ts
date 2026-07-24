@@ -9,7 +9,7 @@ import type {
   ScenarioState,
 } from '../types.js';
 
-const PRINCIPAL = 'acc://acme.acme/protocol';
+const PRINCIPAL = 'ACME protocol';
 
 const CONTRAST: ContrastInfo = {
   without: 'Pipeline pushes the upgrade; one missed approval can break production.',
@@ -97,8 +97,11 @@ export class StopTheMistakeScenario extends BaseScenario {
         verb: 'Upgrade contract',
         summary: 'ACME protocol   v6.0 → v6.1',
         principal: PRINCIPAL,
-        initiator: 'CI/CD pipeline',
-        amountLabel: '$10M production system',
+        initiator: 'Release pipeline',
+        // The version change is the headline figure here — it is what actually changes.
+        amountLabel: 'v6.0 → v6.1',
+        note: '$10M production system',
+        target: 'Production',
         icon: 'upgrade',
       },
       policy: {
@@ -192,6 +195,7 @@ export class StopTheMistakeScenario extends BaseScenario {
       this.patch({
         execution: {
           status: 'done',
+          shortLabel: 'now running v6.1',
           headline: 'protocol version   6.0 → 6.1',
           detail: 'Upgrade executed only after the full quorum signed.',
           verified: out.verified,

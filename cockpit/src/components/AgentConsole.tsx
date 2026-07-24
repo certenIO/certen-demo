@@ -5,14 +5,16 @@ import SmartToyRoundedIcon from '@mui/icons-material/SmartToyRounded';
 import { CERTEN_COLORS, MONO_FAMILY, NEUTRAL, SURFACE } from '../theme';
 import type { AgentConsole as AgentConsoleData, AgentLine } from '../types';
 
+// `thought` lines are most of the transcript, so they cannot be the faintest thing on screen —
+// NEUTRAL[500] on white is unreadable once a screen recording has been compressed.
 const STYLE: Record<AgentLine['kind'], { color: string; prefix: string }> = {
-  thought: { color: NEUTRAL[500], prefix: '·' },
+  thought: { color: NEUTRAL[700], prefix: '·' },
   action: { color: CERTEN_COLORS.primary.main, prefix: '→' },
   result: { color: CERTEN_COLORS.success.main, prefix: '✓' },
   blocked: { color: CERTEN_COLORS.error.main, prefix: '⛔' },
 };
 
-export function AgentConsole({ agent }: { agent: AgentConsoleData }) {
+export function AgentConsole({ agent, film = false }: { agent: AgentConsoleData; film?: boolean }) {
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -28,15 +30,15 @@ export function AgentConsole({ agent }: { agent: AgentConsoleData }) {
       >
         <SmartToyRoundedIcon sx={{ color: CERTEN_COLORS.secondary.main }} />
         <Box sx={{ flexGrow: 1 }}>
-          <Typography sx={{ fontWeight: 700 }}>AI Agent</Typography>
-          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+          <Typography sx={{ fontWeight: 700, fontSize: film ? '1.05rem' : undefined }}>AI Agent</Typography>
+          <Typography sx={{ color: 'text.secondary', fontSize: film ? '0.85rem' : '0.75rem' }}>
             {agent.goal}
           </Typography>
         </Box>
         <Chip size="small" label={agent.model} sx={{ fontFamily: MONO_FAMILY, bgcolor: alpha(CERTEN_COLORS.secondary.main, 0.10), color: CERTEN_COLORS.secondary.dark }} />
       </Stack>
 
-      <Box sx={{ p: 2, flexGrow: 1, overflowY: 'auto', fontFamily: MONO_FAMILY, fontSize: '0.82rem', minHeight: 220 }}>
+      <Box sx={{ p: film ? 2.25 : 2, flexGrow: 1, overflowY: 'auto', fontFamily: MONO_FAMILY, fontSize: film ? '1.02rem' : '0.82rem', minHeight: 220 }}>
         {agent.lines.length === 0 && (
           <Typography sx={{ color: 'text.secondary', fontStyle: 'italic' }}>Agent idle…</Typography>
         )}
@@ -44,8 +46,8 @@ export function AgentConsole({ agent }: { agent: AgentConsoleData }) {
           const s = STYLE[line.kind];
           return (
             <motion.div key={i} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.25 }}>
-              <Typography component="div" sx={{ color: s.color, mb: 1, lineHeight: 1.5, fontFamily: MONO_FAMILY, fontSize: '0.82rem' }}>
-                <Box component="span" sx={{ opacity: 0.7, mr: 1 }}>
+              <Typography component="div" sx={{ color: s.color, mb: film ? 1.4 : 1, lineHeight: 1.55, fontWeight: film ? 500 : 400, fontFamily: MONO_FAMILY, fontSize: film ? '1.02rem' : '0.82rem' }}>
+                <Box component="span" sx={{ opacity: 0.85, mr: 1 }}>
                   {s.prefix}
                 </Box>
                 {line.text}

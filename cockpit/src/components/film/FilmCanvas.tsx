@@ -237,9 +237,11 @@ function AuthorityNode({ node, busy, onApprove }: { node: AuthNode; busy: boolea
               )}
             </motion.div>
           ))}
-          <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary', ml: 0.6 }}>
-            {node.keys.filter((k) => k.signed).length} of {node.keys.length} approvers
-          </Typography>
+          {node.keys.length > 1 && (
+            <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary', ml: 0.6 }}>
+              {node.keys.filter((k) => k.signed).length} of {node.keys.length} approvers
+            </Typography>
+          )}
         </Stack>
 
         <Typography sx={{ fontSize: '0.76rem', fontWeight: 800, letterSpacing: '0.08em', color, opacity: node.status === 'pending' ? 0.6 : 1 }}>

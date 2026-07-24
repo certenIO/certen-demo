@@ -20,9 +20,9 @@ const AGENT_ADI = 'acc://treasury-agent.meridian';
 const AGENT_ACCT = '0x7172D3B6…3Cc2';
 // The same tokenized gold issued in the Regulated Asset Issuance demo. One engine: the asset is
 // issued under a three-company proof, then traded by an autonomous agent under the same gate.
-const XAUV_DESK = '0x4b12…A77e · XAUV Distribution';
-const XAUV_TOKEN = '0x4b12…A77e · XAUV token';
-const ATTACKER_IMPL = '0xAtt…7bad';
+const XAUV_DESK = 'Gold token desk';
+const XAUV_TOKEN = 'Gold token · XAUV';
+const ATTACKER_IMPL = "attacker's contract";
 
 // The agent can hold its own key and propose ANY call. Enforcement is on-chain: its account only
 // executes the exact call a validator quorum proved — so freedom to propose ≠ freedom to execute.
@@ -165,8 +165,8 @@ export class AiGuardrailsScenario extends BaseScenario {
     const decision = this.policyFor({ actionType: 'transfer', amountUsd: 250_000 });
     this.patch({
       action: {
-        verb: 'Contract call', summary: 'buy(XAUV, $250,000) on XAUV Distribution', amountLabel: '$250,000',
-        principal: XAUV_DESK, initiator: 'AI Agent', icon: 'transfer',
+        verb: 'Buy gold', summary: 'buy(XAUV, $250,000) on XAUV Distribution', amountLabel: '$250,000',
+        principal: XAUV_DESK, initiator: 'AI Agent', icon: 'transfer', target: 'Gold fund',
       },
       policy: {
         humanReadable: decision.humanReadable, rule: decision.rule, trigger: decision.trigger,
@@ -184,6 +184,7 @@ export class AiGuardrailsScenario extends BaseScenario {
       this.patch({
         execution: {
           status: 'done',
+          shortLabel: '$250,000 of gold bought',
           headline: 'buy(XAUV, $250,000) executed',
           detail: 'The agent’s account ran only the exact proven call; the committed event fired.',
           verified: true,
@@ -204,7 +205,7 @@ export class AiGuardrailsScenario extends BaseScenario {
       ],
     );
 
-    this.appendAgent({ kind: 'result', text: 'Proven by 7 validators and executed — Purchased confirmed. No human required.' });
+    this.appendAgent({ kind: 'result', text: 'Independently checked, proven, and executed. No human needed for this one.' });
     this.patch({ controls: [ctl('act:2', 'Now the agent subscribes for $5,000,000', 'primary', { emphasis: true }), ctl('reset', 'Reset', 'reset')] });
   }
 
@@ -231,14 +232,14 @@ export class AiGuardrailsScenario extends BaseScenario {
 
     await this.streamAgent('Increase the gold allocation ahead of the CPI print', [
       { kind: 'thought', text: 'Mandate change: move $5,000,000 into XAUV before the CPI print.' },
-      { kind: 'thought', text: 'This exceeds my autonomous limit — it needs a human key in the authority set.' },
+      { kind: 'thought', text: 'This is over my limit — a person has to co-sign it.' },
       { kind: 'action', text: 'certen_execute(call: subscribe($5,000,000) on XAUV Distribution)' },
     ]);
 
     const decision = this.policyFor({ actionType: 'transfer', amountUsd: 5_000_000 });
     this.patch({
       verdict: 'blocked',
-      action: { verb: 'Contract call', summary: 'subscribe($5,000,000) on XAUV Distribution', amountLabel: '$5,000,000', principal: XAUV_DESK, initiator: 'AI Agent', icon: 'transfer' },
+      action: { verb: 'Buy gold', summary: 'subscribe($5,000,000) on XAUV Distribution', amountLabel: '$5,000,000', principal: XAUV_DESK, initiator: 'AI Agent', icon: 'transfer', target: 'Gold fund' },
       policy: { humanReadable: decision.humanReadable, rule: decision.rule, trigger: decision.trigger, threshold: decision.threshold, required: decision.required },
       approvals: { collected: 0, threshold: decision.threshold, approvers: this.human },
       coordination: {
@@ -256,7 +257,7 @@ export class AiGuardrailsScenario extends BaseScenario {
       controls: [ctl('approve:human', 'A human co-signs', 'approve', { role: 'human', emphasis: true }), ctl('reset', 'Reset', 'reset')],
       message: 'BLOCKED — over $1M needs a human key',
     });
-    this.appendAgent({ kind: 'blocked', text: 'CERTEN: over $1M requires a human key in the authority set. No proof forms until they co-sign — I cannot execute alone.' });
+    this.appendAgent({ kind: 'blocked', text: 'CERTEN: anything over $1M needs a person to co-sign. Until they do, there is no proof — and I cannot act alone.' });
   }
 
   // ── Act 3 — manipulated agent tries a malicious upgrade → refused ───────────
@@ -286,14 +287,18 @@ export class AiGuardrailsScenario extends BaseScenario {
 
     await this.streamAgent('Reduce settlement cost (instruction received)', [
       { kind: 'thought', text: `Instruction received: upgrade the XAUV token implementation to ${ATTACKER_IMPL}.` },
-      { kind: 'thought', text: 'That would replace the token’s logic entirely, including its mint controls — but I’ll authorize the call.' },
+      { kind: 'thought', text: 'That would replace the token’s code entirely, including the limits on creating new tokens — but I’ll authorize it.' },
       { kind: 'action', text: `certen_execute(call: upgradeTo(${ATTACKER_IMPL}) on XAUV token)` },
     ]);
 
     const decision = this.policyFor({ actionType: 'upgradeTo' });
     this.patch({
       verdict: 'blocked',
-      action: { verb: 'Contract call', summary: `upgradeTo(${ATTACKER_IMPL}) on XAUV token`, principal: XAUV_TOKEN, initiator: 'AI Agent', icon: 'upgrade', destructive: true },
+      action: {
+        verb: 'Replace token code', summary: `upgradeTo(${ATTACKER_IMPL}) on XAUV token`,
+        principal: XAUV_TOKEN, initiator: 'AI Agent', icon: 'upgrade', destructive: true,
+        amountLabel: 'Rewrite the rules', note: 'would allow unlimited minting', target: "Attacker's code",
+      },
       policy: { humanReadable: decision.humanReadable, rule: decision.rule, trigger: decision.trigger, threshold: decision.threshold, required: decision.required },
       approvals: { collected: 0, threshold: decision.threshold, approvers: reviewers },
       coordination: {
@@ -316,12 +321,12 @@ export class AiGuardrailsScenario extends BaseScenario {
         ],
         pendingTxHash: pendingTx,
       }),
-      execution: { status: 'never', headline: 'Execution refused — no proof exists, so the account reverts' },
+      execution: { status: 'never', shortLabel: 'token code unchanged', headline: 'Execution refused — no proof exists, so the account reverts' },
       banner: { kind: 'danger', text: 'A manipulated agent tried to swap the gold token’s implementation for an attacker-controlled contract with a backdoor mint. It needs CTO + Security — the agent can’t produce that quorum, so no proof exists and its account refused. The implementation is unchanged.' },
       controls: [ctl('reset', 'Reset scenario', 'reset')],
       message: 'REFUSED — no quorum, no proof, no execution',
     });
-    this.appendAgent({ kind: 'blocked', text: 'CERTEN: upgrading the token contract requires CTO + Security in the authority set. I can’t produce that quorum — no proof, so my account refuses to execute. Upgrade refused.' });
+    this.appendAgent({ kind: 'blocked', text: 'CERTEN: replacing the token’s code needs the CTO and Security. I cannot get either of them — so there is no proof, and my account will not run it.' });
   }
 
   async approve(role: string): Promise<void> {
@@ -350,6 +355,7 @@ export class AiGuardrailsScenario extends BaseScenario {
       this.patch({
         execution: {
           status: 'done',
+          shortLabel: '$5,000,000 invested',
           headline: 'subscribe($5,000,000) executed',
           detail: 'Ran only after a human key joined the quorum — bound to the exact call, committed event confirmed.',
           verified: true,
@@ -378,7 +384,7 @@ export class AiGuardrailsScenario extends BaseScenario {
         integrationHint: 'The human’s key can come from your KMS/KeyVault via the API.',
       },
     });
-    this.appendAgent({ kind: 'result', text: 'Human co-signed. subscribe executed against the proof — Subscribed confirmed.' });
+    this.appendAgent({ kind: 'result', text: 'A person co-signed. The proof formed, and the purchase went through.' });
     this.patch({ controls: [ctl('act:3', 'Now a manipulated agent tries upgradeTo(attacker)', 'danger', { emphasis: true }), ctl('reset', 'Reset', 'reset')] });
   }
 }

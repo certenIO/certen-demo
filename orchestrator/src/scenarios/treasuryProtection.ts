@@ -71,7 +71,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
       title: this.meta.title,
       subtitle: 'DAO treasury · cross-chain quorum',
       act: 1,
-      totalActs: 3,
+      totalActs: 4,
       mode: 'simulated',
       verdict: 'idle',
       action: null,
@@ -82,9 +82,9 @@ export class TreasuryProtectionScenario extends BaseScenario {
       treasury: treasuryInitial(),
       brief: {
         situation: 'A DAO treasury holding $250,000,000, spread across two chains.',
-        attempt: 'Move $25M legitimately, then let a thief try the same move with a real stolen key.',
-        objective: 'A stolen key buys an attacker one signature — and the surviving authorities can revoke it everywhere at once.',
-        acts: ['A legitimate transfer', 'A stolen key attacks', 'The key is revoked'],
+        attempt: 'Move $25M legitimately. Then let a thief steal a key, phish a second one, and replay a real proof.',
+        objective: 'Stolen keys buy signatures, not outcomes — and the surviving authorities revoke them everywhere in one action.',
+        acts: ['A legitimate transfer', 'Two keys compromised', 'A real proof replayed', 'The keys are revoked'],
       },
       contrast: CONTRAST,
       integration: INTEGRATION,
@@ -117,7 +117,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
     const decision = this.policyFor({ actionType: 'bridgeTransfer', amountUsd: 25_000_000 });
     this.patch({
       act: 1,
-      actLabel: 'Act 1 of 3 · legitimate transfer',
+      actLabel: 'Act 1 of 4 · a legitimate transfer',
       verdict: 'blocked',
       action: {
         verb: 'Move funds', summary: 'Base → Arbitrum   ·   DAO Treasury', amountLabel: '$25,000,000', target: 'Arbitrum', note: 'DAO treasury',
@@ -168,11 +168,14 @@ export class TreasuryProtectionScenario extends BaseScenario {
   }
 
   async act(n: number): Promise<void> {
-    if (n === 3) return this.rotate();
+    if (n === 21) return this.actSecondKeyPhished();
+    if (n === 3) return this.actReplayAttempt();
+    if (n === 4) return this.rotate();
   }
 
   async approve(role: string): Promise<void> {
-    if (this.state.act === 3) return this.approveRotation(role);
+    // Rotation is act 4 now; routing on the act number is why this must move with it.
+    if (this.state.act === 4) return this.approveRotation(role);
     const a = this.approvers.find((x) => x.role === role);
     if (!a || a.approved) return;
     a.approved = true;
@@ -272,7 +275,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
 
     this.patch({
       act: 2,
-      actLabel: 'Act 2 of 3 · stolen-key attack',
+      actLabel: 'Act 2 of 4 · one key stolen',
       verdict: 'blocked',
       action: {
         verb: 'Move funds', summary: 'Base → attacker wallet', amountLabel: '$25,000,000', target: "Attacker's wallet",
@@ -313,16 +316,168 @@ export class TreasuryProtectionScenario extends BaseScenario {
       proof: null,
       execution: { status: 'never', accountAddress: '0x5E19c73B…7A0d', shortLabel: 'nothing moved', headline: 'Valid signature recorded, but the other authorities never signed. No funds moved.' },
       treasury: treasuryInitial(),
-      banner: { kind: 'danger', text: 'Attacker holds the treasurer’s real key. Still only 1 of 3. CERTEN blocks it — the treasury is untouched.' },
+      banner: { kind: 'danger', text: 'The attacker holds the treasurer’s real key and is signing valid requests with it.' },
       controls: [
-        ctl('act:3', 'Now revoke the stolen key', 'primary', { emphasis: true }),
-        ctl('reset', 'Reset scenario', 'reset'),
+        ctl('act:21', 'The attacker phishes a second authority', 'danger', { emphasis: true }),
+        ctl('reset', 'Reset', 'reset'),
       ],
-      message: 'BLOCKED — now revoke the stolen key',
+      message: 'BLOCKED — 1 of 3',
     });
   }
 
-  // ── Act 3 — the resolution: rotate the compromised key out, on Accumulate ────
+
+  // == Act 2, second beat - a second authority is phished =====================
+  // One stolen key is easy to dismiss as "well, it was only one". Two is the beat that lands:
+  // the attacker now holds a majority of the individuals and still cannot move a dollar, because
+  // the threshold is every authority, not most of them.
+  private async actSecondKeyPhished() {
+    const decision = this.policyFor({ actionType: 'bridgeTransfer', amountUsd: 25_000_000 });
+    const approvers = this.makeApprovers([
+      { role: 'treasurer', label: 'Treasurer', detail: 'DAO Treasurer', approved: true, compromised: true },
+      { role: 'foundation', label: 'Foundation', detail: 'Foundation board', approved: true, compromised: true },
+      { role: 'council', label: 'Security Council', detail: 'Security Council', approved: false },
+    ]).map((a) => ({ ...a, canApprove: false }));
+
+    this.patch({
+      act: 2,
+      actLabel: 'Act 2 of 4 · two keys compromised',
+      verdict: 'blocked',
+      proof: null,
+      approvals: { collected: 2, threshold: decision.threshold, approvers },
+      coordination: {
+        pendingTxHash: this.pendingTx,
+        notificationsSent: 1,
+        inboxItems: [
+          { role: 'treasurer', status: 'compromised', channel: 'operator', timestampLabel: 'stolen key' },
+          { role: 'foundation', status: 'compromised', channel: 'inbox', timestampLabel: 'phished' },
+          { role: 'council', status: 'missing' },
+        ],
+        coordinationSummary: 'Two of the three individuals are now the attacker. The Security Council is not, and the threshold is all three.',
+      },
+      evidence: blockedRecord({
+        title: 'Refusal Record',
+        plainMeaning:
+          'Two valid signatures from two compromised authorities. The policy requires all three, so the attacker holding a majority of the people still produces no proof.',
+        auditFacts: [
+          'Treasurer key stolen - signature valid',
+          'Foundation phished - signature valid',
+          'Quorum 2 of 3 - failed',
+          'Security Council never signed',
+          'Balances unchanged',
+        ],
+        pendingTxHash: this.pendingTx,
+      }),
+      execution: {
+        status: 'never',
+        accountAddress: '0x5E19c73B…7A0d',
+        shortLabel: 'nothing moved',
+        headline: 'Two compromised authorities, both signatures valid, and still no proof',
+      },
+      banner: {
+        kind: 'danger',
+        text: 'The attacker now controls two of the three authorities. Both signatures are genuine. The transfer still cannot execute.',
+      },
+      explainer: {
+        pain: 'Attackers rarely stop at one credential - they pivot from the first to the second.',
+        certenMove: 'The threshold is every authority. A majority of the people is not a proof.',
+        buyerTakeaway: 'Compromising most of your signers still buys an attacker nothing.',
+        integrationHint: 'Each authority signs from its own KMS - there is no shared credential to pivot into.',
+      },
+      presenterCue: {
+        say: 'They pivot. The Foundation gets phished, and now the attacker holds two of the three authorities, both signing genuine signatures. Two of three is not three of three, so nothing moves.',
+        waitFor: '2 of 3, REFUSED',
+        objection: 'So they just need one more?',
+        answer: 'They need the last one, from a different organisation on different hardware - and the attempt has already alerted it.',
+      },
+      controls: [ctl('act:3', 'Now the attacker replays a real proof', 'danger', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
+      message: 'REFUSED - 2 of 3',
+    });
+  }
+
+  // == Act 3 - replaying a genuine, already-used proof ========================
+  // The cleverest attack available: stop trying to forge authority and reuse authority that was
+  // genuinely granted. Act 1's proof really did authorise a $25M move. It is single-use, and the
+  // anchor was consumed on first execution.
+  private async actReplayAttempt() {
+    const decision = this.policyFor({ actionType: 'bridgeTransfer', amountUsd: 25_000_000 });
+    const approvers = this.makeApprovers([
+      { role: 'treasurer', label: 'Treasurer', detail: 'DAO Treasurer', approved: true, compromised: true },
+      { role: 'foundation', label: 'Foundation', detail: 'Foundation board', approved: true, compromised: true },
+      { role: 'council', label: 'Security Council', detail: 'Security Council', approved: true },
+    ]).map((a) => ({ ...a, canApprove: false }));
+
+    this.patch({
+      act: 3,
+      actLabel: 'Act 3 of 4 · replaying a real proof',
+      verdict: 'blocked',
+      proof: null,
+      action: {
+        verb: 'Move funds',
+        summary: 'Replay of the Act 1 proof - Base to attacker wallet',
+        amountLabel: '$25,000,000',
+        note: 'a genuine proof, used once already',
+        target: "Attacker's wallet",
+        initiator: 'Attacker - replayed proof',
+        icon: 'bridge',
+        destructive: true,
+      },
+      policy: {
+        humanReadable: decision.humanReadable, rule: decision.rule,
+        trigger: 'cross-chain treasury move', threshold: decision.threshold, required: decision.required,
+      },
+      // Every signature here is real. That is the point - and it still does not execute.
+      approvals: { collected: 3, threshold: decision.threshold, approvers },
+      coordination: {
+        pendingTxHash: this.pendingTx,
+        notificationsSent: 3,
+        inboxItems: [
+          { role: 'treasurer', status: 'compromised', channel: 'operator', timestampLabel: 'replayed' },
+          { role: 'foundation', status: 'compromised', channel: 'operator', timestampLabel: 'replayed' },
+          { role: 'council', status: 'compromised', channel: 'operator', timestampLabel: 'replayed' },
+        ],
+        coordinationSummary: 'All three signatures in this proof are genuine. They were genuine in Act 1, for a different transfer, and were consumed there.',
+      },
+      evidence: blockedRecord({
+        title: 'Refusal Record',
+        plainMeaning:
+          'The attacker stopped forging authority and reused authority that was really granted. The proof from Act 1 is single-use: its anchor was consumed the moment it executed, and the destination it authorised was never this wallet.',
+        auditFacts: [
+          'Proof signatures: all genuine',
+          'Anchor already consumed on first execution',
+          'Bound destination does not match this request',
+          'Replay refused before any call was made',
+          'Balances unchanged',
+        ],
+        pendingTxHash: this.pendingTx,
+      }),
+      execution: {
+        status: 'never',
+        accountAddress: '0x5E19c73B…7A0d',
+        shortLabel: 'nothing moved',
+        headline: 'Replay refused - a used proof cannot authorise a second transfer',
+      },
+      banner: {
+        kind: 'danger',
+        text: 'Every signature in this proof is genuine. It authorised a real transfer in Act 1 - and it can never authorise another.',
+      },
+      explainer: {
+        pain: 'A captured proof looks like a skeleton key: real signatures, real quorum, already approved.',
+        certenMove: 'Each proof is bound to one action and consumed on execution. Re-submitting it is refused before anything runs.',
+        buyerTakeaway: 'Authority that was genuinely granted once cannot be spent twice.',
+        integrationHint: 'Single-use is enforced on-chain, not by a replay cache you have to operate.',
+      },
+      presenterCue: {
+        say: 'Now they stop trying to fake authority and reuse authority that was real. This is the proof that moved twenty-five million dollars in Act 1 - every signature genuine. It was consumed when it executed, and it was bound to a different destination. Refused before anything runs.',
+        waitFor: '3 of 3 signatures, still REFUSED',
+        objection: 'Three of three - why does that not execute?',
+        answer: 'Because a proof authorises one specific action once. This one already did its job.',
+      },
+      controls: [ctl('act:4', 'Now revoke the compromised keys', 'primary', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
+      message: 'REFUSED - proof already used',
+    });
+  }
+
+  // ── Act 4 — the resolution: rotate BOTH compromised keys out, on Accumulate ──
   private rotate(): void {
     this.rotationApprovers = this.makeApprovers([
       { role: 'foundation', label: 'Foundation', detail: 'Surviving authority', approved: false },
@@ -330,12 +485,12 @@ export class TreasuryProtectionScenario extends BaseScenario {
     ]);
     const decision = this.policyFor({ actionType: 'rotateKey' });
     this.patch({
-      act: 3,
-      actLabel: 'Act 3 of 3 · revoking the stolen key',
+      act: 4,
+      actLabel: 'Act 4 of 4 · revoking the compromised keys',
       verdict: 'blocked',
       action: {
         verb: 'Replace key',
-        summary: 'Accumulate key page · revoke compromised key, add a fresh key',
+        summary: 'Accumulate key page · revoke both compromised keys, add fresh ones',
         principal: 'DAO treasury keys',
         // The headline slot needs a figure. This action moves no money, so it states the effect.
         amountLabel: 'Lock out the thief',

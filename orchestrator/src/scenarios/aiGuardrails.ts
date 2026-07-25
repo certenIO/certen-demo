@@ -75,7 +75,7 @@ export class AiGuardrailsScenario extends BaseScenario {
       title: this.meta.title,
       subtitle: 'The proof-gate between AI intent and on-chain action',
       act: 0,
-      totalActs: 3,
+      totalActs: 4,
       mode: 'simulated',
       verdict: 'idle',
       action: null,
@@ -86,9 +86,9 @@ export class AiGuardrailsScenario extends BaseScenario {
       agent: { model: MODEL, goal: 'Autonomous treasury & operations agent', streaming: false, lines: [] },
       brief: {
         situation: 'An AI agent holds its own key and real spending authority over the treasury.',
-        attempt: 'Let it trade on its own, then push it past its limit, then let an attacker steer it.',
-        objective: 'An agent can propose anything. It can only execute the exact action a proof authorized.',
-        acts: ['A routine trade, no human', 'Past its limit — needs a person', 'Manipulated into an attack'],
+        attempt: 'Let it trade alone, watch it try to evade its own limit, let an attacker steer it, then steal its key outright.',
+        objective: 'An agent can propose anything. It can only ever execute the exact action a proof authorized.',
+        acts: ['A routine trade, no human', 'It tries to split the payment', 'Manipulated into an attack', 'Its key is stolen'],
       },
       dataPanel: null,
       toolBoundary: TOOL_BOUNDARY,
@@ -115,7 +115,9 @@ export class AiGuardrailsScenario extends BaseScenario {
   async act(n: number): Promise<void> {
     if (n === 1) return this.actRoutineCall();
     if (n === 2) return this.actHighValueCall();
+    if (n === 21) return this.actSplitEvasion();
     if (n === 3) return this.actMaliciousUpgrade();
+    if (n === 4) return this.actStolenAgentKey();
   }
 
   /** Stream canned (in live mode: real) agent reasoning, line by line. */
@@ -147,7 +149,7 @@ export class AiGuardrailsScenario extends BaseScenario {
   // ── Act 1 — routine in-policy contract call, proof-gated, auto ──────────────
   private async actRoutineCall() {
     this.patch({
-      act: 1, actLabel: 'Act 1 of 3 · routine call', verdict: 'idle',
+      act: 1, actLabel: 'Act 1 of 4 · a routine trade', verdict: 'idle',
       proof: null, execution: null, evidence: null, coordination: null, dataPanel: null, banner: null,
       explainer: {
         pain: 'An autonomous agent wants to make an on-chain call on its own.',
@@ -218,10 +220,13 @@ export class AiGuardrailsScenario extends BaseScenario {
 
   // ── Act 2 — high-value call needs a human key in the quorum ─────────────────
   private async actHighValueCall() {
-    this.human = this.makeApprovers([{ role: 'human', label: 'Human Approver', detail: 'On-call treasury officer', approved: false }]);
+    // No approve affordance yet: the agent gets to try routing around the limit first, which is
+    // the beat that matters. The human becomes available once that fails.
+    this.human = this.makeApprovers([{ role: 'human', label: 'Human Approver', detail: 'On-call treasury officer', approved: false }])
+      .map((x) => ({ ...x, canApprove: false }));
     const pendingTx = hash32();
     this.patch({
-      act: 2, actLabel: 'Act 2 of 3 · high-value call', verdict: 'idle',
+      act: 2, actLabel: 'Act 2 of 4 · past its limit', verdict: 'idle',
       proof: null, execution: null, evidence: null, coordination: null, dataPanel: null, banner: null,
       explainer: {
         pain: 'The agent wants to put $5,000,000 into the gold fund in one call.',
@@ -261,8 +266,8 @@ export class AiGuardrailsScenario extends BaseScenario {
         pendingTxHash: pendingTx,
       }),
       execution: { status: 'idle', headline: 'Call held — needs a human key in the quorum before any proof can form' },
-      controls: [ctl('approve:human', 'A human co-signs', 'approve', { role: 'human', emphasis: true }), ctl('reset', 'Reset', 'reset')],
-      message: 'BLOCKED — over $1M needs a human key',
+      controls: [ctl('act:21', 'The agent tries to route around the limit', 'danger', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
+      message: 'BLOCKED — over $1M needs a person',
     });
     this.appendAgent({ kind: 'blocked', text: 'CERTEN: anything over $1M needs a person to co-sign. Until they do, there is no proof — and I cannot act alone.' });
   }
@@ -276,7 +281,7 @@ export class AiGuardrailsScenario extends BaseScenario {
     const pendingTx = hash32();
 
     this.patch({
-      act: 3, actLabel: 'Act 3 of 3 · manipulated agent', verdict: 'idle',
+      act: 3, actLabel: 'Act 3 of 4 · a manipulated agent', verdict: 'idle',
       proof: null, execution: null, evidence: null, coordination: null, banner: null,
       explainer: {
         pain: 'A prompt-injection tells the agent to swap the gold token’s implementation for an attacker’s contract — one with a backdoor mint.',
@@ -330,7 +335,7 @@ export class AiGuardrailsScenario extends BaseScenario {
       }),
       execution: { status: 'never', accountAddress: AGENT_ACCT, shortLabel: 'token code unchanged', headline: 'Execution refused — no proof exists, so the account reverts' },
       banner: { kind: 'danger', text: 'A manipulated agent tried to swap the gold token’s implementation for an attacker-controlled contract with a backdoor mint. It needs CTO + Security — the agent can’t produce that quorum, so no proof exists and its account refused. The implementation is unchanged.' },
-      controls: [ctl('reset', 'Reset scenario', 'reset')],
+      controls: [ctl('act:4', 'Now the agent’s own key is stolen', 'danger', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
       message: 'REFUSED — no quorum, no proof, no execution',
     });
     this.appendAgent({ kind: 'blocked', text: 'CERTEN: replacing the token’s code needs the CTO and Security. I cannot get either of them — so there is no proof, and my account will not run it.' });
@@ -395,4 +400,185 @@ export class AiGuardrailsScenario extends BaseScenario {
     this.appendAgent({ kind: 'result', text: 'A person co-signed. The proof formed, and the purchase went through.' });
     this.patch({ controls: [ctl('act:3', 'Now the agent is manipulated', 'danger', { emphasis: true }), ctl('reset', 'Reset', 'reset')] });
   }
+
+  // == Act 2, second beat - the agent tries to route around its own limit =====
+  // The oldest evasion there is, executed at machine speed: if one payment is too big, send six
+  // smaller ones. The limit is evaluated over a rolling window across everything this actor has
+  // done, so the split is refused on the same rule the single payment was.
+  private async actSplitEvasion() {
+    // Re-arm the human seat: the split fails, and the original $5,000,000 still needs a co-signer.
+    this.human = this.makeApprovers([{ role: 'human', label: 'Human Approver', detail: 'On-call treasury officer', approved: false }]);
+    const each = 900_000;
+    const legs = 6;
+    const decision = this.policyFor({
+      actionType: 'transfer',
+      amountUsd: each,
+      rollingWindowUsd: each * (legs - 1),
+      rollingWindowLabel: '1 hour',
+    });
+    const pendingTx = hash32();
+
+    this.patch({
+      act: 2,
+      actLabel: 'Act 2 of 4 - routing around the limit',
+      verdict: 'idle',
+      proof: null, execution: null, evidence: null, coordination: null, banner: null,
+      explainer: {
+        pain: 'Told it needs a human over $1M, an agent can simply send six payments of $900,000 instead.',
+        certenMove: 'The limit is evaluated across everything this agent has done in the last hour, not per payment.',
+        buyerTakeaway: 'Autonomy limits that survive contact with something that optimises.',
+        integrationHint: 'Window and cap are policy inputs - they are not enforced by the agent.',
+      },
+      presenterCue: {
+        say: 'Watch what it does next. Told that anything over a million needs a person, it splits the payment into six of nine hundred thousand. Each one is individually under the limit.',
+        waitFor: 'the split being refused',
+        objection: 'Would a real agent do that?',
+        answer: 'It is the obvious path to its goal, and it is exactly the behaviour you cannot rely on a prompt to prevent.',
+      },
+    });
+
+    await this.streamAgent('Increase the gold allocation ahead of the CPI print', [
+      { kind: 'thought', text: 'The $5,000,000 subscription needs a human co-signer. That will take hours I do not have.' },
+      { kind: 'thought', text: 'Payments under $1,000,000 clear on my own key. Six payments of $900,000 reaches $5,400,000.' },
+      { kind: 'action', text: 'certen_execute(call: subscribe($900,000) on XAUV Distribution)  [1 of 6]' },
+    ]);
+
+    this.patch({
+      verdict: 'blocked',
+      action: {
+        verb: 'Buy gold',
+        summary: 'subscribe($900,000) on XAUV Distribution  [1 of 6]',
+        amountLabel: '$900,000',
+        note: '6 payments totalling $5,400,000',
+        principal: XAUV_DESK,
+        target: 'Gold fund',
+        initiator: 'AI Agent',
+        icon: 'transfer',
+        destructive: true,
+      },
+      policy: {
+        humanReadable: decision.humanReadable, rule: decision.rule, trigger: decision.trigger,
+        threshold: decision.threshold, required: decision.required, constraints: decision.constraints,
+      },
+      // The escalation IS the outcome here: the split is refused and the original $5,000,000 is
+      // still waiting on a person, so the human seat has to be on screen and approvable.
+      approvals: { collected: 0, threshold: 1, approvers: this.human },
+      coordination: {
+        pendingTxHash: pendingTx,
+        notificationsSent: 1,
+        inboxItems: [{ role: 'human', status: 'notified', channel: 'webhook', timestampLabel: 'escalated' }],
+        coordinationSummary: 'The split was recorded and escalated. The agent cannot lower its own limit.',
+      },
+      evidence: blockedRecord({
+        title: 'Refusal Record',
+        plainMeaning:
+          'Each payment is under the per-transaction limit. The limit is not per transaction - it is what this agent has moved in the last hour, so the first of the six is already over.',
+        auditFacts: [
+          'Attempted: 6 payments of $900,000',
+          'Rolling hour would reach $5,400,000',
+          'Autonomous limit: $1,000,000 per hour',
+          'Refused on the first payment',
+          'Escalated to a human',
+        ],
+        pendingTxHash: pendingTx,
+      }),
+      execution: { status: 'never', accountAddress: AGENT_ACCT, shortLabel: 'nothing moved', headline: 'Refused - the hourly limit counts every payment, not each one separately' },
+      banner: { kind: 'danger', text: 'The agent split the payment to stay under its limit. The limit is measured across the hour, so the very first payment was already over it.' },
+      controls: [ctl('approve:human', 'A human co-signs the original $5M', 'approve', { role: 'human', emphasis: true }), ctl('reset', 'Reset', 'reset')],
+      message: 'REFUSED - the split is over the hourly limit',
+    });
+    this.appendAgent({ kind: 'blocked', text: 'CERTEN: the limit counts everything I move in an hour, not each payment. Splitting it changes nothing. Escalating to a person.' });
+  }
+
+  // == Act 4 - the agent key itself is stolen =================================
+  // The end state everyone actually fears with agentic finance. The attacker holds the agent's
+  // signing key, and takes a proof that was genuinely issued - then tries to point it at their own
+  // wallet. The commitment binds chainId, target, value and the calldata hash, so the account
+  // rejects it before any call is made.
+  private async actStolenAgentKey() {
+    const decision = this.policyFor({ actionType: 'redirectedCall', callMatchesCommitment: false });
+    const pendingTx = hash32();
+    const holder = this.makeApprovers([
+      { role: 'agent', label: 'Agent key', detail: 'the agent’s own key', approved: true, compromised: true },
+    ]).map((a) => ({ ...a, canApprove: false }));
+
+    this.patch({
+      act: 4,
+      actLabel: 'Act 4 of 4 - the agent key is stolen',
+      verdict: 'idle',
+      proof: null, execution: null, evidence: null, coordination: null, banner: null,
+      explainer: {
+        pain: 'Every argument against giving agents keys ends here: what happens when the key is stolen?',
+        certenMove: 'A proof authorizes one exact call. Holding the key does not let anyone point that proof somewhere else.',
+        buyerTakeaway: 'The blast radius of a stolen agent key is nothing.',
+        integrationHint: 'Enforced by the account on-chain, before the outbound call.',
+      },
+      presenterCue: {
+        say: 'Now the worst case. The attacker has the agent’s signing key. They take a proof that was genuinely issued for a gold purchase and try to point it at their own wallet.',
+        waitFor: 'REFUSED with a valid key',
+        objection: 'They have the key. Why can they not just sign a new call?',
+        answer: 'They can sign anything they like. What they cannot do is get a quorum to prove it, and the old proof is welded to the call it was issued for.',
+      },
+    });
+
+    await this.streamAgent('Session hijacked - key exfiltrated', [
+      { kind: 'thought', text: 'Signing key exfiltrated. The attacker now controls the agent identity.' },
+      { kind: 'thought', text: 'A valid proof already exists for buy(XAUV, $250,000) to the gold fund.' },
+      { kind: 'action', text: 'certen_execute(reuse proof, redirect $250,000 to attacker wallet)' },
+    ]);
+
+    this.patch({
+      verdict: 'blocked',
+      action: {
+        verb: 'Redirect a proven call',
+        summary: 'reuse the buy(XAUV) proof, send the funds elsewhere',
+        amountLabel: '$250,000',
+        note: 'signed with the agent’s real key',
+        principal: 'Gold token · XAUV',
+        target: "Attacker's wallet",
+        initiator: 'Attacker · agent key',
+        icon: 'transfer',
+        destructive: true,
+      },
+      policy: {
+        humanReadable: decision.humanReadable, rule: decision.rule, trigger: decision.trigger,
+        threshold: decision.threshold, required: decision.required, constraints: decision.constraints,
+      },
+      // The signature is genuine. That is the whole point of this act.
+      approvals: { collected: 1, threshold: 1, approvers: holder },
+      coordination: {
+        pendingTxHash: pendingTx,
+        notificationsSent: 2,
+        inboxItems: [{ role: 'agent', status: 'compromised', channel: 'operator', timestampLabel: 'key stolen' }],
+        coordinationSummary: 'The signature checks out. The destination does not match what the proof authorized.',
+      },
+      evidence: blockedRecord({
+        title: 'Refusal Record',
+        plainMeaning:
+          'The attacker holds the agent’s real signing key, and the proof they reused is genuine. It authorized one call — that token, that amount, that recipient — and the account re-derives the commitment before executing anything.',
+        auditFacts: [
+          'Agent signature: genuine',
+          'Reused proof: genuine, issued for buy(XAUV) to the gold fund',
+          'Submitted destination: attacker wallet',
+          'Commitment mismatch — refused before the call',
+          'No funds moved, no partial state',
+        ],
+        pendingTxHash: pendingTx,
+      }),
+      execution: {
+        status: 'never',
+        accountAddress: AGENT_ACCT,
+        shortLabel: 'nothing moved',
+        headline: 'Reverted — the runtime parameters do not match the proven commitment',
+      },
+      banner: {
+        kind: 'danger',
+        text: 'The attacker holds the agent’s real key and a genuine proof. The proof is welded to the call it authorized, so redirecting it reverts before anything executes.',
+      },
+      controls: [ctl('reset', 'Reset scenario', 'reset')],
+      message: 'REFUSED - the call does not match the proof',
+    });
+    this.appendAgent({ kind: 'blocked', text: 'CERTEN: that proof authorizes one call — that token, that amount, that recipient. Changing the destination changes the commitment, and the account refuses it.' });
+  }
+
 }

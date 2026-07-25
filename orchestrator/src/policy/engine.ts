@@ -31,6 +31,14 @@ export interface ActionContext {
   attestationAgeHours?: number;
   /** whether the destination address is on the transfer agent's holder registry */
   destinationRegistered?: boolean;
+
+  // ── agent context ──────────────────────────────────────────────────────────
+  /** total already moved by this actor in the rolling window, excluding this action */
+  rollingWindowUsd?: number;
+  /** the rolling window itself, e.g. "1 hour" */
+  rollingWindowLabel?: string;
+  /** whether the call being submitted matches the one the proof actually authorized */
+  callMatchesCommitment?: boolean;
 }
 
 export interface NumericCondition {

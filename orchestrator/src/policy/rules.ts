@@ -51,6 +51,40 @@ const REGISTERED_DESTINATION: PolicyConstraint = {
 };
 
 /**
+ * Splitting a payment to stay under a per-transaction cap is the oldest evasion there is, and an
+ * autonomous agent can do it in milliseconds. The limit is therefore evaluated over a rolling
+ * window across ALL of the actor's activity, not per transaction.
+ */
+const WITHIN_ROLLING_LIMIT: PolicyConstraint = {
+  id: 'within-rolling-limit',
+  short: 'Within the hourly limit',
+  describe: 'Total moved by this actor in a rolling hour must stay within its autonomous limit',
+  check: (ctx) => {
+    const window = ctx.rollingWindowUsd ?? 0;
+    const total = window + (ctx.amountUsd ?? 0);
+    const label = ctx.rollingWindowLabel ?? '1 hour';
+    return total <= 1_000_000
+      ? { satisfied: true, detail: `${usd(total)} in the last ${label}, within the ${usd(1_000_000)} limit` }
+      : { satisfied: false, detail: `${usd(total)} in the last ${label} — ${usd(1_000_000)} limit, split across ${Math.ceil(total / 900_000)} payments` };
+  },
+};
+
+/**
+ * The exact-call binding, as a policy check. A proof authorizes ONE call: the commitment binds
+ * chainId, target, value and the calldata hash. Holding a valid proof — or even the signing key —
+ * does not let anyone point it somewhere else.
+ */
+const MATCHES_PROVEN_CALL: PolicyConstraint = {
+  id: 'matches-proven-call',
+  short: 'Matches the proven action',
+  describe: 'The call submitted must be the exact call the proof authorized',
+  check: (ctx) =>
+    ctx.callMatchesCommitment
+      ? { satisfied: true, detail: 'target, value and calldata match the commitment' }
+      : { satisfied: false, detail: 'destination does not match the commitment this proof was bound to' },
+};
+
+/**
  * The demo ruleset. One ordered list drives all three scenarios — the whole point is that
  * the same engine, evaluating the same way, produces every demo's policy. Only the action
  * (and therefore which rule fires) changes.
@@ -113,8 +147,15 @@ export const DEMO_RULES: PolicyRule[] = [
   {
     name: 'small-transfer-auto',
     when: { actionType: 'transfer', amountUsd: { lte: 1_000_000 } },
-    require: { approvers: [], threshold: 0 },
-    describe: 'Amount within $1,000,000 auto-limit → auto-approved, no human needed',
+    require: { approvers: [], threshold: 0, constraints: [WITHIN_ROLLING_LIMIT] },
+    describe: 'Amount within the $1,000,000 auto-limit → no human needed, subject to the rolling limit',
+  },
+  // A redirected call: the authority is real, the destination is not the one that was proven.
+  {
+    name: 'agent-call-redirect',
+    when: { actionType: 'redirectedCall' },
+    require: { approvers: [], threshold: 0, constraints: [MATCHES_PROVEN_CALL] },
+    describe: 'Any call → must be the exact call the proof authorized',
   },
 
   // ── Demo 3 — cross-chain treasury move ──────────────────────────────────────

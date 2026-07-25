@@ -31,6 +31,7 @@ import { ToolBoundaryPanel } from './ToolBoundaryPanel';
 import { FilmCanvas } from './film/FilmCanvas';
 import { PolicyChecks } from './film/PolicyChecks';
 import { ImpactPanel } from './film/ImpactPanel';
+import { ProofJourney } from './film/ProofJourney';
 import { SecurityDrawer, SecurityThesisChip } from './SecurityDrawer';
 import { CertaintyRecap } from './CertaintyRecap';
 import { HealthChip } from './HealthChip';
@@ -208,7 +209,8 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
     state?.treasury ||
     state?.dataPanel ||
     state?.policy?.constraints?.length ||
-    state?.impactedSystems?.length
+    state?.impactedSystems?.length ||
+    (film && state?.action)
   );
 
   const onControl = (id: string) => sendControl(meta.id, id, pace);
@@ -367,7 +369,7 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
         {film ? (
           <Box data-qa="rails" sx={{ minHeight: { xs: 520, lg: 0 }, pr: 0.5, display: 'flex', alignItems: 'stretch' }}>
             <Box sx={{ width: '100%', minHeight: 0 }}>
-              <FilmCanvas state={state} busy={!!state?.busy} simulated={mode !== 'live'} onApprove={onApprove} />
+              <FilmCanvas state={state} busy={!!state?.busy} onApprove={onApprove} />
             </Box>
           </Box>
         ) : (
@@ -407,6 +409,7 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
               {/* Supply vs. attested custody leads the column — it's the one panel that reads
                   from across a room and needs no narration. */}
               {state?.supply && <SupplyBar supply={state.supply} film={film} />}
+              {film && state?.action && <ProofJourney state={state} simulated={mode !== 'live'} />}
               {film && <PolicyChecks policy={state?.policy} />}
               {film && !state?.supply && !state?.agent && !state?.treasury && !!state?.impactedSystems?.length && (
                 <ImpactPanel systems={state.impactedSystems} refused={state?.execution?.status === 'never'} />

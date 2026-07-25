@@ -273,8 +273,18 @@ export interface ToolBoundary {
 export type OrgStatus = 'pending' | 'satisfied' | 'refused' | 'not-required' | 'compromised';
 
 /** One key inside an organization's own key page. */
+/**
+ * How a seat signs. A `policy-engine` seat is the org's OWN headless signer: Certen ships the
+ * software, the organisation runs it and holds its own key, and it consults that organisation's
+ * own off-chain policy before voting — a bullion assay feed, a KYC registry, a biometric re-auth.
+ * This is why off-chain reality can gate an on-chain action.
+ */
+export type SignerKind = 'human' | 'policy-engine';
+
 export interface AuthoritySigner {
   label: string;
+  /** person, or the organisation's own headless policy-engine signer */
+  kind?: SignerKind;
   /** e.g. "YubiHSM 2 · Zurich" */
   detail?: string;
   signed: boolean;

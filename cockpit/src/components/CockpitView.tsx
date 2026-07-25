@@ -32,6 +32,7 @@ import { FilmCanvas } from './film/FilmCanvas';
 import { PolicyChecks } from './film/PolicyChecks';
 import { ImpactPanel } from './film/ImpactPanel';
 import { ProofJourney } from './film/ProofJourney';
+import { useJourney } from './film/journey';
 import { SecurityDrawer, SecurityThesisChip } from './SecurityDrawer';
 import { CertaintyRecap } from './CertaintyRecap';
 import { HealthChip } from './HealthChip';
@@ -216,6 +217,10 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
     (film && state?.action)
   );
 
+  // One cycle cursor drives BOTH the journey panel and the central diagram, so the proof and the
+  // execution can never appear ahead of the phases that produce them.
+  const journey = useJourney(state, mode !== 'live', JOURNEY_MS[pace]);
+
   const onControl = (id: string) => sendControl(meta.id, id, pace);
   const onApprove = (role: string) => sendControl(meta.id, `approve:${role}`, pace);
   const deckControls = (state?.controls ?? []).filter((c) => !c.id.startsWith('approve:'));
@@ -372,7 +377,7 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
         {film ? (
           <Box data-qa="rails" sx={{ minHeight: { xs: 520, lg: 0 }, pr: 0.5, display: 'flex', alignItems: 'stretch' }}>
             <Box sx={{ width: '100%', minHeight: 0 }}>
-              <FilmCanvas state={state} busy={!!state?.busy} onApprove={onApprove} />
+              <FilmCanvas state={state} busy={!!state?.busy} stage={journey.revealed} onApprove={onApprove} />
             </Box>
           </Box>
         ) : (
@@ -412,7 +417,7 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
               {/* Supply vs. attested custody leads the column — it's the one panel that reads
                   from across a room and needs no narration. */}
               {state?.supply && <SupplyBar supply={state.supply} film={film} />}
-              {film && state?.action && <ProofJourney state={state} simulated={mode !== 'live'} stepMs={JOURNEY_MS[pace]} />}
+              {film && state?.action && <ProofJourney steps={journey.steps} />}
               {film && <PolicyChecks policy={state?.policy} />}
               {film && !state?.supply && !state?.agent && !state?.treasury && !!state?.impactedSystems?.length && (
                 <ImpactPanel systems={state.impactedSystems} refused={state?.execution?.status === 'never'} />

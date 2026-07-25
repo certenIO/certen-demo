@@ -21,6 +21,7 @@ import LocalFireDepartmentRoundedIcon from '@mui/icons-material/LocalFireDepartm
 import ArrowDownwardRoundedIcon from '@mui/icons-material/ArrowDownwardRounded';
 import KeyOffRoundedIcon from '@mui/icons-material/KeyOffRounded';
 import { BriefCard } from './BriefCard';
+import { PHASE } from './journey';
 import { CERTEN_COLORS, MONO_FAMILY, NEUTRAL } from '../../theme';
 import type { ScenarioState } from '../../types';
 
@@ -39,7 +40,7 @@ interface AuthNode {
   role: string;
   name: string;
   kind: string;
-  /** one key per entry; `automated` renders a chip glyph instead of a dot */
+  /** one key per entry; `automated` marks the org's own headless policy-engine signer */
   keys: { signed: boolean; automated?: boolean }[];
   threshold: number;
   status: NodeStatus;
@@ -98,7 +99,7 @@ function toNodes(state: ScenarioState | null): AuthNode[] {
       role: o.role,
       name: o.org,
       kind: o.kind,
-      keys: o.signers.map((s) => ({ signed: s.signed, automated: s.detail?.startsWith('automated') })),
+      keys: o.signers.map((s) => ({ signed: s.signed, automated: s.kind === 'policy-engine' || s.detail?.startsWith('automated') })),
       threshold: o.threshold,
       status: (o.status === 'not-required' ? 'pending' : o.status) as NodeStatus,
       filmNote: o.filmNote,
@@ -206,7 +207,7 @@ function AuthorityNode({ node, busy, onApprove }: { node: AuthNode; busy: boolea
     // NB: the motion wrapper carries height:100% too — without it the grid row grows to fill the
     // frame while the card stays at content height, leaving a gap that reads as a broken connector.
     <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} style={{ height: '100%' }}>
-      <Stack alignItems="center" justifyContent="center" spacing={0.7} sx={{ px: 1, py: 1.75, borderRadius: 2, border: `1.5px solid ${alpha(color, node.status === 'pending' ? 0.3 : 0.65)}`, bgcolor: alpha(color, node.status === 'pending' ? 0.02 : 0.08), height: '100%' }}>
+      <Stack alignItems="center" justifyContent="center" spacing={0.5} sx={{ px: 1, py: 1.25, borderRadius: 2, border: `1.5px solid ${alpha(color, node.status === 'pending' ? 0.3 : 0.65)}`, bgcolor: alpha(color, node.status === 'pending' ? 0.02 : 0.08), height: '100%' }}>
         {/* entity glyph in a status ring, with a verdict badge */}
         <Box sx={{ position: 'relative' }}>
           <Box sx={{ width: 76, height: 76, borderRadius: '50%', display: 'grid', placeItems: 'center', border: `3px solid ${color}`, color, bgcolor: alpha(color, 0.08) }}>
@@ -246,11 +247,21 @@ function AuthorityNode({ node, busy, onApprove }: { node: AuthNode; busy: boolea
           ))}
           {node.keys.length > 1 && (
             <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary', ml: 0.6 }}>
-              {node.keys.filter((k) => k.signed).length} of {node.keys.length} approvers
+              {node.keys.filter((k) => k.signed).length} of {node.keys.length}
             </Typography>
           )}
         </Stack>
 
+        {/* Who actually holds these keys. This is the question the diagram was not answering:
+            each seat is either a person in that company, or that company's own policy engine
+            signing headlessly against its own off-chain records. */}
+        {!node.autoNode && node.keys.length > 0 && (
+          <Typography align="center" sx={{ fontSize: '0.66rem', color: 'text.secondary', lineHeight: 1.25 }}>
+            {node.keys.some((k) => k.automated)
+              ? `${node.keys.filter((k) => !k.automated).length} person · ${node.keys.filter((k) => k.automated).length} policy engine`
+              : `${node.keys.length} ${node.keys.length === 1 ? 'signer' : 'signers'}`}
+          </Typography>
+        )}
         <Typography sx={{ fontSize: '0.76rem', fontWeight: 800, letterSpacing: '0.08em', color, opacity: node.status === 'pending' ? 0.6 : 1 }}>
           {node.autoNode ? 'AUTO-APPROVED' : STATUS_WORD[node.status]}
         </Typography>
@@ -329,10 +340,14 @@ function ConnectorField({ nodes }: { nodes: AuthNode[] }) {
 }
 
 // ── the proof: the gate everything else exists to satisfy ────────────────────
-function ProofNode({ state }: { state: ScenarioState }) {
+function ProofNode({ state, stage }: { state: ScenarioState; stage: number }) {
   const ev = state.evidence;
-  const proven = ev?.kind === 'execution-proof';
-  const refused = ev?.kind === 'blocked-action-record' || state.execution?.status === 'never';
+  // Gate on the shared cycle cursor: a proof is not shown as formed until the journey has walked
+  // through validator authorization AND bound the commitment. Without this the node lit up the
+  // instant the engine produced evidence, several seconds ahead of the journey explaining it.
+  const reached = stage > PHASE.commitment;
+  const proven = ev?.kind === 'execution-proof' && reached;
+  const refused = (ev?.kind === 'blocked-action-record' || state.execution?.status === 'never') && stage > PHASE.validators;
   const color = proven ? CERTEN_COLORS.success.main : refused ? CERTEN_COLORS.error.main : NEUTRAL[400];
   const Icon = refused ? GppBadRoundedIcon : ShieldRoundedIcon;
   const label = proven ? 'PROOF' : refused ? 'NO PROOF' : 'PROOF';
@@ -395,9 +410,13 @@ function ProofNode({ state }: { state: ScenarioState }) {
 }
 
 // ── the outcome ──────────────────────────────────────────────────────────────
-function ExecutionNode({ state }: { state: ScenarioState }) {
+function ExecutionNode({ state, stage }: { state: ScenarioState; stage: number }) {
   const ex = state.execution;
-  const status = ex?.status ?? 'idle';
+  // Execution is downstream of the proof by definition, so it may not appear until the journey
+  // has reached the execute phase. This is the binding the whole product claims — the screen
+  // should not contradict it by showing the outcome first.
+  const reached = stage > PHASE.execute;
+  const status = reached ? (ex?.status ?? 'idle') : stage > PHASE.commitment && ex?.status === 'executing' ? 'executing' : 'idle';
   const never = status === 'never';
   const done = status === 'done';
   const running = status === 'executing' || status === 'pending';
@@ -425,10 +444,13 @@ function ExecutionNode({ state }: { state: ScenarioState }) {
 export function FilmCanvas({
   state,
   busy,
+  stage,
   onApprove,
 }: {
   state: ScenarioState | null;
   busy: boolean;
+  /** how far the shared proof cycle has advanced — the diagram follows it, never leads it */
+  stage: number;
   onApprove: (role: string) => void;
 }) {
   if (!state) return null;
@@ -455,17 +477,28 @@ export function FilmCanvas({
 
       {nodes.length > 0 && (
         <>
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mt: 2, mb: 1, px: 0.5, flexShrink: 0 }}>
-            <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.14em', color: 'text.secondary' }}>
-              {auto ? 'POLICY DECISION' : 'REQUIRED AUTHORITY'}
-            </Typography>
+          <Stack direction="row" alignItems="baseline" justifyContent="space-between" sx={{ mt: 2, mb: 1, px: 0.5, flexShrink: 0, gap: 2 }}>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.14em', color: 'text.secondary' }}>
+                {auto ? 'POLICY DECISION' : 'REQUIRED AUTHORITY'}
+              </Typography>
+              {/* The model, stated once as a caption for the row. Without it a viewer sees three
+                  boxes and cannot tell whether these are departments, wallets, or one company's
+                  multisig — and never learns that some seats are machines the org runs itself. */}
+              {!auto && nodes.length > 1 && (
+                <Typography sx={{ fontSize: '0.74rem', color: 'text.secondary', lineHeight: 1.3 }}>
+                  Separate companies, each with its own identity and its own keys —{' '}
+                  <Box component="span" sx={{ fontWeight: 700 }}>CERTEN holds none of them</Box>
+                </Typography>
+              )}
+            </Box>
             {!auto && (
               <Typography sx={{ fontFamily: MONO_FAMILY, fontSize: '1.15rem', fontWeight: 800, color: filled === nodes.length ? CERTEN_COLORS.success.main : 'text.secondary' }}>
                 {filled} / {nodes.length}
               </Typography>
             )}
           </Stack>
-          <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${nodes.length}, 1fr)`, gap: 1.5, alignItems: 'stretch', flex: '3 1 auto', minHeight: 196, maxHeight: 300 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${nodes.length}, 1fr)`, gap: 1.5, alignItems: 'stretch', flex: '3 1 auto', minHeight: 210, maxHeight: 360 }}>
             {nodes.map((n) => (
               <AuthorityNode key={n.role} node={n} busy={busy} onApprove={onApprove} />
             ))}
@@ -479,9 +512,9 @@ export function FilmCanvas({
         {/* The receipts used to sit here, but at this size they were unreadable. They now live
             in the Proof Journey panel, which has the room to make them legible AND the context
             to say which system each one came from. */}
-        <ProofNode state={state} />
+        <ProofNode state={state} stage={stage} />
         <ArrowDownwardRoundedIcon sx={{ fontSize: 24, color: 'text.secondary', opacity: 0.45 }} />
-        <ExecutionNode state={state} />
+        <ExecutionNode state={state} stage={stage} />
         {/* THE differentiator, permanently on screen. Everyone else records who approved and then
             trusts a key to execute. This account has no key — the proof is the only way in. That
             sentence is the entire moat, so it never scrolls away and never has to be narrated. */}

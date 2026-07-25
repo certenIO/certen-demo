@@ -6,7 +6,7 @@
 > nothing high-value executes until policy is satisfied and *proven* — whether the actor is a
 > person, a multisig, or an AI.
 
-The planning docs live in [`docs/`](./docs): start with [`docs/demo_plan_overview.md`](./docs/demo_plan_overview.md).
+Presenter and planning material is kept out of this repository.
 This README is how you **run** what those docs describe.
 
 ---
@@ -20,7 +20,6 @@ demos/
 ├── agent/           Demo 2's real Claude agent whose only action tool routes through Certen
 ├── contracts/       DemoUpgradeable / DemoTreasury Solidity + Foundry deploy script
 ├── scripts/         seed.ts (provision live identities) + preflight.ts (health checks)
-├── docs/            The full demo plan (overview + one doc per demo)
 ├── docker-compose.yml
 └── .env.example
 ```
@@ -68,7 +67,7 @@ Full options in [`SHARE.md`](./SHARE.md). (`npm run dev` stays orchestrator-back
 
 ## Cockpit features (self-teaching, audit-driven)
 
-The cockpit follows the [audit runbooks](./docs/certen_authorization_cockpit_audit_runbooks.md):
+The cockpit follows the internal audit runbooks:
 
 - **No-scroll layout** — all five rails + the proof/execution payoff are visible at **1280×720**
   and **1440×900** with no scrolling. Verified by `npm run qa:viewport` (Playwright; captures

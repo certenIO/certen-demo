@@ -26,4 +26,14 @@ qa/shots/
 .vercel/
 
 .DS_Store
-qa/shots/
+
+# ── keep out of the public repo ───────────────────────────────────────────────
+# Presenter and strategy material: narration scripts, objection handling, positioning,
+# the master demo plan, and audit runbooks that cite other private repos. The app itself is
+# fine to publish; how we sell it is not. Kept on disk, excluded from the repo.
+docs/
+
+# local scratch
+scratch/
+tmp/
+*.local.md

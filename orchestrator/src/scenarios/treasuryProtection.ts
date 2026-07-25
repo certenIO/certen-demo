@@ -170,6 +170,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
   async act(n: number): Promise<void> {
     if (n === 21) return this.actSecondKeyPhished();
     if (n === 3) return this.actReplayAttempt();
+    if (n === 31) return this.actReplayChecked();
     if (n === 4) return this.rotate();
   }
 
@@ -437,6 +438,47 @@ export class TreasuryProtectionScenario extends BaseScenario {
         ],
         coordinationSummary: 'All three signatures in this proof are genuine. They were genuine in Act 1, for a different transfer, and were consumed there.',
       },
+      evidence: pendingRecord({
+        plainMeaning:
+          'Three genuine signatures, submitted against a proof that really was issued. Nothing has been checked against the anchor yet.',
+        auditFacts: [
+          'Proof signatures: all genuine',
+          'Submitted as a replay of the Act 1 proof',
+          'Anchor not yet checked',
+        ],
+        pendingTxHash: this.pendingTx,
+      }),
+      execution: { status: 'idle', headline: 'Submitted with three genuine signatures' },
+      banner: {
+        kind: 'danger',
+        text: 'Every signature in this proof is genuine — three of three. On paper this is a fully authorised transfer.',
+      },
+      explainer: {
+        pain: 'A captured proof looks like a skeleton key: real signatures, real quorum, already approved.',
+        certenMove: 'Each proof is bound to one action and consumed on execution. Re-submitting it is refused before anything runs.',
+        buyerTakeaway: 'Authority that was genuinely granted once cannot be spent twice.',
+        integrationHint: 'Single-use is enforced on-chain, not by a replay cache you have to operate.',
+      },
+      presenterCue: {
+        say: 'Now they stop trying to fake authority and reuse authority that was real. This is the proof that moved twenty-five million dollars in Act 1 - every signature genuine. It was consumed when it executed, and it was bound to a different destination. Refused before anything runs.',
+        waitFor: '3 of 3 signatures, still REFUSED',
+        objection: 'Three of three - why does that not execute?',
+        answer: 'Because a proof authorises one specific action once. This one already did its job.',
+      },
+      // STOP on 3 of 3. The audience should have a second to think this one is going through.
+      controls: [ctl('act:31', 'CERTEN checks the anchor', 'primary', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
+      message: '3 of 3 signatures - all genuine',
+    });
+  }
+
+  /** Act 3, beat 2 — the anchor is checked, and a spent proof cannot be spent again. */
+  private async actReplayChecked() {
+    this.patch({ busy: true, message: 'Checking the anchor this proof belongs to...' });
+    await this.beat(1500);
+
+    this.patch({
+      busy: false,
+      verdict: 'blocked',
       evidence: blockedRecord({
         title: 'Refusal Record',
         plainMeaning:
@@ -458,19 +500,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
       },
       banner: {
         kind: 'danger',
-        text: 'Every signature in this proof is genuine. It authorised a real transfer in Act 1 - and it can never authorise another.',
-      },
-      explainer: {
-        pain: 'A captured proof looks like a skeleton key: real signatures, real quorum, already approved.',
-        certenMove: 'Each proof is bound to one action and consumed on execution. Re-submitting it is refused before anything runs.',
-        buyerTakeaway: 'Authority that was genuinely granted once cannot be spent twice.',
-        integrationHint: 'Single-use is enforced on-chain, not by a replay cache you have to operate.',
-      },
-      presenterCue: {
-        say: 'Now they stop trying to fake authority and reuse authority that was real. This is the proof that moved twenty-five million dollars in Act 1 - every signature genuine. It was consumed when it executed, and it was bound to a different destination. Refused before anything runs.',
-        waitFor: '3 of 3 signatures, still REFUSED',
-        objection: 'Three of three - why does that not execute?',
-        answer: 'Because a proof authorises one specific action once. This one already did its job.',
+        text: 'The anchor was consumed when this proof executed in Act 1, and it was bound to a different destination. Genuine signatures, spent authority.',
       },
       controls: [ctl('act:4', 'Now revoke the compromised keys', 'primary', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
       message: 'REFUSED - proof already used',

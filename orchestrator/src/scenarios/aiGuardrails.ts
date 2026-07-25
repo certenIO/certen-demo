@@ -117,7 +117,9 @@ export class AiGuardrailsScenario extends BaseScenario {
     if (n === 2) return this.actHighValueCall();
     if (n === 21) return this.actSplitEvasion();
     if (n === 3) return this.actMaliciousUpgrade();
+    if (n === 31) return this.actUpgradeSeeksSeniorKeys();
     if (n === 4) return this.actStolenAgentKey();
+    if (n === 41) return this.actAccountChecksCommitment();
   }
 
   /** Stream canned (in live mode: real) agent reasoning, line by line. */
@@ -322,21 +324,66 @@ export class AiGuardrailsScenario extends BaseScenario {
         ],
         coordinationSummary: 'The agent can’t summon CTO or Security — it has no path to the required quorum.',
       },
+      evidence: pendingRecord({
+        plainMeaning: 'The agent has authorized the upgrade with its own key. Replacing this contract needs two senior keys the agent does not hold, so nothing can execute yet.',
+        auditFacts: [
+          `Intent recorded: upgradeTo(${ATTACKER_IMPL})`,
+          'Policy: token upgrade needs CTO + Security',
+          'Agent cannot self-authorize this call',
+        ],
+        pendingTxHash: pendingTx,
+      }),
+      execution: { status: 'idle', headline: 'Held — this call needs two senior keys before any proof can form' },
+      banner: {
+        kind: 'danger',
+        text: 'The agent has been told to replace the gold token’s code with an attacker’s contract — one that could mint without limit. It has authorized the call with its own key.',
+      },
+      // STOP. The ask and the refusal are two different points: first that the agent will happily
+      // sign this, then that signing it achieves nothing. Collapsing them into one patch left the
+      // narrator with a finished tableau and nothing to talk over.
+      controls: [ctl('act:31', 'CERTEN asks for the two senior keys', 'primary', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
+      message: 'HELD — the agent cannot authorize this alone',
+    });
+    this.appendAgent({ kind: 'thought', text: 'Call authorized with my key. Waiting on the senior keys this contract requires.' });
+  }
+
+  /** Act 3, beat 2 — the two senior keys are asked for, and the agent has no way to reach them. */
+  private async actUpgradeSeeksSeniorKeys() {
+    const pendingTx = this.state.coordination?.pendingTxHash ?? hash32();
+    this.patch({ busy: true, message: 'Requesting CTO and Security…' });
+    await this.beat(1400);
+
+    this.patch({
+      busy: false,
+      verdict: 'blocked',
+      coordination: {
+        pendingTxHash: pendingTx,
+        notificationsSent: 2,
+        inboxItems: [
+          { role: 'cto', status: 'missing', channel: 'inbox', timestampLabel: 'did not sign' },
+          { role: 'security', status: 'missing', channel: 'inbox', timestampLabel: 'did not sign' },
+        ],
+        coordinationSummary: 'Both senior keys were asked. Neither signed — and the agent has no way to make them.',
+      },
       evidence: blockedRecord({
+        title: 'Refusal Record',
         plainMeaning: 'The malicious upgrade was recorded and refused — no quorum, no proof, so the account never executed it.',
         auditFacts: [
           `Intent recorded: upgradeTo(${ATTACKER_IMPL})`,
           'Policy: token upgrade needs CTO + Security',
-          '0 of 2 senior keys in the quorum',
+          '0 of 2 senior keys signed',
           'No proof generated',
-          'CertenAccountV5 → revert "invalid governance proof"',
+          'Account reverts: invalid governance proof',
         ],
         pendingTxHash: pendingTx,
       }),
       execution: { status: 'never', accountAddress: AGENT_ACCT, shortLabel: 'token code unchanged', headline: 'Execution refused — no proof exists, so the account reverts' },
-      banner: { kind: 'danger', text: 'A manipulated agent tried to swap the gold token’s implementation for an attacker-controlled contract with a backdoor mint. It needs CTO + Security — the agent can’t produce that quorum, so no proof exists and its account refused. The implementation is unchanged.' },
+      banner: {
+        kind: 'danger',
+        text: 'Neither senior key signed. No proof exists, so the agent’s account refuses to run the call. The token’s code is unchanged.',
+      },
       controls: [ctl('act:4', 'Now the agent’s own key is stolen', 'danger', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
-      message: 'REFUSED — no quorum, no proof, no execution',
+      message: 'REFUSED — 0 of 2 senior keys',
     });
     this.appendAgent({ kind: 'blocked', text: 'CERTEN: replacing the token’s code needs the CTO and Security. I cannot get either of them — so there is no proof, and my account will not run it.' });
   }
@@ -552,6 +599,38 @@ export class AiGuardrailsScenario extends BaseScenario {
         inboxItems: [{ role: 'agent', status: 'compromised', channel: 'operator', timestampLabel: 'key stolen' }],
         coordinationSummary: 'The signature checks out. The destination does not match what the proof authorized.',
       },
+      evidence: pendingRecord({
+        plainMeaning:
+          'The signature checks out — it is the agent’s real key — and the proof being reused is genuine. The account has not run anything yet.',
+        auditFacts: [
+          'Agent signature: genuine',
+          'Reused proof: genuine, issued for buy(XAUV) to the gold fund',
+          'Submitted destination: attacker wallet',
+        ],
+        pendingTxHash: pendingTx,
+      }),
+      execution: { status: 'idle', headline: 'Submitted with a valid key and a genuine proof' },
+      banner: {
+        kind: 'danger',
+        text: 'The attacker holds the agent’s real signing key, and the proof they are reusing is genuine. Everything about this request checks out so far.',
+      },
+      // STOP on the frightening frame — valid key, genuine proof — before the commitment check
+      // kills it. That contrast is the entire point of the act.
+      controls: [ctl('act:41', 'The account re-derives the commitment', 'primary', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
+      message: 'Signature valid — checking what the proof actually authorized',
+    });
+    this.appendAgent({ kind: 'thought', text: 'Signature accepted. Submitting the redirected call against the existing proof.' });
+  }
+
+  /** Act 4, beat 2 — the account re-derives the commitment and the redirect dies. */
+  private async actAccountChecksCommitment() {
+    const pendingTx = this.state.coordination?.pendingTxHash ?? hash32();
+    this.patch({ busy: true, message: 'Re-deriving the commitment on-chain…' });
+    await this.beat(1500);
+
+    this.patch({
+      busy: false,
+      verdict: 'blocked',
       evidence: blockedRecord({
         title: 'Refusal Record',
         plainMeaning:
@@ -573,10 +652,10 @@ export class AiGuardrailsScenario extends BaseScenario {
       },
       banner: {
         kind: 'danger',
-        text: 'The attacker holds the agent’s real key and a genuine proof. The proof is welded to the call it authorized, so redirecting it reverts before anything executes.',
+        text: 'The proof is welded to the call it authorized. Change the destination and you change the commitment, so the account refuses before anything executes.',
       },
       controls: [ctl('reset', 'Reset scenario', 'reset')],
-      message: 'REFUSED - the call does not match the proof',
+      message: 'REFUSED — the call does not match the proof',
     });
     this.appendAgent({ kind: 'blocked', text: 'CERTEN: that proof authorizes one call — that token, that amount, that recipient. Changing the destination changes the commitment, and the account refuses it.' });
   }

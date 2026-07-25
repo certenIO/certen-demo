@@ -263,6 +263,8 @@ export class RwaIssuanceScenario extends BaseScenario {
     if (n === 21) return this.actFatFingerSubmit();
     if (n === 3) return this.actCompromisedIssuer();
     if (n === 31) return this.actCompromisedSubmit();
+    if (n === 32) return this.actCustodianChecksVault();
+    if (n === 33) return this.actAgentChecksRegister();
   }
 
   /** Evaluate the mint under the real policy engine and map its constraints for rail ②. */
@@ -592,17 +594,55 @@ export class RwaIssuanceScenario extends BaseScenario {
     issuer.note = 'All 3 officer keys signed — the attacker holds every one of them.';
     issuer.filmNote = 'signed with stolen keys';
     this.syncAuthorities('1 of 3 organizations · issuer seat filled by stolen keys');
-    await this.beat(900);
 
-    // Certen routes the request to the other two companies automatically — they are in the
-    // authority set, so the attacker cannot route around them. Both refuse on their own policy.
+    // STOP HERE. The other two companies are separate beats the presenter triggers, because each
+    // refuses for a completely different reason and each deserves its own sentence. Running the
+    // whole attack automatically collapsed three distinct points into a few seconds of animation
+    // with nothing for a narrator to say.
+    this.patch({
+      busy: false,
+      banner: {
+        kind: 'danger',
+        text: 'Every one of Meridian’s officer keys just signed. That seat is legitimately satisfied — the attacker really does control that company.',
+      },
+      controls: [ctl('act:32', 'Helvetia checks the vault', 'primary', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
+      message: '1 of 3 — the issuer seat is filled by stolen keys',
+    });
+  }
+
+  /** Act 3, beat 2 — the custodian's own policy engine does the arithmetic. */
+  private async actCustodianChecksVault() {
+    const decision = this.evaluateMint(MINT_ATTACK, false);
+    const custody = this.constraint(decision.constraints, 'within-attested-custody');
+
+    this.patch({ busy: true, message: 'Helvetia’s policy engine is checking the vault…' });
+    await this.beat(1100);
+
     const custodian = this.orgs[1];
     custodian.status = 'refused';
     custodian.canApprove = false;
     custodian.note = custody?.detail ?? 'mint exceeds attested custody';
     custodian.filmNote = 'not enough gold';
     this.syncAuthorities('1 of 3 organizations · custodian refused');
-    await this.beat(800);
+
+    this.patch({
+      busy: false,
+      banner: {
+        kind: 'danger',
+        text: 'Helvetia refuses. Two billion dollars of tokens against six hundred and twelve million of gold — the arithmetic does not close, and no signature can make it close.',
+      },
+      controls: [ctl('act:33', 'Ledgerline checks the register', 'primary', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
+      message: 'Custodian refused — not enough gold',
+    });
+  }
+
+  /** Act 3, beat 3 — the transfer agent checks who the recipient actually is. */
+  private async actAgentChecksRegister() {
+    const decision = this.evaluateMint(MINT_ATTACK, false);
+    const registry = this.constraint(decision.constraints, 'registered-destination');
+
+    this.patch({ busy: true, message: 'Ledgerline is checking the holder registry…' });
+    await this.beat(1100);
 
     const ta = this.orgs[2];
     ta.status = 'refused';
@@ -613,7 +653,7 @@ export class RwaIssuanceScenario extends BaseScenario {
       '1 of 3 organizations · no proof can form',
       'The attacker owns one company. The other two are not reachable from a stolen issuer key.',
     );
-    await this.beat(700);
+    await this.beat(800);
 
     this.patch({
       busy: false,

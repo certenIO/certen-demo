@@ -7,8 +7,9 @@ const ctx=await b.newContext({viewport:{width:1600,height:900}});
 await ctx.addInitScript(()=>{localStorage.setItem('certen.pace','instant');localStorage.setItem('certen.view.v2','1');}); // recap left at its default
 const p=await ctx.newPage();
 await p.goto('http://localhost:3010',{waitUntil:'networkidle'});
-await p.getByText('Regulated Asset Issuance',{exact:true}).first().click(); await p.waitForTimeout(700);
-await p.getByRole('button',{name:/Issue \$50,000,000/}).click(); await p.waitForTimeout(1500);
+const DEMO=process.env.DEMO ?? 'Regulated Asset Issuance';
+await p.getByText(DEMO,{exact:true}).first().click(); await p.waitForTimeout(700);
+
 // drive to the TRUE end of the demo — the summary is per demo, not per act
 for(let i=0;i<14;i++){
   let btn=p.getByRole('button',{name:/^(Authorize|Evaluate)/}).first();

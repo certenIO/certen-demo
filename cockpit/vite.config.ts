@@ -2,7 +2,13 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
 
+// Build stamp. Vite emits new hashed filenames every build, so a cached index.html silently
+// serves an old bundle — which has repeatedly looked like a bug that was already fixed. Showing
+// this in the UI makes "am I on the current build?" a five-second check.
+const BUILD_ID = new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+
 export default defineConfig({
+  define: { __BUILD_ID__: JSON.stringify(BUILD_ID) },
   plugins: [react()],
   resolve: {
     alias: {

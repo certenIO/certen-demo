@@ -346,6 +346,10 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
             control={<Switch size="small" checked={recap} onChange={(e) => setRecap(e.target.checked)} />}
             label={<Typography variant="body2">Offer a summary button when an act resolves</Typography>}
           />
+          <Divider sx={{ my: 1 }} />
+          <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+            Build {__BUILD_ID__}
+          </Typography>
         </Box>
       </Popover>
 

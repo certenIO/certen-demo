@@ -268,8 +268,10 @@ export class TreasuryProtectionScenario extends BaseScenario {
   async attack(): Promise<void> {
     const decision = this.policyFor({ actionType: 'bridgeTransfer', amountUsd: 25_000_000 });
     this.pendingTx = hash32();
+    // Start with NOTHING signed. The stolen signature has to be seen landing, or the act opens
+    // on a finished tableau and there is no moment to narrate.
     const attackApprovers = this.makeApprovers([
-      { role: 'treasurer', label: 'Treasurer', detail: 'DAO Treasurer', approved: true, compromised: true },
+      { role: 'treasurer', label: 'Treasurer', detail: 'DAO Treasurer', approved: false, compromised: true },
       { role: 'foundation', label: 'Foundation', detail: 'Foundation board', approved: false },
       { role: 'council', label: 'Security Council', detail: 'Security Council', approved: false },
     ]).map((a) => ({ ...a, canApprove: false })); // attacker can't conjure the other signatures
@@ -286,7 +288,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
         humanReadable: decision.humanReadable, rule: decision.rule, trigger: 'cross-chain treasury move',
         threshold: decision.threshold, required: decision.required,
       },
-      approvals: { collected: 1, threshold: decision.threshold, approvers: attackApprovers },
+      approvals: { collected: 0, threshold: decision.threshold, approvers: attackApprovers },
       coordination: {
         pendingTxHash: this.pendingTx,
         notificationsSent: 0,
@@ -297,9 +299,9 @@ export class TreasuryProtectionScenario extends BaseScenario {
         ],
         coordinationSummary: 'CERTEN records the stolen signature but refuses to escalate it to execution.',
       },
-      evidence: blockedRecord({
-        plainMeaning: 'A valid treasurer signature was recorded, but quorum was not met — no bridge intent executed.',
-        auditFacts: ['Valid treasurer signature recorded', 'Quorum 1 of 3 — failed', 'No bridge legs created · balances unchanged', 'Vault account has no private key — proof-only control'],
+      evidence: pendingRecord({
+        plainMeaning: 'A transfer to an unknown wallet, submitted with a real treasurer key. Nothing has been signed yet.',
+        auditFacts: ['Submitted with a genuine treasurer key', 'Destination: attacker wallet', 'Awaiting all three authorities'],
         pendingTxHash: this.pendingTx,
       }),
       explainer: {
@@ -315,13 +317,29 @@ export class TreasuryProtectionScenario extends BaseScenario {
         answer: 'The quorum lives on Accumulate, pending coordination is automated, and the proof can authorize or refuse execution across external chains.',
       },
       proof: null,
-      execution: { status: 'never', accountAddress: '0x5E19c73B…7A0d', shortLabel: 'nothing moved', headline: 'Valid signature recorded, but the other authorities never signed. No funds moved.' },
+      execution: { status: 'idle', headline: 'Held — the other two authorities have not signed' },
       treasury: treasuryInitial(),
       banner: { kind: 'danger', text: 'The attacker holds the treasurer’s real key and is signing valid requests with it.' },
       controls: [
         ctl('act:21', 'The attacker phishes a second authority', 'danger', { emphasis: true }),
         ctl('reset', 'Reset', 'reset'),
       ],
+      message: 'Submitted with a stolen key…',
+    });
+
+    // The stolen signature lands, and then nothing follows it.
+    await this.beat(1100);
+    attackApprovers[0].approved = true;
+    this.patch({
+      verdict: 'blocked',
+      approvals: { collected: 1, threshold: decision.threshold, approvers: attackApprovers },
+      evidence: blockedRecord({
+        title: 'Refusal Record',
+        plainMeaning: 'A valid treasurer signature was recorded, but quorum was not met — no bridge intent executed.',
+        auditFacts: ['Valid treasurer signature recorded', 'Quorum 1 of 3 — failed', 'No bridge legs created · balances unchanged', 'Vault account has no private key — proof-only control'],
+        pendingTxHash: this.pendingTx,
+      }),
+      execution: { status: 'never', accountAddress: '0x5E19c73B…7A0d', shortLabel: 'nothing moved', headline: 'Valid signature recorded, but the other authorities never signed. No funds moved.' },
       message: 'BLOCKED — 1 of 3',
     });
   }
@@ -401,10 +419,12 @@ export class TreasuryProtectionScenario extends BaseScenario {
   // anchor was consumed on first execution.
   private async actReplayAttempt() {
     const decision = this.policyFor({ actionType: 'bridgeTransfer', amountUsd: 25_000_000 });
+    // Land them one at a time. Watching a third genuine signature arrive — and the counter reach
+    // 3 of 3 — is what makes the refusal that follows land at all.
     const approvers = this.makeApprovers([
-      { role: 'treasurer', label: 'Treasurer', detail: 'DAO Treasurer', approved: true, compromised: true },
-      { role: 'foundation', label: 'Foundation', detail: 'Foundation board', approved: true, compromised: true },
-      { role: 'council', label: 'Security Council', detail: 'Security Council', approved: true },
+      { role: 'treasurer', label: 'Treasurer', detail: 'DAO Treasurer', approved: false, compromised: true },
+      { role: 'foundation', label: 'Foundation', detail: 'Foundation board', approved: false, compromised: true },
+      { role: 'council', label: 'Security Council', detail: 'Security Council', approved: false },
     ]).map((a) => ({ ...a, canApprove: false }));
 
     this.patch({
@@ -427,7 +447,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
         trigger: 'cross-chain treasury move', threshold: decision.threshold, required: decision.required,
       },
       // Every signature here is real. That is the point - and it still does not execute.
-      approvals: { collected: 3, threshold: decision.threshold, approvers },
+      approvals: { collected: 0, threshold: decision.threshold, approvers },
       coordination: {
         pendingTxHash: this.pendingTx,
         notificationsSent: 3,
@@ -467,8 +487,17 @@ export class TreasuryProtectionScenario extends BaseScenario {
       },
       // STOP on 3 of 3. The audience should have a second to think this one is going through.
       controls: [ctl('act:31', 'CERTEN checks the anchor', 'primary', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
-      message: '3 of 3 signatures - all genuine',
+      message: 'Replaying a genuine proof…',
     });
+
+    for (const a of approvers) {
+      await this.beat(850);
+      a.approved = true;
+      this.patch({
+        approvals: { collected: this.collected(approvers), threshold: decision.threshold, approvers },
+        message: `${this.collected(approvers)} of 3 signatures — all genuine`,
+      });
+    }
   }
 
   /** Act 3, beat 2 — the anchor is checked, and a spent proof cannot be spent again. */

@@ -248,7 +248,9 @@ export class StopTheMistakeScenario extends BaseScenario {
   async act(n: number): Promise<void> {
     if (n === 1) return this.start();
     if (n === 2) return this.actRushedHotfix();
+    if (n === 21) return this.actHotfixPagesTheOthers();
     if (n === 3) return this.actCompromisedPipeline();
+    if (n === 31) return this.actPipelineAsksAuthorities();
   }
 
   // == Act 2 - a hotfix that skips review =====================================
@@ -256,7 +258,7 @@ export class StopTheMistakeScenario extends BaseScenario {
   // real engineer with real credentials still cannot ship alone. Nobody can wave it through.
   private async actRushedHotfix() {
     this.approvers = this.makeApprovers([
-      { role: 'cto', label: 'CTO', detail: 'Technical owner', approved: true },
+      { role: 'cto', label: 'CTO', detail: 'Technical owner', approved: false },
       { role: 'security', label: 'Security Lead', detail: 'Risk owner', approved: false },
       { role: 'foundation', label: 'Foundation', detail: 'Governance owner', approved: false },
     ]).map((x) => ({ ...x, canApprove: false })); // at 02:00 there is nobody awake to sign
@@ -296,23 +298,17 @@ export class StopTheMistakeScenario extends BaseScenario {
         ],
         coordinationSummary: 'It is 2am. One authority is awake. The change waits - it does not ship.',
       },
-      evidence: blockedRecord({
-        title: 'Refusal Record',
+      evidence: pendingRecord({
         plainMeaning:
-          'An urgent hotfix from a real engineer with real credentials. It waits for the other two authorities, because urgency is not an authority.',
+          'An urgent hotfix from a real engineer with real credentials, waiting on the two authorities who are asleep.',
         auditFacts: [
           'Intent: upgrade to v6.1.1-hotfix',
-          '1 of 3 required authorities signed',
-          'No override path exists',
-          'Production unchanged',
+          'Submitted at 02:14 by the on-call engineer',
+          'Awaiting Security Lead and Foundation',
         ],
         pendingTxHash: this.pendingTx,
       }),
-      execution: {
-        status: 'never',
-        shortLabel: 'still on v6.1',
-        headline: 'Production unchanged - the other two authorities never signed',
-      },
+      execution: { status: 'idle', headline: 'Held - two authorities have not signed' },
       explainer: {
         pain: 'At 2am, under pressure, the usual answer is to let someone push it and review in the morning.',
         certenMove: 'CERTEN has no override. The hotfix waits for the same authorities as any other release.',
@@ -324,6 +320,61 @@ export class StopTheMistakeScenario extends BaseScenario {
         waitFor: '1 of 3, REFUSED',
         objection: 'What if it is a real emergency?',
         answer: 'Then you wake the other two. What you cannot do is decide alone that tonight is an exception.',
+      },
+      controls: [ctl('act:21', 'Page the other two authorities', 'primary', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
+      message: 'HELD - 1 of 3 authorities',
+    });
+
+    // Watch the one authority who IS awake sign. Seeing a signature land, and then nothing
+    // following it, is the whole point of the act.
+    await this.beat(900);
+    const cto = this.approvers[0];
+    cto.approved = true;
+    this.patch({
+      approvals: { collected: this.collected(this.approvers), threshold: 3, approvers: this.approvers },
+      message: 'CTO signed - the other two are asleep',
+    });
+  }
+
+  /** Act 2, beat 2 - the other two are paged, and the release still does not ship. */
+  private async actHotfixPagesTheOthers() {
+    this.patch({ busy: true, message: 'Paging the Security Lead and the Foundation...' });
+    await this.beat(1600);
+
+    this.patch({
+      busy: false,
+      verdict: 'blocked',
+      coordination: {
+        pendingTxHash: this.pendingTx,
+        notificationsSent: 4,
+        inboxItems: [
+          { role: 'cto', status: 'signed', channel: 'kms', timestampLabel: '02:14' },
+          { role: 'security', status: 'missing', channel: 'inbox', timestampLabel: 'paged twice, asleep' },
+          { role: 'foundation', status: 'missing', channel: 'inbox', timestampLabel: 'paged twice, asleep' },
+        ],
+        coordinationSummary: 'Paged again. Still one signature. There is no button that makes tonight an exception.',
+      },
+      evidence: blockedRecord({
+        title: 'Refusal Record',
+        plainMeaning:
+          'An urgent hotfix from a real engineer with real credentials. It waits for the other two authorities, because urgency is not an authority.',
+        auditFacts: [
+          'Intent: upgrade to v6.1.1-hotfix',
+          '1 of 3 required authorities signed',
+          'Paged twice - no response',
+          'No override path exists',
+          'Production unchanged',
+        ],
+        pendingTxHash: this.pendingTx,
+      }),
+      execution: {
+        status: 'never',
+        shortLabel: 'still on v6.1',
+        headline: 'Production unchanged - the other two authorities never signed',
+      },
+      banner: {
+        kind: 'danger',
+        text: 'Paged twice. Still one of three. The fix is real and the engineer is legitimate - and it still does not ship.',
       },
       controls: [ctl('act:3', 'Now the build pipeline is compromised', 'danger', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
       message: 'REFUSED - 1 of 3 authorities',
@@ -380,6 +431,52 @@ export class StopTheMistakeScenario extends BaseScenario {
         ],
         coordinationSummary: 'All three authorities were notified of an unrecognised release. None signed.',
       },
+      evidence: pendingRecord({
+        plainMeaning:
+          'A backdoored build, submitted through the normal release path with valid CI credentials. The pipeline can ask; it cannot approve.',
+        auditFacts: [
+          'Intent: upgrade to v6.6.6 (backdoored)',
+          'Submitted with valid CI credentials',
+          'Awaiting all three authorities',
+        ],
+        pendingTxHash: this.pendingTx,
+      }),
+      execution: { status: 'idle', headline: 'Held - the pipeline has no signing authority of its own' },
+      explainer: {
+        pain: 'A compromised build pipeline is how software supply-chain attacks reach production.',
+        certenMove: 'CERTEN treats the pipeline as a proposer, never an authority - so owning it produces a refusal and three alerts.',
+        buyerTakeaway: 'Compromising the thing that ships your code no longer means compromising what runs.',
+        integrationHint: 'Your CI keeps its credentials; it simply never had signing authority.',
+      },
+      presenterCue: {
+        say: 'Now the attacker owns the build pipeline outright - valid credentials, the normal release path, a backdoored build. The pipeline was never an authority. It asks, and it gets nothing.',
+        waitFor: '0 of 3, REFUSED',
+        objection: 'Most teams would be breached here.',
+        answer: 'Because the pipeline usually holds the deploy key. Here it holds nothing but the ability to ask.',
+      },
+      controls: [ctl('act:31', 'CERTEN asks all three authorities', 'primary', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
+      message: 'HELD - 0 of 3 authorities',
+    });
+  }
+
+  /** Act 3, beat 2 - all three are asked, none of them recognises the release. */
+  private async actPipelineAsksAuthorities() {
+    this.patch({ busy: true, message: 'Requesting CTO, Security Lead and Foundation...' });
+    await this.beat(1700);
+
+    this.patch({
+      busy: false,
+      verdict: 'blocked',
+      coordination: {
+        pendingTxHash: this.pendingTx,
+        notificationsSent: 3,
+        inboxItems: [
+          { role: 'cto', status: 'missing', channel: 'inbox', timestampLabel: 'unrecognised release' },
+          { role: 'security', status: 'missing', channel: 'inbox', timestampLabel: 'unrecognised release' },
+          { role: 'foundation', status: 'missing', channel: 'inbox', timestampLabel: 'unrecognised release' },
+        ],
+        coordinationSummary: 'All three were asked. None of them recognised this release, and none of them signed.',
+      },
       evidence: blockedRecord({
         title: 'Refusal Record',
         plainMeaning:
@@ -398,17 +495,9 @@ export class StopTheMistakeScenario extends BaseScenario {
         shortLabel: 'still on v6.1',
         headline: 'Production unchanged - the pipeline cannot authorize its own release',
       },
-      explainer: {
-        pain: 'A compromised build pipeline is how software supply-chain attacks reach production.',
-        certenMove: 'CERTEN treats the pipeline as a proposer, never an authority - so owning it produces a refusal and three alerts.',
-        buyerTakeaway: 'Compromising the thing that ships your code no longer means compromising what runs.',
-        integrationHint: 'Your CI keeps its credentials; it simply never had signing authority.',
-      },
-      presenterCue: {
-        say: 'Now the attacker owns the build pipeline outright - valid credentials, the normal release path, a backdoored build. The pipeline was never an authority. It asks, and it gets nothing.',
-        waitFor: '0 of 3, REFUSED',
-        objection: 'Most teams would be breached here.',
-        answer: 'Because the pipeline usually holds the deploy key. Here it holds nothing but the ability to ask.',
+      banner: {
+        kind: 'danger',
+        text: 'Three requests, no signatures, and three people who now know something is wrong with the build system.',
       },
       controls: [ctl('reset', 'Reset scenario', 'reset')],
       message: 'REFUSED - 0 of 3 authorities',

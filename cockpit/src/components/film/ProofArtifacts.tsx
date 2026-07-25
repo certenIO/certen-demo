@@ -30,7 +30,7 @@ const short = (h?: string, head = 8, tail = 4) => {
 function Line({ children, color }: { children: React.ReactNode; color?: string }) {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.3 }}>
-      <Stack direction="row" alignItems="center" spacing={0.75} sx={{ fontFamily: MONO_FAMILY, fontSize: '0.72rem', color: color ?? NEUTRAL[500] }}>
+      <Stack direction="row" alignItems="center" spacing={0.75} sx={{ fontFamily: MONO_FAMILY, fontSize: '0.84rem', fontWeight: 500, color: color ?? NEUTRAL[600] }}>
         {children}
       </Stack>
     </motion.div>
@@ -40,7 +40,7 @@ function Line({ children, color }: { children: React.ReactNode; color?: string }
 /** A muted marker so a hash from a simulated run is never mistaken for a live one on camera. */
 function SampleTag() {
   return (
-    <Box sx={{ px: 0.6, py: 0.1, borderRadius: 0.75, border: '1px solid', borderColor: alpha(NEUTRAL[500], 0.35), fontSize: '0.6rem', letterSpacing: '0.06em', color: NEUTRAL[500] }}>
+    <Box sx={{ px: 0.6, py: 0.1, borderRadius: 0.75, border: '1px solid', borderColor: alpha(NEUTRAL[500], 0.35), fontSize: '0.66rem', fontWeight: 700, letterSpacing: '0.06em', color: NEUTRAL[600] }}>
       SAMPLE
     </Box>
   );

@@ -380,7 +380,7 @@ function ProofNode({ state }: { state: ScenarioState }) {
                   <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: i < got ? color : 'transparent', border: `1.5px solid ${i < got ? color : NEUTRAL[300]}` }} />
                 </motion.div>
               ))}
-              <Typography sx={{ fontSize: '0.78rem', color: 'text.secondary', ml: 0.6 }}>
+              <Typography sx={{ fontSize: '0.84rem', fontWeight: 500, color: 'text.primary', ml: 0.6 }}>
                 {got} of {total} checked independently{ev?.requiredAttestations ? ` · ${ev.requiredAttestations} required` : ''}
               </Typography>
             </Stack>
@@ -490,7 +490,7 @@ export function FilmCanvas({
           {/* Naming the account turns the claim into something checkable: it is ADI-derived
               (owner = keccak256(adiURL)[-20:]) and no private key for it exists anywhere. */}
           {state.execution?.accountAddress && (
-            <Typography sx={{ fontFamily: MONO_FAMILY, fontSize: '0.8rem', color: 'text.secondary', opacity: 0.8 }}>
+            <Typography sx={{ fontFamily: MONO_FAMILY, fontSize: '0.86rem', fontWeight: 500, color: 'text.secondary' }}>
               {state.execution.accountAddress}
             </Typography>
           )}

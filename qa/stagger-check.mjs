@@ -12,9 +12,16 @@ await p.getByRole('button',{name:/Issue \$50,000,000/}).click(); await p.waitFor
 for (let i=0;i<3;i++){ const btn=p.getByRole('button',{name:/^(Authorize|Evaluate)/}).first();
   if(await btn.count()){await btn.click(); await p.waitForTimeout(3000);} }
 // now sample the journey as it fills
-const read=async()=>p.evaluate(()=>{const el=[...document.querySelectorAll('*')].find(e=>e.textContent?.trim().startsWith('PROOF JOURNEY')&&e.children.length);
-  if(!el)return'-'; const svgs=el.querySelectorAll('svg'); return `${svgs.length} markers filled`;});
-for (let t=0;t<12;t++){
+// Read the journey's actual rendered state: which step labels are showing, and whether the
+// chain step is mid-flight. Counting SVGs alone can't distinguish "executing" from "done".
+const read=async()=>p.evaluate(()=>{
+  const el=[...document.querySelectorAll('*')].find(e=>e.textContent?.trim().startsWith('PROOF JOURNEY')&&e.children.length);
+  if(!el)return'-';
+  const done=el.querySelectorAll('svg[data-testid$="RoundedIcon"]').length;
+  const spinning=el.querySelectorAll('.MuiCircularProgress-root').length;
+  const exec=/Executing…/.test(el.textContent||'')?' EXECUTING':'';
+  return `${done} landed${spinning?` +${spinning} in-flight`:''}${exec}`;});
+for (let t=0;t<24;t++){
   await p.screenshot({path:`${OUT}/t${String(t).padStart(2,'0')}.png`});
   console.log(`t=${t*400}ms`, await read());
   await p.waitForTimeout(400);

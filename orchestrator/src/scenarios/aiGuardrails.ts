@@ -179,7 +179,7 @@ export class AiGuardrailsScenario extends BaseScenario {
 
     await this.reveal(async () => {
       this.patch({ execution: { status: 'executing', headline: 'Executing buy(XAUV, $250,000)…', legs: [{ chain: 'base-sepolia', label: 'Base Sepolia', status: 'executing' }] } });
-      await this.beat(900);
+      await this.beat(1500); // let the on-chain execution beat be watchable
       const out = await execWithdraw('base-sepolia', 250000n, 'XAUV desk');
       this.patch({
         execution: {
@@ -351,7 +351,7 @@ export class AiGuardrailsScenario extends BaseScenario {
 
     await this.reveal(async () => {
       this.patch({ execution: { status: 'executing', headline: 'Executing subscribe($5,000,000)…', legs: [{ chain: 'base-sepolia', label: 'Base Sepolia', status: 'executing' }] } });
-      await this.beat(900);
+      await this.beat(1500); // let the on-chain execution beat be watchable
       const out = await execWithdraw('base-sepolia', 5000000n, 'XAUV desk');
       this.patch({
         execution: {

@@ -201,7 +201,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
           ],
         },
       });
-      await this.beat(900);
+      await this.beat(1500); // let the on-chain execution beat be watchable
       const src = await execWithdraw('base-sepolia', 25000000n, 'Source treasury');
       this.patch({
         execution: {
@@ -219,7 +219,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
         },
       });
       // Leg 2 — credit the destination chain (Arbitrum Sepolia)
-      await this.beat(900);
+      await this.beat(1500); // let the on-chain execution beat be watchable
       const dst = await execDeposit('arbitrum-sepolia', 25000000n, 'Destination treasury');
       this.patch({
         execution: {

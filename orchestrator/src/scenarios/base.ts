@@ -135,7 +135,7 @@ export abstract class BaseScenario {
       busy: true,
       message: 'Quorum reached — policy satisfied',
     });
-    await this.beat(1100); // hold on APPROVED so the verdict flip lands and is read
+    await this.beat(1300); // hold on APPROVED so the verdict flip lands and is read
 
     let proof: ProofInfo;
     if (config.mode === 'live' && opts.txHash) {
@@ -176,7 +176,7 @@ export abstract class BaseScenario {
       },
       message: 'Certen proof generated',
     });
-    await this.beat(1400); // hold on PROOF so the viewer can register the evidence
+    await this.beat(2000); // hold on PROOF — this is the landing, and it needs room before execution starts
 
     this.patch({ verdict: 'executing', message: 'Executing on-chain…' });
     await run(proof);

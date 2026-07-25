@@ -768,7 +768,7 @@ export class RwaIssuanceScenario extends BaseScenario {
             legs: [{ chain: 'base-sepolia', label: 'Base Sepolia · XAUV token', status: 'executing' }],
           },
         });
-        await this.beat(900);
+        await this.beat(1500); // let the on-chain execution beat be watchable
         const out = await execAssetMint('base-sepolia', BigInt(minted), 'XAUV supply');
         this.outstanding += minted;
         this.proposed = 0;

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Box, Stack, Typography, alpha } from '@mui/material';
+import { Box, CircularProgress, Stack, Typography, alpha } from '@mui/material';
 import { motion } from 'framer-motion';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
@@ -19,10 +19,12 @@ import type { ScenarioState } from '../../types';
  * still completes, because recording the refusal is itself a real, permanent act.
  */
 
-type StepState = 'done' | 'refused' | 'pending';
+type StepState = 'done' | 'refused' | 'pending' | 'active';
 
 interface Step {
   label: string;
+  /** wording to use while the step has resolved but not yet been revealed */
+  pendingLabel?: string;
   /** which system this happens on */
   layer: string;
   artifact?: string;
@@ -41,6 +43,7 @@ function buildSteps(state: ScenarioState, simulated: boolean): Step[] {
   const proven = ev?.kind === 'execution-proof';
   const refused = ev?.kind === 'blocked-action-record' || ex?.status === 'never';
   const executed = ex?.status === 'done';
+  const executing = ex?.status === 'executing' || ex?.status === 'pending';
   const proposed = !!state.action;
 
   const leg = ex?.legs?.find((l) => l.txHash) ?? null;
@@ -69,15 +72,19 @@ function buildSteps(state: ScenarioState, simulated: boolean): Step[] {
       state: proven ? 'done' : refused ? 'refused' : 'pending',
     },
     {
-      label: executed ? 'Executed' : refused ? 'Never executed' : 'Executes',
+      // Executing is its own beat. Without an active state this jumps straight from hollow to
+      // done and the narrator has nothing to say over the moment the chain is actually touched.
+      label: executed ? 'Executed' : refused ? 'Never executed' : executing ? 'Executing…' : 'Executes',
+      pendingLabel: 'Executes',
       layer: chain,
       artifact: executed ? short(leg?.txHash, 10, 6) : undefined,
-      state: executed ? 'done' : refused ? 'refused' : 'pending',
+      state: executed ? 'done' : refused ? 'refused' : executing ? 'active' : 'pending',
     },
     {
       // A refusal is not an absence of an outcome — it produces a permanent record, which is the
       // artifact almost nobody else in this space can show.
       label: refused ? 'Refusal recorded' : 'Result recorded',
+      pendingLabel: 'Recorded',
       layer: 'Accumulate',
       artifact: refused || executed ? (simulated ? 'permanent · sample' : 'permanent') : undefined,
       state: refused || executed ? 'done' : 'pending',
@@ -88,8 +95,16 @@ function buildSteps(state: ScenarioState, simulated: boolean): Step[] {
 const COLOR: Record<StepState, string> = {
   done: CERTEN_COLORS.success.main,
   refused: CERTEN_COLORS.error.main,
+  active: CERTEN_COLORS.warning.main,
   pending: NEUTRAL[400],
 };
+
+/**
+ * Relative dwell per step. The back half of the journey carries the payoff — the proof landing,
+ * the chain being touched, the result being written back — so those beats get progressively more
+ * room. A flat cadence rushes exactly the moments worth narrating.
+ */
+const DWELL = [1, 1, 1.35, 1.6, 1.9];
 
 /**
  * Walk the journey one step at a time.
@@ -101,7 +116,7 @@ const COLOR: Record<StepState, string> = {
  *
  * Retreats (a reset, or the next act) snap back immediately; only forward progress is paced.
  */
-function useStaggeredReveal(target: number, stepMs: number) {
+function useStaggeredReveal(target: number, stepMs: number, states: StepState[]) {
   const [revealed, setRevealed] = useState(target);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -111,9 +126,13 @@ function useStaggeredReveal(target: number, stepMs: number) {
       setRevealed(target); // reset / new act — no reason to animate backwards
       return;
     }
-    timer.current = setTimeout(() => setRevealed((r) => Math.min(r + 1, target)), stepMs);
+    // An 'active' step is a live beat with its own duration — reveal it almost immediately, or
+    // the dwell swallows it and the spinner never appears. Dwell governs settled steps only.
+    const next = states[revealed];
+    const dwell = next === 'active' ? 180 : stepMs * (DWELL[revealed] ?? 1);
+    timer.current = setTimeout(() => setRevealed((r) => Math.min(r + 1, target)), dwell);
     return () => { if (timer.current) clearTimeout(timer.current); };
-  }, [target, revealed, stepMs]);
+  }, [target, revealed, stepMs, states]);
 
   return revealed;
 }
@@ -130,9 +149,10 @@ export function ProofJourney({
 }) {
   const resolved = buildSteps(state, simulated);
   const target = resolved.filter((s) => s.state !== 'pending').length;
-  const revealed = useStaggeredReveal(target, stepMs);
+  const revealed = useStaggeredReveal(target, stepMs, resolved.map((s) => s.state));
   // A step that has resolved but not yet been revealed reads as pending.
-  const steps = resolved.map((s, i) => (i < revealed ? s : { ...s, artifact: undefined, state: 'pending' as StepState }));
+  const steps = resolved.map((s, i) =>
+    i < revealed ? s : { ...s, label: s.pendingLabel ?? s.label, artifact: undefined, state: 'pending' as StepState });
 
   return (
     <Box sx={{ p: 1.75, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
@@ -156,7 +176,7 @@ export function ProofJourney({
                   transition={{ type: 'spring', stiffness: 420, damping: 16 }}
                 >
                   <Box sx={{ width: 22, height: 22, borderRadius: '50%', display: 'grid', placeItems: 'center', bgcolor: s.state === 'pending' ? 'transparent' : alpha(color, 0.15), border: `2px solid ${alpha(color, s.state === 'pending' ? 0.45 : 0.9)}`, color }}>
-                    {s.state !== 'pending' && <Glyph sx={{ fontSize: 14 }} />}
+                    {s.state === 'active' ? <CircularProgress size={12} thickness={6} sx={{ color }} /> : s.state !== 'pending' && <Glyph sx={{ fontSize: 14 }} />}
                   </Box>
                 </motion.div>
                 {!last && <Box sx={{ width: 2, flexGrow: 1, minHeight: 16, bgcolor: alpha(color, s.state === 'pending' ? 0.25 : 0.5) }} />}

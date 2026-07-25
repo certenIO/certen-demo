@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { Box, Stack, Typography, alpha } from '@mui/material';
 import { motion } from 'framer-motion';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
@@ -90,8 +91,48 @@ const COLOR: Record<StepState, string> = {
   pending: NEUTRAL[400],
 };
 
-export function ProofJourney({ state, simulated = false }: { state: ScenarioState; simulated?: boolean }) {
-  const steps = buildSteps(state, simulated);
+/**
+ * Walk the journey one step at a time.
+ *
+ * The underlying state resolves all five steps in a single patch, so without this every marker
+ * flips at once and there is nothing for a narrator to talk over. Holding a reveal cursor and
+ * advancing it on a timer turns one instant into a five-beat sequence — which is the difference
+ * between "it worked" and being able to say *where* each part of it happened.
+ *
+ * Retreats (a reset, or the next act) snap back immediately; only forward progress is paced.
+ */
+function useStaggeredReveal(target: number, stepMs: number) {
+  const [revealed, setRevealed] = useState(target);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (timer.current) clearTimeout(timer.current);
+    if (target <= revealed) {
+      setRevealed(target); // reset / new act — no reason to animate backwards
+      return;
+    }
+    timer.current = setTimeout(() => setRevealed((r) => Math.min(r + 1, target)), stepMs);
+    return () => { if (timer.current) clearTimeout(timer.current); };
+  }, [target, revealed, stepMs]);
+
+  return revealed;
+}
+
+export function ProofJourney({
+  state,
+  simulated = false,
+  stepMs = 700,
+}: {
+  state: ScenarioState;
+  simulated?: boolean;
+  /** dwell between steps landing; the presenter's pace setting drives this */
+  stepMs?: number;
+}) {
+  const resolved = buildSteps(state, simulated);
+  const target = resolved.filter((s) => s.state !== 'pending').length;
+  const revealed = useStaggeredReveal(target, stepMs);
+  // A step that has resolved but not yet been revealed reads as pending.
+  const steps = resolved.map((s, i) => (i < revealed ? s : { ...s, artifact: undefined, state: 'pending' as StepState }));
 
   return (
     <Box sx={{ p: 1.75, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
@@ -108,7 +149,12 @@ export function ProofJourney({ state, simulated = false }: { state: ScenarioStat
             <Stack key={s.label} direction="row" spacing={1.25} sx={{ minWidth: 0 }}>
               {/* rail: marker plus the connector to the next step */}
               <Stack alignItems="center" sx={{ flexShrink: 0, width: 22 }}>
-                <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.25, delay: i * 0.06 }}>
+                <motion.div
+                  key={s.state}
+                  initial={s.state === 'pending' ? false : { scale: 0.4, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 420, damping: 16 }}
+                >
                   <Box sx={{ width: 22, height: 22, borderRadius: '50%', display: 'grid', placeItems: 'center', bgcolor: s.state === 'pending' ? 'transparent' : alpha(color, 0.15), border: `2px solid ${alpha(color, s.state === 'pending' ? 0.45 : 0.9)}`, color }}>
                     {s.state !== 'pending' && <Glyph sx={{ fontSize: 14 }} />}
                   </Box>

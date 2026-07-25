@@ -39,6 +39,9 @@ import { CERTEN_COLORS, SHADOW } from '../theme';
 
 type Pace = 'cinematic' | 'standard' | 'instant';
 const PACE_MS: Record<Pace, number> = { cinematic: 1700, standard: 1000, instant: 0 };
+/** Dwell between proof-journey steps landing. Slower than the rail reveal — this is the beat the
+ *  narrator talks over, and five steps at once is a blur. */
+const JOURNEY_MS: Record<Pace, number> = { cinematic: 850, standard: 500, instant: 90 };
 
 const lsGet = (k: string, d: boolean) => {
   try { const v = localStorage.getItem(k); return v == null ? d : v === '1'; } catch { return d; }
@@ -409,7 +412,7 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
               {/* Supply vs. attested custody leads the column — it's the one panel that reads
                   from across a room and needs no narration. */}
               {state?.supply && <SupplyBar supply={state.supply} film={film} />}
-              {film && state?.action && <ProofJourney state={state} simulated={mode !== 'live'} />}
+              {film && state?.action && <ProofJourney state={state} simulated={mode !== 'live'} stepMs={JOURNEY_MS[pace]} />}
               {film && <PolicyChecks policy={state?.policy} />}
               {film && !state?.supply && !state?.agent && !state?.treasury && !!state?.impactedSystems?.length && (
                 <ImpactPanel systems={state.impactedSystems} refused={state?.execution?.status === 'never'} />

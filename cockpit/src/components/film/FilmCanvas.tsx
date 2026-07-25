@@ -138,7 +138,10 @@ function ActionBand({ state }: { state: ScenarioState }) {
   const n = amount.length;
   const STEPS = [2.9, 2.4, 2.0, 1.7, 1.45];
   let step = n >= 20 ? 3 : n >= 16 ? 2 : n >= 12 ? 1 : 0;
-  if (init.length > 20) step += 1;
+  // A long actor chip eats the same row, so it costs the figure a size step — two steps once it
+  // is genuinely long, or the figure gets clipped by the target chip.
+  if (init.length > 26) step += 2;
+  else if (init.length > 18) step += 1;
   const size = `${STEPS[Math.min(step, STEPS.length - 1)]}rem`;
   const compromised = /compromis|stolen|attacker/i.test(init);
   const ActorIcon = /agent|ai|bot/i.test(init) ? SmartToyRoundedIcon : compromised ? WarningAmberRoundedIcon : PersonRoundedIcon;

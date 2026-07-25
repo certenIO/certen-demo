@@ -259,9 +259,9 @@ export class TreasuryProtectionScenario extends BaseScenario {
     const decision = this.policyFor({ actionType: 'bridgeTransfer', amountUsd: 25_000_000 });
     this.pendingTx = hash32();
     const attackApprovers = this.makeApprovers([
-      { role: 'treasurer', label: 'Treasurer', detail: 'KEY COMPROMISED', approved: true, compromised: true },
-      { role: 'foundation', label: 'Foundation', detail: 'Did not sign', approved: false },
-      { role: 'council', label: 'Security Council', detail: 'Did not sign', approved: false },
+      { role: 'treasurer', label: 'Treasurer', detail: 'DAO Treasurer', approved: true, compromised: true },
+      { role: 'foundation', label: 'Foundation', detail: 'Foundation board', approved: false },
+      { role: 'council', label: 'Security Council', detail: 'Security Council', approved: false },
     ]).map((a) => ({ ...a, canApprove: false })); // attacker can't conjure the other signatures
 
     this.patch({
@@ -270,7 +270,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
       verdict: 'blocked',
       action: {
         verb: 'Move funds', summary: 'Base → attacker wallet', amountLabel: '$25,000,000', target: "Attacker's wallet",
-        initiator: 'Treasurer (key compromised)', icon: 'bridge', destructive: true,
+        initiator: 'Treasurer · stolen key', icon: 'bridge', destructive: true,
       },
       policy: {
         humanReadable: decision.humanReadable, rule: decision.rule, trigger: 'cross-chain treasury move',

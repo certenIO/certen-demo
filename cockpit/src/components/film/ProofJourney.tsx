@@ -54,19 +54,30 @@ function buildSteps(state: ScenarioState, simulated: boolean): Step[] {
   const attested = ev?.attestations ?? 0;
   const required = ev?.requiredAttestations;
 
-  // The ledger proof is built once the authority set is satisfied and before a proof can form,
-  // so a refusal stops the cycle right here rather than silently skipping a phase.
+  // Has every required signer actually signed? This gates the whole journey: no key page has met
+  // its threshold at the start of a scenario, so nothing downstream of it may read as complete.
   const authority = state.authorities
     ? state.authorities.orgs.every((o) => o.status === 'satisfied' || o.status === 'compromised')
     : (state.approvals?.collected ?? 0) >= (state.approvals?.threshold ?? 0);
 
   return [
     {
-      label: 'Intent recorded',
+      // An intent is SUBMITTED immediately but it is not RECORDED until every required key page
+      // meets its own M-of-N threshold — on Accumulate the transaction sits pending until then.
+      // Showing this green the moment something is proposed would claim an approval that has not
+      // happened, which is precisely the thing the rest of the screen argues is impossible.
+      label: refused
+        ? 'Intent never completed'
+        : authority
+          ? 'Intent recorded'
+          : proposed
+            ? 'Intent pending signatures'
+            : 'Intent',
+      pendingLabel: 'Intent',
       layer: 'Accumulate',
-      tech: 'canonical 4-blob intent — action · cross-chain · governance · replay — SHA-256 operationID',
+      tech: 'canonical 4-blob intent written to Accumulate · pending until every required key page meets its M-of-N threshold',
       artifact: short(ev?.txHash ?? state.coordination?.pendingTxHash, 10, 0),
-      state: proposed ? 'done' : 'pending',
+      state: refused ? 'refused' : authority && proposed ? 'done' : proposed ? 'active' : 'pending',
     },
     {
       label: 'Proven against the ledger',
@@ -230,7 +241,7 @@ export function ProofJourney({
                     its detail rather than opening as a wall of cryptography */}
                 {s.state !== 'pending' && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.35 }}>
-                    <Typography sx={{ fontSize: '0.66rem', color: 'text.secondary', lineHeight: 1.3 }}>
+                    <Typography data-tech="1" sx={{ fontSize: '0.66rem', color: 'text.secondary', lineHeight: 1.3 }}>
                       {s.tech}
                     </Typography>
                   </motion.div>

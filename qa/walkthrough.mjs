@@ -43,7 +43,12 @@ async function audit(page, tag) {
   return page.evaluate((tag) => {
     const out = [];
     const txt = (el) => (el?.textContent ?? '').trim();
-    const body = document.body.innerText;
+    // The Proof Journey's technical readings are deliberately technical — "key page", "BLS",
+    // "merkle" belong there and only there. Exclude them so the ban still applies everywhere else.
+    const techNodes = [...document.querySelectorAll('[data-tech]')];
+    const techText = new Set(techNodes.map((n) => (n.textContent || '').trim()));
+    let body = document.body.innerText;
+    for (const t of techText) body = body.split(t).join(' ');
 
     // jargon that should never survive to the diagram
     const banned = [/\bG[012]\b/, /acc:\/\//, /key page/i, /key book/i, /\bquorum\b/i, /attestation/i, /\bADI\b/];

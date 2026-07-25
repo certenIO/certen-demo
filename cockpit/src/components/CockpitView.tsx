@@ -8,6 +8,7 @@ import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import SkipNextRoundedIcon from '@mui/icons-material/SkipNextRounded';
+import SummarizeRoundedIcon from '@mui/icons-material/SummarizeRounded';
 import type { ScenarioMeta, ScenarioState } from '../types';
 import { sendControl, subscribe } from '../api';
 import { BrandMark } from './Brand';
@@ -98,7 +99,6 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
   const [settingsEl, setSettingsEl] = useState<HTMLElement | null>(null);
   const [recap, setRecap] = useState(() => lsGet('certen.recap', true));
   const [recapOpen, setRecapOpen] = useState(false);
-  const shownRecapKey = useRef('');
   // The diagram is the DEFAULT view — it's the one that reads on camera and across a room.
   // The prose rails are the opt-in "Detail" mode for buyers reading at their own pace.
   // Note the v2 key: the old `certen.film` wrote a literal '0' for every visitor under the
@@ -133,9 +133,10 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
   }, []);
   useEffect(() => { try { localStorage.setItem('certen.pace', pace); } catch { /* ignore */ } }, [pace]);
 
-  // ── certainty recap: auto-surface on the terminal state (safe / refused) ──
-  // Both close ONLY at the true end of the demo — no further act/attack/start pending — so it never
-  // pops mid-scenario (e.g. Demo 3's stolen-key refusal in Act 2, with the Act 3 rotation still to come).
+  // ── certainty recap: opened BY THE PRESENTER, never on its own ──
+  // It used to surface itself a second after a terminal state, which meant it covered the frame
+  // the moment an act resolved — exactly when the diagram is worth looking at. It is now a button
+  // that appears once an act has resolved, and nothing else opens it.
   const isEnd = !(state?.controls ?? []).some((c) => c.id.startsWith('act:') || c.id === 'attack' || c.id === 'start');
   const terminalSafe = state?.verdict === 'executed' && isEnd;
   const terminalRefused = state?.verdict === 'blocked' && state?.execution?.status === 'never' && isEnd;
@@ -156,12 +157,8 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
         ? 'The treasury is untouched.'
         : 'Nothing moved.';
 
-  useEffect(() => {
-    if (!recap || !terminal) { setRecapOpen(false); return; }
-    if (recapKey === shownRecapKey.current) return;
-    const t = setTimeout(() => { setRecapOpen(true); shownRecapKey.current = recapKey; }, 1200);
-    return () => clearTimeout(t);
-  }, [recapKey, recap, terminal]);
+  // Close it if the act moves on, but never open it automatically.
+  useEffect(() => { setRecapOpen(false); }, [recapKey]);
 
   // which rails have data ready (they fill in order 1→5)
   const ready: Record<number, boolean> = {
@@ -347,7 +344,7 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
           />
           <FormControlLabel
             control={<Switch size="small" checked={recap} onChange={(e) => setRecap(e.target.checked)} />}
-            label={<Typography variant="body2">Certainty recap (after each demo)</Typography>}
+            label={<Typography variant="body2">Offer a summary button when an act resolves</Typography>}
           />
         </Box>
       </Popover>
@@ -435,7 +432,21 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
 
       {/* ── Footer control deck (reserved, never overlays) ── */}
       <Box sx={{ flexShrink: 0, pt: 0.75 }}>
-        <ControlDeck controls={deckControls} busy={!!state?.busy} onControl={onControl} />
+        <Stack direction="row" alignItems="center" justifyContent="center" spacing={2}>
+          <ControlDeck controls={deckControls} busy={!!state?.busy} onControl={onControl} />
+          {/* Deliberate, never automatic: the presenter decides when to cover the diagram. */}
+          {recap && terminal && !recapOpen && (
+            <Button
+              size="large"
+              variant="outlined"
+              onClick={() => setRecapOpen(true)}
+              startIcon={<SummarizeRoundedIcon />}
+              sx={{ px: 3, py: 1, fontSize: '0.92rem', color: 'text.secondary', borderColor: 'divider', flexShrink: 0 }}
+            >
+              Summary
+            </Button>
+          )}
+        </Stack>
       </Box>
 
       {/* ── Step-mode "reveal next" affordance ── */}

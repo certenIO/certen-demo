@@ -84,7 +84,7 @@ for (const title of titles) {
     let btn = page.getByRole('button', { name: /^(Authorize|Evaluate|Approve)/ }).first();
     let where = 'canvas';
     if (!(await btn.count())) {
-      btn = page.getByRole('button', { name: /^(?!Reset|Details|Bundle|Verify|Why|tx|Presenter|Diagram|Detail).+/ }).last();
+      btn = page.getByRole('button', { name: /^(?!Reset|Details|Bundle|Verify|Why|tx|Presenter|Diagram|Detail|Summary).+/ }).last();
       where = 'deck';
     }
     if (!(await btn.count())) break;

@@ -229,6 +229,12 @@ export class RwaIssuanceScenario extends BaseScenario {
       execution: null,
       authorities: null,
       supply: this.supply(),
+      brief: {
+        situation: 'Tokenized gold. One company issues the token, another holds the metal, a third keeps the register of who owns what.',
+        attempt: 'Create $50,000,000 of new tokens — then make a mistake, then get robbed.',
+        objective: 'Supply cannot move unless all three companies authorize it AND the gold actually exists.',
+        acts: ['A correct issuance', 'An operator’s typo', 'The issuer is compromised'],
+      },
       explainer: {
         pain: 'One company controls issuance. Its internal approvals are the only thing between a keystroke and new supply.',
         certenMove: 'CERTEN makes supply changes executable only against a proof that three independent companies each authorized it, inside signed custody.',

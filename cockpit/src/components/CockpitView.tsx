@@ -41,7 +41,7 @@ type Pace = 'cinematic' | 'standard' | 'instant';
 const PACE_MS: Record<Pace, number> = { cinematic: 1700, standard: 1000, instant: 0 };
 /** Dwell between proof-journey steps landing. Slower than the rail reveal — this is the beat the
  *  narrator talks over, and five steps at once is a blur. */
-const JOURNEY_MS: Record<Pace, number> = { cinematic: 1150, standard: 650, instant: 90 };
+const JOURNEY_MS: Record<Pace, number> = { cinematic: 1800, standard: 900, instant: 90 };
 
 const lsGet = (k: string, d: boolean) => {
   try { const v = localStorage.getItem(k); return v == null ? d : v === '1'; } catch { return d; }

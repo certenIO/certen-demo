@@ -20,6 +20,7 @@ import DeleteForeverRoundedIcon from '@mui/icons-material/DeleteForeverRounded';
 import LocalFireDepartmentRoundedIcon from '@mui/icons-material/LocalFireDepartmentRounded';
 import ArrowDownwardRoundedIcon from '@mui/icons-material/ArrowDownwardRounded';
 import KeyOffRoundedIcon from '@mui/icons-material/KeyOffRounded';
+import { BriefCard } from './BriefCard';
 import { CERTEN_COLORS, MONO_FAMILY, NEUTRAL } from '../../theme';
 import type { ScenarioState } from '../../types';
 
@@ -431,6 +432,9 @@ export function FilmCanvas({
   onApprove: (role: string) => void;
 }) {
   if (!state) return null;
+  // Before anything is proposed the diagram has nothing to show, so open on the brief instead of
+  // an empty flow — the viewer needs to know what this demo IS before they watch it run.
+  if (!state.action && state.brief) return <BriefCard brief={state.brief} title={state.title} />;
   const real = toNodes(state);
   // A zero-threshold act has no signers, but it DOES have a step: policy cleared it. Drawing that
   // as a node keeps the flow grammar intact — otherwise the canvas renders a hole where the

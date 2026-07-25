@@ -21,7 +21,7 @@ const read=async()=>p.evaluate(()=>{
   const spinning=el.querySelectorAll('.MuiCircularProgress-root').length;
   const exec=/Executing…/.test(el.textContent||'')?' EXECUTING':'';
   return `${done} landed${spinning?` +${spinning} in-flight`:''}${exec}`;});
-for (let t=0;t<24;t++){
+for (let t=0;t<44;t++){
   await p.screenshot({path:`${OUT}/t${String(t).padStart(2,'0')}.png`});
   console.log(`t=${t*400}ms`, await read());
   await p.waitForTimeout(400);

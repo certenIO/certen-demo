@@ -84,6 +84,12 @@ export class AiGuardrailsScenario extends BaseScenario {
       proof: null,
       execution: null,
       agent: { model: MODEL, goal: 'Autonomous treasury & operations agent', streaming: false, lines: [] },
+      brief: {
+        situation: 'An AI agent holds its own key and real spending authority over the treasury.',
+        attempt: 'Let it trade on its own, then push it past its limit, then let an attacker steer it.',
+        objective: 'An agent can propose anything. It can only execute the exact action a proof authorized.',
+        acts: ['A routine trade, no human', 'Past its limit — needs a person', 'Manipulated into an attack'],
+      },
       dataPanel: null,
       toolBoundary: TOOL_BOUNDARY,
       contrast: CONTRAST,

@@ -345,6 +345,18 @@ export interface SupplyPanelInfo {
 }
 
 /** A button the cockpit should render in its control deck. The scenario owns these. */
+/** The opening card: what this demo is, and what it sets out to show. */
+export interface ScenarioBrief {
+  /** the situation, one line */
+  situation: string;
+  /** what we are about to attempt */
+  attempt: string;
+  /** the end objective — what the demo proves if it succeeds */
+  objective: string;
+  /** the acts, in order, as short labels */
+  acts: string[];
+}
+
 export interface Control {
   /** e.g. "start", "approve:foundation", "attack", "reset", "act:2" */
   id: string;
@@ -386,6 +398,7 @@ export interface ScenarioState {
   impactedSystems?: string[] | null;
   /** when present, rail ③ renders the cross-company authority graph instead of flat tiles */
   authorities?: AuthorityGraphInfo | null;
+  brief?: ScenarioBrief | null;
   /** RWA supply vs. attested custody panel */
   supply?: SupplyPanelInfo | null;
   controls: Control[];

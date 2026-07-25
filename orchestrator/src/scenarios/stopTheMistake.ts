@@ -55,8 +55,8 @@ export class StopTheMistakeScenario extends BaseScenario {
       id: this.meta.id,
       title: this.meta.title,
       subtitle: 'Production change control · governance gate',
-      act: 1,
-      totalActs: 1,
+      act: 0,
+      totalActs: 3,
       mode: 'simulated',
       verdict: 'idle',
       action: null,
@@ -75,6 +75,12 @@ export class StopTheMistakeScenario extends BaseScenario {
       contrast: CONTRAST,
       integration: INTEGRATION,
       impactedSystems: IMPACTED,
+      brief: {
+        situation: 'A release pipeline can change a $10M production contract on its own.',
+        attempt: 'Ship a correct release, then rush a hotfix past review, then let an attacker own the pipeline.',
+        objective: 'Nothing reaches production without proof that every required authority signed — and the pipeline was never one of them.',
+        acts: ['A correct release', 'A rushed hotfix', 'The pipeline is compromised'],
+      },
       controls: [ctl('start', 'Propose the upgrade', 'primary', { emphasis: true })],
       busy: false,
       message: 'Ready',
@@ -92,6 +98,8 @@ export class StopTheMistakeScenario extends BaseScenario {
     const decision = this.policyFor({ actionType: 'contractUpgrade', env: 'production', principal: PRINCIPAL });
 
     this.patch({
+      act: 1,
+      actLabel: 'Act 1 of 3 · a correct release',
       verdict: 'blocked',
       action: {
         verb: 'Upgrade contract',
@@ -230,5 +238,181 @@ export class StopTheMistakeScenario extends BaseScenario {
         },
       });
     }
+
+    this.patch({
+      controls: [ctl('act:2', 'Now a hotfix skips review', 'primary', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
+    });
   }
+
+  /** 1 opens the correct release; 2 the rushed hotfix; 3 the compromised pipeline. */
+  async act(n: number): Promise<void> {
+    if (n === 1) return this.start();
+    if (n === 2) return this.actRushedHotfix();
+    if (n === 3) return this.actCompromisedPipeline();
+  }
+
+  // == Act 2 - a hotfix that skips review =====================================
+  // Segregation of duties at the worst possible moment: an urgent, well-intentioned change by a
+  // real engineer with real credentials still cannot ship alone. Nobody can wave it through.
+  private async actRushedHotfix() {
+    this.approvers = this.makeApprovers([
+      { role: 'cto', label: 'CTO', detail: 'Technical owner', approved: true },
+      { role: 'security', label: 'Security Lead', detail: 'Risk owner', approved: false },
+      { role: 'foundation', label: 'Foundation', detail: 'Governance owner', approved: false },
+    ]).map((x) => ({ ...x, canApprove: false })); // at 02:00 there is nobody awake to sign
+    this.pendingTx = hash32();
+    const decision = this.policyFor({ actionType: 'contractUpgrade', env: 'production', principal: PRINCIPAL });
+
+    this.patch({
+      act: 2,
+      actLabel: 'Act 2 of 3 - a rushed hotfix',
+      verdict: 'blocked',
+      proof: null,
+      action: {
+        verb: 'Upgrade contract',
+        summary: 'ACME protocol   v6.1 -> v6.1.1-hotfix',
+        principal: PRINCIPAL,
+        initiator: 'On-call engineer',
+        amountLabel: 'v6.1 to v6.1.1',
+        note: 'urgent hotfix at 02:14',
+        target: 'Production',
+        icon: 'upgrade',
+      },
+      policy: {
+        humanReadable: decision.humanReadable,
+        rule: decision.rule,
+        trigger: 'production environment',
+        threshold: decision.threshold,
+        required: decision.required,
+      },
+      approvals: { collected: this.collected(this.approvers), threshold: decision.threshold, approvers: this.approvers },
+      coordination: {
+        pendingTxHash: this.pendingTx,
+        notificationsSent: 2,
+        inboxItems: [
+          { role: 'cto', status: 'signed', channel: 'kms', timestampLabel: 'just now' },
+          { role: 'security', status: 'notified', channel: 'inbox', timestampLabel: 'paged' },
+          { role: 'foundation', status: 'notified', channel: 'inbox', timestampLabel: 'paged' },
+        ],
+        coordinationSummary: 'It is 2am. One authority is awake. The change waits - it does not ship.',
+      },
+      evidence: blockedRecord({
+        title: 'Refusal Record',
+        plainMeaning:
+          'An urgent hotfix from a real engineer with real credentials. It waits for the other two authorities, because urgency is not an authority.',
+        auditFacts: [
+          'Intent: upgrade to v6.1.1-hotfix',
+          '1 of 3 required authorities signed',
+          'No override path exists',
+          'Production unchanged',
+        ],
+        pendingTxHash: this.pendingTx,
+      }),
+      execution: {
+        status: 'never',
+        shortLabel: 'still on v6.1',
+        headline: 'Production unchanged - the other two authorities never signed',
+      },
+      explainer: {
+        pain: 'At 2am, under pressure, the usual answer is to let someone push it and review in the morning.',
+        certenMove: 'CERTEN has no override. The hotfix waits for the same authorities as any other release.',
+        buyerTakeaway: 'Segregation of duties that holds at the worst possible moment, not just on paper.',
+        integrationHint: 'The same policy applies whether the change is routine or urgent.',
+      },
+      presenterCue: {
+        say: 'Two in the morning. An on-call engineer has a genuine fix and real credentials. One authority is awake. Nothing ships, and there is no button anyone can press to change that.',
+        waitFor: '1 of 3, REFUSED',
+        objection: 'What if it is a real emergency?',
+        answer: 'Then you wake the other two. What you cannot do is decide alone that tonight is an exception.',
+      },
+      controls: [ctl('act:3', 'Now the build pipeline is compromised', 'danger', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
+      message: 'REFUSED - 1 of 3 authorities',
+    });
+  }
+
+  // == Act 3 - the pipeline itself is owned ===================================
+  // The sharpest point in this demo: CI/CD is a PROPOSER, never an authority. Owning it lets an
+  // attacker ask for anything and obtain nothing.
+  private async actCompromisedPipeline() {
+    this.approvers = this.makeApprovers([
+      { role: 'cto', label: 'CTO', detail: 'Technical owner', approved: false },
+      { role: 'security', label: 'Security Lead', detail: 'Risk owner', approved: false },
+      { role: 'foundation', label: 'Foundation', detail: 'Governance owner', approved: false },
+    ]).map((x) => ({ ...x, canApprove: false }));
+    this.pendingTx = hash32();
+    const decision = this.policyFor({ actionType: 'contractUpgrade', env: 'production', principal: PRINCIPAL });
+
+    this.patch({
+      act: 3,
+      actLabel: 'Act 3 of 3 - the pipeline is compromised',
+      verdict: 'blocked',
+      proof: null,
+      banner: {
+        kind: 'danger',
+        text: 'The build pipeline is fully compromised. The attacker holds valid CI credentials and is pushing a backdoored build through the normal release path.',
+      },
+      action: {
+        verb: 'Upgrade contract',
+        summary: 'ACME protocol   v6.1 -> v6.6.6 (backdoored)',
+        principal: PRINCIPAL,
+        initiator: 'Pipeline - compromised',
+        amountLabel: 'Backdoored build',
+        note: 'valid CI credentials',
+        target: 'Production',
+        icon: 'upgrade',
+        destructive: true,
+      },
+      policy: {
+        humanReadable: decision.humanReadable,
+        rule: decision.rule,
+        trigger: 'production environment',
+        threshold: decision.threshold,
+        required: decision.required,
+      },
+      approvals: { collected: 0, threshold: decision.threshold, approvers: this.approvers },
+      coordination: {
+        pendingTxHash: this.pendingTx,
+        notificationsSent: 3,
+        inboxItems: [
+          { role: 'cto', status: 'missing' },
+          { role: 'security', status: 'missing' },
+          { role: 'foundation', status: 'missing' },
+        ],
+        coordinationSummary: 'All three authorities were notified of an unrecognised release. None signed.',
+      },
+      evidence: blockedRecord({
+        title: 'Refusal Record',
+        plainMeaning:
+          'The pipeline was never an authority - it only proposes. Owning it lets an attacker ask for anything and obtain nothing, and the attempt notified all three authorities.',
+        auditFacts: [
+          'Intent: upgrade to v6.6.6 (backdoored)',
+          'Submitted with valid CI credentials',
+          '0 of 3 required authorities signed',
+          'All three notified of an unrecognised release',
+          'Production unchanged',
+        ],
+        pendingTxHash: this.pendingTx,
+      }),
+      execution: {
+        status: 'never',
+        shortLabel: 'still on v6.1',
+        headline: 'Production unchanged - the pipeline cannot authorize its own release',
+      },
+      explainer: {
+        pain: 'A compromised build pipeline is how software supply-chain attacks reach production.',
+        certenMove: 'CERTEN treats the pipeline as a proposer, never an authority - so owning it produces a refusal and three alerts.',
+        buyerTakeaway: 'Compromising the thing that ships your code no longer means compromising what runs.',
+        integrationHint: 'Your CI keeps its credentials; it simply never had signing authority.',
+      },
+      presenterCue: {
+        say: 'Now the attacker owns the build pipeline outright - valid credentials, the normal release path, a backdoored build. The pipeline was never an authority. It asks, and it gets nothing.',
+        waitFor: '0 of 3, REFUSED',
+        objection: 'Most teams would be breached here.',
+        answer: 'Because the pipeline usually holds the deploy key. Here it holds nothing but the ability to ask.',
+      },
+      controls: [ctl('reset', 'Reset scenario', 'reset')],
+      message: 'REFUSED - 0 of 3 authorities',
+    });
+  }
+
 }

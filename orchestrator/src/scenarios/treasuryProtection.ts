@@ -80,6 +80,12 @@ export class TreasuryProtectionScenario extends BaseScenario {
       proof: null,
       execution: null,
       treasury: treasuryInitial(),
+      brief: {
+        situation: 'A DAO treasury holding $250,000,000, spread across two chains.',
+        attempt: 'Move $25M legitimately, then let a thief try the same move with a real stolen key.',
+        objective: 'A stolen key buys an attacker one signature — and the surviving authorities can revoke it everywhere at once.',
+        acts: ['A legitimate transfer', 'A stolen key attacks', 'The key is revoked'],
+      },
       contrast: CONTRAST,
       integration: INTEGRATION,
       coordination: null,

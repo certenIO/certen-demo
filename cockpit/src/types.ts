@@ -243,6 +243,18 @@ export interface SupplyPanelInfo {
   breach?: string;
 }
 
+/** The opening card: what this demo is, and what it sets out to show. */
+export interface ScenarioBrief {
+  /** the situation, one line */
+  situation: string;
+  /** what we are about to attempt */
+  attempt: string;
+  /** the end objective — what the demo proves if it succeeds */
+  objective: string;
+  /** the acts, in order, as short labels */
+  acts: string[];
+}
+
 export interface Control {
   id: string;
   label: string;
@@ -279,6 +291,7 @@ export interface ScenarioState {
   toolBoundary?: ToolBoundary | null;
   impactedSystems?: string[] | null;
   authorities?: AuthorityGraphInfo | null;
+  brief?: ScenarioBrief | null;
   supply?: SupplyPanelInfo | null;
   controls: Control[];
   busy: boolean;

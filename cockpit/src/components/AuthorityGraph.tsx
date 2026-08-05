@@ -138,6 +138,37 @@ function OrgCard({
           ))}
         </Stack>
 
+        {/* The machine seat, called out as its own block rather than one more row in the key list.
+            Mirrors the diagram view: it is this company's engine, not a Certen service, and the
+            rules it runs are configuration. A buyer reading the detail view has to get that too. */}
+        {org.signers.some((s) => s.kind === 'policy-engine' || s.detail?.startsWith('automated')) && (
+          <Tooltip title="The policy layer is parameterized, not coded. Adding or changing a rule is a configuration change, not a redeploy.">
+            <Stack
+              spacing={0}
+              sx={{
+                px: 0.7,
+                py: 0.35,
+                borderRadius: 1,
+                border: `1px dashed ${alpha(color, 0.5)}`,
+                bgcolor: alpha(NEUTRAL[500], 0.05),
+              }}
+            >
+              <Stack direction="row" spacing={0.4} alignItems="center">
+                <MemoryRoundedIcon sx={{ fontSize: film ? 13 : 12, color, flexShrink: 0 }} />
+                <Typography
+                  noWrap
+                  sx={{ fontSize: film ? '0.58rem' : '0.54rem', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color }}
+                >
+                  {org.org.split(/\s+/)[0]}’s own policy engine
+                </Typography>
+              </Stack>
+              <Typography sx={{ fontSize: film ? '0.6rem' : '0.56rem', color: 'text.secondary', lineHeight: 1.2 }}>
+                parameterized, not coded
+              </Typography>
+            </Stack>
+          </Tooltip>
+        )}
+
         {/* Scope earns its line while the audience is learning the model; once a refusal note is
             showing, that note is what matters and this becomes noise competing for the fold. */}
         {org.scope && !(film && org.note) && (

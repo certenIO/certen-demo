@@ -39,8 +39,8 @@ app.get('/api/demo-health', async () => {
       { name: 'Gateway', status: 'simulated', detail: 'not contacted in simulated mode' },
       { name: 'Proofs service', status: 'simulated', detail: 'not contacted in simulated mode' },
       { name: 'Accumulate', status: 'simulated', detail: 'not contacted in simulated mode' },
-      { name: 'Base', status: 'simulated', detail: 'not contacted in simulated mode' },
-      { name: 'Arbitrum', status: 'simulated', detail: 'not contacted in simulated mode' },
+      { name: 'Base Sepolia', status: 'simulated', detail: 'not contacted in simulated mode' },
+      { name: 'Arbitrum Sepolia', status: 'simulated', detail: 'not contacted in simulated mode' },
     ];
     return { mode: config.mode, deps };
   }
@@ -48,8 +48,8 @@ app.get('/api/demo-health', async () => {
   const deps = await Promise.all([
     ping('Gateway', `${config.gatewayUrl.replace(/\/$/, '')}/v1/health`),
     ping('Proofs service', `${config.proofsUrl.replace(/\/$/, '')}/api/v1/system/health`),
-    rpc('Base', config.evm.rpc['base']),
-    rpc('Arbitrum', config.evm.rpc['arbitrum']),
+    rpc('Base Sepolia', config.evm.rpc['base-sepolia']),
+    rpc('Arbitrum Sepolia', config.evm.rpc['arbitrum-sepolia']),
   ]);
   return { mode: config.mode, deps };
 });

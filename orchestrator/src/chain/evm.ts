@@ -6,12 +6,12 @@ import deploymentsJson from '../../../contracts/deployments.json';
  * Real EVM execution + on-chain verification for live mode.
  *
  * After Certen authorization completes, the orchestrator sends a REAL transaction to the
- * demo contracts (deployed to Base / Arbitrum) signed by the sponsor key — which is
+ * demo contracts (deployed to Base / Arbitrum Sepolia) signed by the sponsor key — which is
  * the contracts' `authorizer`. It then reads the contract state back to PROVE the change
  * happened on-chain, and returns real explorer links.
  */
 
-export type ChainKey = 'base' | 'arbitrum';
+export type ChainKey = 'base-sepolia' | 'arbitrum-sepolia';
 
 interface ChainDeployment {
   chainId: number;

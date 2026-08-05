@@ -23,8 +23,8 @@ export interface ExecOutcome {
 }
 
 const CHAIN_LABEL: Record<evm.ChainKey, string> = {
-  'base': 'Base',
-  'arbitrum': 'Arbitrum',
+  'base-sepolia': 'Base Sepolia',
+  'arbitrum-sepolia': 'Arbitrum Sepolia',
 };
 
 const isLive = () => config.mode === 'live' && !!config.evm.sponsorKey;

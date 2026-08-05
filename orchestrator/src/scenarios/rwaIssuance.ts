@@ -886,11 +886,11 @@ export class RwaIssuanceScenario extends BaseScenario {
           execution: {
             status: 'executing',
             headline: `Minting ${usd(minted)} of XAUV…`,
-            legs: [{ chain: 'base', label: 'Base · XAUV token', status: 'executing' }],
+            legs: [{ chain: 'base-sepolia', label: 'Base Sepolia · XAUV token', status: 'executing' }],
           },
         });
         await this.beat(1500); // let the on-chain execution beat be watchable
-        const out = await execAssetMint('base', BigInt(minted), 'XAUV supply');
+        const out = await execAssetMint('base-sepolia', BigInt(minted), 'XAUV supply');
         this.outstanding += minted;
         this.proposed = 0;
         this.patch({
@@ -905,7 +905,7 @@ export class RwaIssuanceScenario extends BaseScenario {
             verifiedDetail: `Transfer(0x0 → ${FUND_ADDR}, ${usd(minted)}) matched — proof-of-effect`,
             explorerUrl: out.explorerUrl,
             legs: [
-              { chain: 'base', label: out.chainLabel + ' · XAUV token', status: 'done', txHash: out.txHash, explorerUrl: out.explorerUrl },
+              { chain: 'base-sepolia', label: out.chainLabel + ' · XAUV token', status: 'done', txHash: out.txHash, explorerUrl: out.explorerUrl },
             ],
           },
           explainer: {

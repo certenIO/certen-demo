@@ -37,8 +37,8 @@ const INTEGRATION: IntegrationTrace = {
 
 const treasuryInitial = (): TreasuryPanel => ({
   totalLabel: TOTAL,
-  source: { label: 'Base', chain: 'base', balanceLabel: '$250,000,000', fraction: 1 },
-  dest: { label: 'Arbitrum', chain: 'arbitrum', balanceLabel: '$0', fraction: 0 },
+  source: { label: 'Base Sepolia', chain: 'base-sepolia', balanceLabel: '$250,000,000', fraction: 1 },
+  dest: { label: 'Arbitrum Sepolia', chain: 'arbitrum-sepolia', balanceLabel: '$0', fraction: 0 },
 });
 
 /**
@@ -210,37 +210,37 @@ export class TreasuryProtectionScenario extends BaseScenario {
     if (this.collected(this.approvers) < threshold) return;
 
     await this.reveal(async () => {
-      // Leg 1 — debit the source chain (Base)
+      // Leg 1 — debit the source chain (Base Sepolia)
       this.patch({
         execution: {
           status: 'executing',
           headline: 'Moving $25,000,000 across chains…',
           legs: [
-            { chain: 'base', label: 'Base (debit)', status: 'executing' },
-            { chain: 'arbitrum', label: 'Arbitrum (credit)', status: 'pending' },
+            { chain: 'base-sepolia', label: 'Base Sepolia (debit)', status: 'executing' },
+            { chain: 'arbitrum-sepolia', label: 'Arbitrum Sepolia (credit)', status: 'pending' },
           ],
         },
       });
       await this.beat(1500); // let the on-chain execution beat be watchable
-      const src = await execWithdraw('base', 25000000n, 'Source treasury');
+      const src = await execWithdraw('base-sepolia', 25000000n, 'Source treasury');
       this.patch({
         execution: {
           status: 'executing',
           headline: 'Moving $25,000,000 across chains…',
           legs: [
-            { chain: 'base', label: 'Base (debit)', status: 'done', txHash: src.txHash, explorerUrl: src.explorerUrl },
-            { chain: 'arbitrum', label: 'Arbitrum (credit)', status: 'executing' },
+            { chain: 'base-sepolia', label: 'Base Sepolia (debit)', status: 'done', txHash: src.txHash, explorerUrl: src.explorerUrl },
+            { chain: 'arbitrum-sepolia', label: 'Arbitrum Sepolia (credit)', status: 'executing' },
           ],
         },
         treasury: {
           totalLabel: TOTAL,
-          source: { label: 'Base', chain: 'base', balanceLabel: '$225,000,000', fraction: 0.9, delta: '−$25M' },
-          dest: { label: 'Arbitrum', chain: 'arbitrum', balanceLabel: '$0', fraction: 0 },
+          source: { label: 'Base Sepolia', chain: 'base-sepolia', balanceLabel: '$225,000,000', fraction: 0.9, delta: '−$25M' },
+          dest: { label: 'Arbitrum Sepolia', chain: 'arbitrum-sepolia', balanceLabel: '$0', fraction: 0 },
         },
       });
-      // Leg 2 — credit the destination chain (Arbitrum)
+      // Leg 2 — credit the destination chain (Arbitrum Sepolia)
       await this.beat(1500); // let the on-chain execution beat be watchable
-      const dst = await execDeposit('arbitrum', 25000000n, 'Destination treasury');
+      const dst = await execDeposit('arbitrum-sepolia', 25000000n, 'Destination treasury');
       this.patch({
         execution: {
           status: 'done',
@@ -251,14 +251,14 @@ export class TreasuryProtectionScenario extends BaseScenario {
           verified: src.verified && dst.verified,
           verifiedDetail: `${src.verifiedDetail}  ·  ${dst.verifiedDetail}`,
           legs: [
-            { chain: 'base', label: 'Base (debit)', status: 'done', txHash: src.txHash, explorerUrl: src.explorerUrl },
-            { chain: 'arbitrum', label: 'Arbitrum (credit)', status: 'done', txHash: dst.txHash, explorerUrl: dst.explorerUrl },
+            { chain: 'base-sepolia', label: 'Base Sepolia (debit)', status: 'done', txHash: src.txHash, explorerUrl: src.explorerUrl },
+            { chain: 'arbitrum-sepolia', label: 'Arbitrum Sepolia (credit)', status: 'done', txHash: dst.txHash, explorerUrl: dst.explorerUrl },
           ],
         },
         treasury: {
           totalLabel: TOTAL,
-          source: { label: 'Base', chain: 'base', balanceLabel: '$225,000,000', fraction: 0.9, delta: '−$25M' },
-          dest: { label: 'Arbitrum', chain: 'arbitrum', balanceLabel: '$25,000,000', fraction: 0.1, delta: '+$25M' },
+          source: { label: 'Base Sepolia', chain: 'base-sepolia', balanceLabel: '$225,000,000', fraction: 0.9, delta: '−$25M' },
+          dest: { label: 'Arbitrum Sepolia', chain: 'arbitrum-sepolia', balanceLabel: '$25,000,000', fraction: 0.1, delta: '+$25M' },
         },
         explainer: {
           pain: 'Without CERTEN, a treasury admin could push a cross-chain transfer alone.',

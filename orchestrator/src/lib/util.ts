@@ -36,15 +36,15 @@ export function usd(n: number): string {
 
 /** Build a block-explorer tx url for a chain key. */
 export function explorerTx(
-  chain: 'ethereum' | 'base' | 'arbitrum',
+  chain: 'ethereum-sepolia' | 'base-sepolia' | 'arbitrum-sepolia',
   txHash: string,
 ): string {
   const base =
-    chain === 'arbitrum'
-      ? config.explorer.arbitrum
-      : chain === 'ethereum'
-        ? config.explorer.ethereum
-        : config.explorer.base;
+    chain === 'arbitrum-sepolia'
+      ? config.explorer.arbitrumSepolia
+      : chain === 'ethereum-sepolia'
+        ? config.explorer.ethereumSepolia
+        : config.explorer.baseSepolia;
   return `${base}/tx/${txHash}`;
 }
 

@@ -204,9 +204,9 @@ export class AiGuardrailsScenario extends BaseScenario {
     await this.beat(600);
 
     await this.reveal(async () => {
-      this.patch({ execution: { status: 'executing', headline: 'Executing buy(XAUV, $250,000)…', legs: [{ chain: 'base', label: 'Base', status: 'executing' }] } });
+      this.patch({ execution: { status: 'executing', headline: 'Executing buy(XAUV, $250,000)…', legs: [{ chain: 'base-sepolia', label: 'Base Sepolia', status: 'executing' }] } });
       await this.beat(1500); // let the on-chain execution beat be watchable
-      const out = await execWithdraw('base', 250000n, 'XAUV desk');
+      const out = await execWithdraw('base-sepolia', 250000n, 'XAUV desk');
       this.patch({
         execution: {
           status: 'done',
@@ -217,7 +217,7 @@ export class AiGuardrailsScenario extends BaseScenario {
           verified: true,
           verifiedDetail: 'committed event Purchased(XAUV, $250,000) matched (proof-of-effect)',
           explorerUrl: out.explorerUrl,
-          legs: [{ chain: 'base', label: 'Base', status: 'done', txHash: out.txHash, explorerUrl: out.explorerUrl }],
+          legs: [{ chain: 'base-sepolia', label: 'Base Sepolia', status: 'done', txHash: out.txHash, explorerUrl: out.explorerUrl }],
         },
       });
     }, { governanceLevel: 'G2', validators: 7 });
@@ -441,9 +441,9 @@ export class AiGuardrailsScenario extends BaseScenario {
     if (this.collected(this.human) < threshold) return;
 
     await this.reveal(async () => {
-      this.patch({ execution: { status: 'executing', headline: 'Executing subscribe($5,000,000)…', legs: [{ chain: 'base', label: 'Base', status: 'executing' }] } });
+      this.patch({ execution: { status: 'executing', headline: 'Executing subscribe($5,000,000)…', legs: [{ chain: 'base-sepolia', label: 'Base Sepolia', status: 'executing' }] } });
       await this.beat(1500); // let the on-chain execution beat be watchable
-      const out = await execWithdraw('base', 5000000n, 'XAUV desk');
+      const out = await execWithdraw('base-sepolia', 5000000n, 'XAUV desk');
       this.patch({
         execution: {
           status: 'done',
@@ -454,7 +454,7 @@ export class AiGuardrailsScenario extends BaseScenario {
           verified: true,
           verifiedDetail: 'committed event Subscribed($5,000,000) matched (proof-of-effect)',
           explorerUrl: out.explorerUrl,
-          legs: [{ chain: 'base', label: 'Base', status: 'done', txHash: out.txHash, explorerUrl: out.explorerUrl }],
+          legs: [{ chain: 'base-sepolia', label: 'Base Sepolia', status: 'done', txHash: out.txHash, explorerUrl: out.explorerUrl }],
         },
       });
     }, { governanceLevel: 'G2', validators: 7 });

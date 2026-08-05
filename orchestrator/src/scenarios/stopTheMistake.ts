@@ -210,12 +210,12 @@ export class StopTheMistakeScenario extends BaseScenario {
       this.patch({
         execution: {
           status: 'executing',
-          headline: 'Calling DemoUpgradeable.setVersion("6.1") on Base',
-          legs: [{ chain: 'base', label: 'Base', status: 'executing' }],
+          headline: 'Calling DemoUpgradeable.setVersion("6.1") on Base Sepolia',
+          legs: [{ chain: 'base-sepolia', label: 'Base Sepolia', status: 'executing' }],
         },
       });
       await this.beat(1000); // let the "executing" state be seen
-      const out = await execSetVersion('base', '6.1');
+      const out = await execSetVersion('base-sepolia', '6.1');
       this.patch({
         execution: {
           status: 'done',
@@ -226,7 +226,7 @@ export class StopTheMistakeScenario extends BaseScenario {
           verified: out.verified,
           verifiedDetail: out.verifiedDetail,
           legs: [
-            { chain: 'base', label: out.chainLabel, status: 'done', txHash: out.txHash, explorerUrl: out.explorerUrl },
+            { chain: 'base-sepolia', label: out.chainLabel, status: 'done', txHash: out.txHash, explorerUrl: out.explorerUrl },
           ],
           explorerUrl: out.explorerUrl,
         },
@@ -394,11 +394,11 @@ export class StopTheMistakeScenario extends BaseScenario {
         execution: {
           status: 'executing',
           headline: `Replacing the implementation with ${NEW_IMPL}…`,
-          legs: [{ chain: 'base', label: 'Base', status: 'executing' }],
+          legs: [{ chain: 'base-sepolia', label: 'Base Sepolia', status: 'executing' }],
         },
       });
       await this.beat(1000);
-      const out = await execSetVersion('base', '7.0');
+      const out = await execSetVersion('base-sepolia', '7.0');
       this.patch({
         execution: {
           status: 'done',
@@ -409,7 +409,7 @@ export class StopTheMistakeScenario extends BaseScenario {
           verified: out.verified,
           verifiedDetail: out.verifiedDetail,
           legs: [
-            { chain: 'base', label: out.chainLabel, status: 'done', txHash: out.txHash, explorerUrl: out.explorerUrl },
+            { chain: 'base-sepolia', label: out.chainLabel, status: 'done', txHash: out.txHash, explorerUrl: out.explorerUrl },
           ],
           explorerUrl: out.explorerUrl,
         },

@@ -9,6 +9,7 @@ import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import SkipNextRoundedIcon from '@mui/icons-material/SkipNextRounded';
 import SummarizeRoundedIcon from '@mui/icons-material/SummarizeRounded';
+import UndoRoundedIcon from '@mui/icons-material/UndoRounded';
 import type { ScenarioMeta, ScenarioState } from '../types';
 import { sendControl, subscribe } from '../api';
 import { BrandMark } from './Brand';
@@ -25,6 +26,7 @@ import { SupplyBar } from './SupplyBar';
 import { TreasuryBar } from './TreasuryBar';
 import { ControlDeck } from './ControlDeck';
 import { ExplainerStrip } from './ExplainerStrip';
+import { ThroughputPanel } from './ThroughputPanel';
 import { ContrastStrip } from './ContrastStrip';
 import { IntegrationPanel } from './IntegrationPanel';
 import { PresenterCuePanel } from './PresenterCuePanel';
@@ -49,8 +51,11 @@ const lsGet = (k: string, d: boolean) => {
   try { const v = localStorage.getItem(k); return v == null ? d : v === '1'; } catch { return d; }
 };
 const lsSet = (k: string, v: boolean) => { try { localStorage.setItem(k, v ? '1' : '0'); } catch { /* ignore */ } };
+// Default is 'standard', not 'cinematic': cinematic is a filming pace and it makes a live
+// walkthrough drag. Instant removes the beats the narration is timed against, so it is not the
+// default either — it stays a presenter choice.
 const lsGetPace = (): Pace => {
-  try { return (localStorage.getItem('certen.pace') as Pace) || 'cinematic'; } catch { return 'cinematic'; }
+  try { return (localStorage.getItem('certen.pace') as Pace) || 'standard'; } catch { return 'standard'; }
 };
 
 const RAIL_PLACEHOLDER: Record<number, [string, string]> = {
@@ -218,8 +223,44 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
   // execution can never appear ahead of the phases that produce them.
   const journey = useJourney(state, mode !== 'live', JOURNEY_MS[pace]);
 
-  const onControl = (id: string) => sendControl(meta.id, id, pace);
-  const onApprove = (role: string) => sendControl(meta.id, `approve:${role}`, pace);
+  // ── Step back ────────────────────────────────────────────────────────────────
+  // The scenarios are forward-only state machines: a beat mutates state in place, so there is no
+  // prior state to restore and nothing to pop. Rather than have every scenario maintain an undo
+  // stack, step-back re-derives the previous state the only way that is guaranteed correct —
+  // reset, then replay every beat except the last one, at instant pace.
+  //
+  // This is sound because the scenarios are deterministic: the same control sequence always
+  // produces the same state. Only the cosmetic hashes are regenerated. In the static build
+  // sendControl resolves when the beat's dwell has finished, so awaiting in sequence replays the
+  // acts in order rather than racing them.
+  // Held as state, not a ref: the Back button's own visibility depends on it, so a mutation that
+  // does not re-render would leave the control missing until some other patch happened to arrive.
+  const [history, setHistory] = useState<string[]>([]);
+  const [rewinding, setRewinding] = useState(false);
+
+  const onControl = (id: string) => {
+    setHistory((h) => (id === 'reset' ? [] : [...h, id]));
+    return sendControl(meta.id, id, pace);
+  };
+  const onApprove = (role: string) => {
+    setHistory((h) => [...h, `approve:${role}`]);
+    return sendControl(meta.id, `approve:${role}`, pace);
+  };
+
+  const canStepBack = history.length > 0 && !state?.busy && !rewinding;
+  const stepBack = async () => {
+    if (!canStepBack) return;
+    const replay = history.slice(0, -1);
+    setRewinding(true);
+    try {
+      await sendControl(meta.id, 'reset');
+      for (const id of replay) await sendControl(meta.id, id, 'instant');
+      setHistory(replay);
+    } finally {
+      setRewinding(false);
+    }
+  };
+
   const deckControls = (state?.controls ?? []).filter((c) => !c.id.startsWith('approve:'));
   const stepWaiting = stepMode && revealed < readyCount;
 
@@ -299,13 +340,13 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
             </IconButton>
           </Tooltip>
           {!film && (
-            <>
-              <Tooltip title="Funds move only on a BFT-committed, BLS-verified proof — from an account with no private key. Click for the full security model.">
-                <span><SecurityThesisChip onClick={() => setSecurityOpen(true)} /></span>
-              </Tooltip>
-              <HealthChip mode={mode} />
-            </>
+            <Tooltip title="Funds move only on a BFT-committed, BLS-verified proof — from an account with no private key. Click for the full security model.">
+              <span><SecurityThesisChip onClick={() => setSecurityOpen(true)} /></span>
+            </Tooltip>
           )}
+          {/* Shown in BOTH views. Anyone who sees a number move has to be able to see, without
+              asking, that it is choreography — that claim cannot be view-dependent. */}
+          <HealthChip mode={mode} />
           <VerdictStamp verdict={state?.verdict ?? 'idle'} armed={revealed >= 3} />
         </Stack>
       </Stack>
@@ -353,12 +394,14 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
         </Box>
       </Popover>
 
-      {/* ── Why-this-matters strip (sales layout only — film mode leaves this to the narrator) ── */}
-      {!film && (
-        <Box sx={{ flexShrink: 0, mb: 0.5 }}>
-          <ExplainerStrip explainer={state?.explainer} />
-        </Box>
-      )}
+      {/* ── Why-this-matters strip ── */}
+      {/* Shown in BOTH views. It used to be Detail-only on the theory that the narrator carries it
+          in film mode, but the diagram is the default view and several acts do not stand up
+          unnarrated without it — so the band that explains the stakes cannot be the one thing the
+          default view drops. */}
+      <Box sx={{ flexShrink: 0, mb: 0.5 }}>
+        <ExplainerStrip explainer={state?.explainer} />
+      </Box>
 
       {/* ── Banner ── */}
       {/* The banner restates in prose what the diagram already shows in colour — on camera that's
@@ -428,6 +471,9 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
               {state?.agent && <Box sx={{ flex: 1, minHeight: 180 }}><AgentConsole agent={state.agent} film={film} /></Box>}
               {state?.treasury && <TreasuryBar treasury={state.treasury} />}
               {state?.dataPanel && <DataPanel data={state.dataPanel} />}
+              {/* Sits last: the exception on screen is the subject, and this is the context for
+                  it. Shown in both views — the "does this scale?" question gets asked in both. */}
+              <ThroughputPanel throughput={state?.throughput} />
             </>
           )}
           {cues && <PresenterCuePanel cue={state?.presenterCue} />}
@@ -437,6 +483,20 @@ export function CockpitView({ meta, mode, onExit }: { meta: ScenarioMeta; mode: 
       {/* ── Footer control deck (reserved, never overlays) ── */}
       <Box sx={{ flexShrink: 0, pt: 0.75 }}>
         <Stack direction="row" alignItems="center" justifyContent="center" spacing={2}>
+          {/* One beat back, not the whole scenario. Reset is still there; this is the control a
+              presenter needs when a question lands and the answer was on the previous frame. */}
+          {history.length > 0 && (
+            <Button
+              size="large"
+              variant="outlined"
+              disabled={!canStepBack}
+              onClick={stepBack}
+              startIcon={<UndoRoundedIcon />}
+              sx={{ px: 2.5, py: 1, fontSize: '0.92rem', color: 'text.secondary', borderColor: 'divider', flexShrink: 0 }}
+            >
+              {rewinding ? 'Going back…' : 'Back'}
+            </Button>
+          )}
           <ControlDeck controls={deckControls} busy={!!state?.busy} onControl={onControl} />
           {/* Deliberate, never automatic: the presenter decides when to cover the diagram. */}
           {recap && terminal && !recapOpen && (

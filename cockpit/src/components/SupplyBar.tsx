@@ -11,15 +11,15 @@ import type { SupplyPanelInfo } from '../types';
  *
  * The chart is scaled to the ATTESTED CEILING, never to the proposal. A mint that breaches
  * custody therefore runs off the end of the chart, and the breach is stated as a multiple
- * ("489,876× attested") — a linear scale that fits $300T would render the real reserves as a
- * hairline and destroy the whole point.
+ * ("5.38× attested") — scaling linearly to the proposal would render the real reserves as a
+ * hairline and destroy the whole point. The multiple form also survives a video bitrate.
  */
 
 const HEADROOM = 1.15; // the custody line sits at ~87% of the track
 
 /**
- * Label left, figure right, one per row. These numbers span nine orders of magnitude between
- * acts — a side-by-side column layout truncates the $300T exactly when its size is the entire
+ * Label left, figure right, one per row. These numbers span several orders of magnitude between
+ * acts — a side-by-side column layout truncates the largest figure exactly when its size is the
  * point, so the figure gets the full width and shrinks to fit instead.
  */
 function Stat({ label, value, color, film }: { label: string; value: string; color: string; film: boolean }) {

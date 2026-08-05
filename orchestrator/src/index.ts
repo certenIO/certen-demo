@@ -23,8 +23,12 @@ app.get('/api/demo-health', async () => {
       return { name, status: 'down', detail: e?.message ?? 'unreachable' };
     }
   };
-  const rpc = async (name: string, url: string): Promise<Dep> =>
-    ping(name, url, {
+  // The endpoint is optional now: unset means live mode resolves it from the deployment record,
+  // so health reports "not configured" rather than probing an empty URL.
+  const rpc = async (name: string, url: string | undefined): Promise<Dep> =>
+    !url
+      ? { name, status: 'simulated', detail: 'endpoint not configured — resolved from the deployment record' }
+      : ping(name, url, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_chainId', params: [] }),
@@ -34,9 +38,9 @@ app.get('/api/demo-health', async () => {
     const deps: Dep[] = [
       { name: 'Gateway', status: 'simulated', detail: 'not contacted in simulated mode' },
       { name: 'Proofs service', status: 'simulated', detail: 'not contacted in simulated mode' },
-      { name: 'Accumulate (Kermit)', status: 'simulated', detail: 'not contacted in simulated mode' },
-      { name: 'Base Sepolia', status: 'simulated', detail: 'not contacted in simulated mode' },
-      { name: 'Arbitrum Sepolia', status: 'simulated', detail: 'not contacted in simulated mode' },
+      { name: 'Accumulate', status: 'simulated', detail: 'not contacted in simulated mode' },
+      { name: 'Base', status: 'simulated', detail: 'not contacted in simulated mode' },
+      { name: 'Arbitrum', status: 'simulated', detail: 'not contacted in simulated mode' },
     ];
     return { mode: config.mode, deps };
   }
@@ -44,8 +48,8 @@ app.get('/api/demo-health', async () => {
   const deps = await Promise.all([
     ping('Gateway', `${config.gatewayUrl.replace(/\/$/, '')}/v1/health`),
     ping('Proofs service', `${config.proofsUrl.replace(/\/$/, '')}/api/v1/system/health`),
-    rpc('Base Sepolia', config.evm.rpc['base-sepolia']),
-    rpc('Arbitrum Sepolia', config.evm.rpc['arbitrum-sepolia']),
+    rpc('Base', config.evm.rpc['base']),
+    rpc('Arbitrum', config.evm.rpc['arbitrum']),
   ]);
   return { mode: config.mode, deps };
 });

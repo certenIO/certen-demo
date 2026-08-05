@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
 import FlagRoundedIcon from '@mui/icons-material/FlagRounded';
 import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
+import GavelRoundedIcon from '@mui/icons-material/GavelRounded';
 import { CERTEN_COLORS, NEUTRAL } from '../../theme';
 import type { ScenarioBrief } from '../../types';
 
@@ -59,6 +60,30 @@ export function BriefCard({ brief, title }: { brief: ScenarioBrief; title: strin
             />
           ))}
         </Stack>
+
+        {/* What is at stake if this goes wrong — the part the acts cannot dramatise, and the
+            reason a buyer's counsel cares. Fills the card's dead lower third. */}
+        {brief.note && (
+          <Stack
+            direction="row"
+            spacing={1.25}
+            alignItems="flex-start"
+            sx={{
+              mt: 0.5,
+              px: 1.75,
+              py: 1.25,
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: alpha(CERTEN_COLORS.warning.main, 0.35),
+              bgcolor: alpha(CERTEN_COLORS.warning.main, 0.07),
+            }}
+          >
+            <GavelRoundedIcon sx={{ fontSize: 18, color: CERTEN_COLORS.warning.main, flexShrink: 0, mt: 0.2 }} />
+            <Typography sx={{ fontSize: '0.86rem', color: 'text.secondary', lineHeight: 1.45 }}>
+              {brief.note}
+            </Typography>
+          </Stack>
+        )}
       </Stack>
     </motion.div>
   );

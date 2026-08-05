@@ -23,8 +23,8 @@ export interface ExecOutcome {
 }
 
 const CHAIN_LABEL: Record<evm.ChainKey, string> = {
-  'base-sepolia': 'Base Sepolia',
-  'arbitrum-sepolia': 'Arbitrum Sepolia',
+  'base': 'Base',
+  'arbitrum': 'Arbitrum',
 };
 
 const isLive = () => config.mode === 'live' && !!config.evm.sponsorKey;
@@ -132,7 +132,7 @@ export async function execKeyRotation(opts: {
   addKeyHash: string;
 }): Promise<RotationOutcome> {
   // Live path: drive the real gateway governance op against Accumulate. Requires a gateway API
-  // key and a provisioned identity on Kermit; degrades cleanly to a modeled op otherwise.
+  // key and a provisioned identity on the configured network; degrades cleanly to a modeled op.
   if (config.mode === 'live' && config.gatewayApiKey) {
     try {
       const { gateway } = await import('../gateway/client.js');

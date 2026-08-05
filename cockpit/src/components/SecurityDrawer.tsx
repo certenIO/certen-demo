@@ -12,7 +12,7 @@ import { CERTEN_COLORS, MONO_FAMILY, SURFACE } from '../theme';
 /**
  * Security model drawer. The story is the redundant, sequential cryptographic gate chain:
  * execution is governed by proof, and every class of attack dead-ends at a gate. Honest framing:
- * this is how Certen enforces it in production (V6.1), cited against a REAL Sepolia proof cycle.
+ * this is how Certen enforces it in production (V6.1), cited against a REAL end-to-end proof cycle.
  * The simulated cockpit visualizes the same guarantee.
  */
 
@@ -48,7 +48,7 @@ const GATES: { attack: string; gate: string; how: string }[] = [
 
 const EVIDENCE = {
   intent: '4014802a-2eb4-4520-b07b-a5470035d086',
-  adi: 'acc://certen-kermit-12.acme',
+  adi: 'acc://certen-12.acme',
   tx1: '0x147dd73c…7179a481  · createAnchor',
   tx2: '0xaed9d528…1477817a  · verify proof on-chain',
   tx3: '0x7aecd21a…2a3890ab  · execute (value moved ✓)',
@@ -83,7 +83,7 @@ const QA: { q: string; a: string }[] = [
   },
   {
     q: 'Are the dollars real?',
-    a: 'In these simulated demos the amounts are value-equivalent labels and the flow is deterministic choreography. The control and proof shapes mirror the live system; live mode runs real testnet transactions.',
+    a: 'In these simulated demos the amounts are value-equivalent labels and the flow is deterministic choreography. The control and proof shapes mirror the live system; live mode runs real on-chain transactions.',
   },
 ];
 
@@ -150,7 +150,7 @@ export function SecurityDrawer({ open, onClose }: { open: boolean; onClose: () =
         <Box sx={{ p: 1.5, mb: 2, borderRadius: 2, border: `1px solid ${alpha(CERTEN_COLORS.success.main, 0.35)}`, bgcolor: alpha(CERTEN_COLORS.success.main, 0.05) }}>
           <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.75 }}>
             <VerifiedRoundedIcon sx={{ color: CERTEN_COLORS.success.main, fontSize: 18 }} />
-            <Typography sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Live-verified end-to-end on Sepolia (real proof cycle)</Typography>
+            <Typography sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Live-verified end-to-end (real proof cycle)</Typography>
           </Stack>
           {Object.entries(EVIDENCE).map(([k, v]) => (
             <Box key={k} sx={{ display: 'grid', gridTemplateColumns: '90px 1fr', gap: 1, py: 0.15 }}>

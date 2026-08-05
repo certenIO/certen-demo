@@ -183,6 +183,19 @@ export interface IntegrationTrace {
   partnerImplements: string[];
 }
 
+/**
+ * What the policy engine handled in the background while the demo showed one action. The demos
+ * walk exceptions one at a time, which implies every action needs this ceremony; this states the
+ * routine volume the engine absorbed on policy alone.
+ */
+export interface PolicyThroughput {
+  windowLabel: string;
+  evaluated: number;
+  autoApproved: number;
+  escalated: number;
+  note: string;
+}
+
 export interface PresenterCue {
   say: string;
   waitFor?: string;
@@ -263,6 +276,12 @@ export interface ScenarioBrief {
   objective: string;
   /** the acts, in order, as short labels */
   acts: string[];
+  /**
+   * Per-scene footnote for the card's empty lower area — the regulatory or commercial stake that
+   * makes the scenario matter, which the acts themselves cannot show. Scenario-specific; omit it
+   * and the card simply closes after the act chips.
+   */
+  note?: string;
 }
 
 export interface Control {
@@ -292,6 +311,7 @@ export interface ScenarioState {
   dataPanel?: DataPanel | null;
   treasury?: TreasuryPanel | null;
   banner?: Banner | null;
+  throughput?: PolicyThroughput | null;
   explainer?: ScenarioExplainer | null;
   coordination?: CoordinationInfo | null;
   evidence?: EvidenceInfo | null;

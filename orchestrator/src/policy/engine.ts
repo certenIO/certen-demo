@@ -39,6 +39,12 @@ export interface ActionContext {
   rollingWindowLabel?: string;
   /** whether the call being submitted matches the one the proof actually authorized */
   callMatchesCommitment?: boolean;
+  /**
+   * Whether the payment's recipient is on the payee register. Distinct from
+   * `destinationRegistered`, which is the transfer agent's holder-of-record list for issuance:
+   * this one is the treasury's list of addresses an actor is permitted to pay at all.
+   */
+  recipientListed?: boolean;
 }
 
 export interface NumericCondition {
@@ -79,6 +85,8 @@ export interface PolicyRule {
     actionType?: string | string[];
     env?: string;
     amountUsd?: NumericCondition;
+    /** matched only when explicitly set, so amount-based rules stay unaffected by it */
+    recipientListed?: boolean;
   };
   /** approver role labels required, and how many of them must sign */
   require: {
@@ -144,6 +152,7 @@ export function evaluate(rules: PolicyRule[], ctx: ActionContext): PolicyDecisio
     if (!typeMatch(rule.when.actionType, ctx.actionType)) continue;
     if (rule.when.env !== undefined && rule.when.env !== ctx.env) continue;
     if (!numMatch(rule.when.amountUsd, ctx.amountUsd)) continue;
+    if (rule.when.recipientListed !== undefined && rule.when.recipientListed !== ctx.recipientListed) continue;
 
     const constraints: ConstraintResult[] = (rule.require.constraints ?? []).map((c) => {
       const r = c.check(ctx);

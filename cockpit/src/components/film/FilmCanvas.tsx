@@ -1,4 +1,4 @@
-import { Box, Button, CircularProgress, Stack, Typography, alpha } from '@mui/material';
+import { Box, Button, CircularProgress, Stack, Tooltip, Typography, alpha } from '@mui/material';
 import { motion } from 'framer-motion';
 import AccountBalanceRoundedIcon from '@mui/icons-material/AccountBalanceRounded';
 import LockRoundedIcon from '@mui/icons-material/LockRounded';
@@ -133,7 +133,7 @@ function ActionBand({ state }: { state: ScenarioState }) {
   // the actor gets its own glyph and sits at the head of the band: actor → action → target.
   const init = a.initiator ?? '';
 
-  // The headline figure spans nine orders of magnitude across acts ($50M → $300T) while sharing a
+  // The headline figure spans several orders of magnitude across acts ($250K → $3B) while sharing a
   // row with variable-width actor and target chips. It is set in mono, so character count predicts
   // width reliably: pick a step from the digit count, then drop one more step when a long actor
   // label eats into the same row. This figure must never clip — in Act 2 it IS the story.
@@ -257,10 +257,47 @@ function AuthorityNode({ node, busy, onApprove }: { node: AuthNode; busy: boolea
             signing headlessly against its own off-chain records. */}
         {!node.autoNode && node.keys.length > 0 && (
           <Typography align="center" sx={{ fontSize: '0.66rem', color: 'text.secondary', lineHeight: 1.25 }}>
-            {node.keys.some((k) => k.automated)
-              ? `${node.keys.filter((k) => !k.automated).length} person · ${node.keys.filter((k) => k.automated).length} policy engine`
-              : `${node.keys.length} ${node.keys.length === 1 ? 'signer' : 'signers'}`}
+            {(() => {
+              const people = node.keys.filter((k) => !k.automated).length;
+              return `${people} ${people === 1 ? 'signer' : 'signers'}`;
+            })()}
           </Typography>
+        )}
+
+        {/* The machine seat gets its OWN block rather than a word in a count line. It is not a
+            person, and it is not a Certen service — it is that company's engine, running against
+            that company's records. The parameterized line is the buying point: adding or changing
+            a rule is configuration, so a policy change is not a redeploy. */}
+        {!node.autoNode && node.keys.some((k) => k.automated) && (
+          <Tooltip title="The policy layer is parameterized, not coded. Adding or changing a rule is a configuration change, not a redeploy.">
+            <Stack
+              spacing={0}
+              sx={{
+                mt: 0.4,
+                width: '100%',
+                px: 0.75,
+                py: 0.4,
+                borderRadius: 1.5,
+                border: `1px dashed ${alpha(color, 0.55)}`,
+                bgcolor: alpha(NEUTRAL[500], 0.05),
+              }}
+            >
+              <Stack direction="row" spacing={0.4} alignItems="center" justifyContent="center">
+                <MemoryRoundedIcon sx={{ fontSize: 13, color, flexShrink: 0 }} />
+                <Typography
+                  align="center"
+                  sx={{ fontSize: '0.56rem', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color, lineHeight: 1.1 }}
+                >
+                  {node.name.split(/\s+/)[0]}’s own policy engine
+                </Typography>
+              </Stack>
+              {/* Short form on the card, full sentence in the tooltip: the card has to stay inside
+                  its row or it pushes the proof node off the canvas on a short screen. */}
+              <Typography align="center" sx={{ fontSize: '0.58rem', color: 'text.secondary', lineHeight: 1.2 }}>
+                parameterized, not coded
+              </Typography>
+            </Stack>
+          </Tooltip>
         )}
         <Typography sx={{ fontSize: '0.76rem', fontWeight: 800, letterSpacing: '0.08em', color, opacity: node.status === 'pending' ? 0.6 : 1 }}>
           {node.autoNode ? 'AUTO-APPROVED' : STATUS_WORD[node.status]}
@@ -484,10 +521,14 @@ export function FilmCanvas({
               </Typography>
               {/* The model, stated once as a caption for the row. Without it a viewer sees three
                   boxes and cannot tell whether these are departments, wallets, or one company's
-                  multisig — and never learns that some seats are machines the org runs itself. */}
-              {!auto && nodes.length > 1 && (
+                  multisig — and never learns that some seats are machines the org runs itself.
+
+                  Shown ONLY for the multi-company authority graph, which is the case it describes.
+                  On a flat approver list it was a false claim: a CTO and a Security Lead are two
+                  people at one company, not separate companies with separate root identities. */}
+              {!auto && !!state.authorities?.orgs?.length && nodes.length > 1 && (
                 <Typography sx={{ fontSize: '0.74rem', color: 'text.secondary', lineHeight: 1.3 }}>
-                  Separate companies, each with its own identity and its own keys —{' '}
+                  Separate companies, each with its own identity and its own keys.{' '}
                   <Box component="span" sx={{ fontWeight: 700 }}>CERTEN holds none of them</Box>
                 </Typography>
               )}

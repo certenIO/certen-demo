@@ -10,10 +10,13 @@ import type {
 } from '../types.js';
 
 const PRINCIPAL = 'ACME protocol';
+// Act 3's call. Replacing the implementation is a different CLASS of action from bumping a
+// version, so it routes to a different authority set — see the `privileged-upgrade` rule.
+const NEW_IMPL = 'DemoUpgradeableV7   0x8A2f…41Bd';
 
 const CONTRAST: ContrastInfo = {
-  without: 'Pipeline pushes the upgrade; one missed approval can break production.',
-  with: 'Nothing can change the contract except a verified proof that all required authorities signed on-chain, all policies were satisfied, and the action to execute is the exact action approved — there is no admin key that can bypass it.',
+  without: 'Production change control is a review in one tool and a deploy key in another. The record of who approved a release sits in that tool’s audit log, and the deploy key never consults it.',
+  with: 'Every approval to change production is recorded on-chain rather than in a vendor’s log. Each signing authority keeps its own keys and its own systems. Release authority can be revoked and reassigned without redeploying, and there is no admin key that can bypass it.',
 };
 
 const IMPACTED = ['Protocol contract', 'Customer-facing API', 'Treasury controls', 'Compliance audit trail'];
@@ -75,11 +78,20 @@ export class StopTheMistakeScenario extends BaseScenario {
       contrast: CONTRAST,
       integration: INTEGRATION,
       impactedSystems: IMPACTED,
+      // Most of what a pipeline does has no production effect and is never gated. Only the
+      // handful that actually change production need signatures.
+      throughput: {
+        windowLabel: 'last hour',
+        evaluated: 312,
+        autoApproved: 309,
+        escalated: 3,
+        note: 'The 309 were builds, tests and staging deploys with no production effect, and none of them asked anyone for anything. The 3 that would change production required signatures.',
+      },
       brief: {
         situation: 'A release pipeline can change a $10M production contract on its own.',
-        attempt: 'Ship a correct release, then rush a hotfix past review, then let an attacker own the pipeline.',
-        objective: 'Nothing reaches production without proof that every required authority signed — and the pipeline was never one of them.',
-        acts: ['A correct release', 'A rushed hotfix', 'The pipeline is compromised'],
+        attempt: 'Ship a correct release, let an attacker own the pipeline and try to ship a backdoored one, then replace the contract’s code entirely.',
+        objective: 'Nothing reaches production without proof that every required authority signed. The pipeline was never one of them, and the required authorities depend on the call.',
+        acts: ['A correct release', 'The pipeline is compromised', 'A privileged contract action'],
       },
       controls: [ctl('start', 'Propose the upgrade', 'primary', { emphasis: true })],
       busy: false,
@@ -166,6 +178,10 @@ export class StopTheMistakeScenario extends BaseScenario {
   }
 
   async approve(role: string): Promise<void> {
+    // Act 3 collects a different authority set for a different call, and executes a different
+    // effect, so it cannot share Act 1's approval path.
+    if (this.state.act === 3) return this.approvePrivileged(role);
+
     const a = this.approvers.find((x) => x.role === role);
     if (!a || a.approved) return;
     a.approved = true;
@@ -194,12 +210,12 @@ export class StopTheMistakeScenario extends BaseScenario {
       this.patch({
         execution: {
           status: 'executing',
-          headline: 'Calling DemoUpgradeable.setVersion("6.1") on Base Sepolia',
-          legs: [{ chain: 'base-sepolia', label: 'Base Sepolia', status: 'executing' }],
+          headline: 'Calling DemoUpgradeable.setVersion("6.1") on Base',
+          legs: [{ chain: 'base', label: 'Base', status: 'executing' }],
         },
       });
       await this.beat(1000); // let the "executing" state be seen
-      const out = await execSetVersion('base-sepolia', '6.1');
+      const out = await execSetVersion('base', '6.1');
       this.patch({
         execution: {
           status: 'done',
@@ -210,7 +226,7 @@ export class StopTheMistakeScenario extends BaseScenario {
           verified: out.verified,
           verifiedDetail: out.verifiedDetail,
           legs: [
-            { chain: 'base-sepolia', label: out.chainLabel, status: 'done', txHash: out.txHash, explorerUrl: out.explorerUrl },
+            { chain: 'base', label: out.chainLabel, status: 'done', txHash: out.txHash, explorerUrl: out.explorerUrl },
           ],
           explorerUrl: out.explorerUrl,
         },
@@ -240,175 +256,233 @@ export class StopTheMistakeScenario extends BaseScenario {
     }
 
     this.patch({
-      controls: [ctl('act:2', 'Now a hotfix skips review', 'primary', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
+      controls: [ctl('act:2', 'Now the build pipeline is compromised', 'danger', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
     });
   }
 
-  /** 1 opens the correct release; 2 the rushed hotfix; 3 the compromised pipeline. */
+  /**
+   * 1 opens the correct release; 2/21 the compromised pipeline; 3 the privileged contract action.
+   *
+   * The rushed-hotfix act that used to sit at 2 was cut: it resolved correctly, but it taught the
+   * same lesson as the compromised pipeline (a proposer with real credentials still cannot sign
+   * for itself) and paid for it with a third of the running time.
+   */
   async act(n: number): Promise<void> {
     if (n === 1) return this.start();
-    if (n === 2) return this.actRushedHotfix();
-    if (n === 21) return this.actHotfixPagesTheOthers();
-    if (n === 3) return this.actCompromisedPipeline();
-    if (n === 31) return this.actPipelineAsksAuthorities();
+    if (n === 2) return this.actCompromisedPipeline();
+    if (n === 21) return this.actPipelineAsksAuthorities();
+    if (n === 3) return this.actPrivilegedCall();
   }
 
-  // == Act 2 - a hotfix that skips review =====================================
-  // Segregation of duties at the worst possible moment: an urgent, well-intentioned change by a
-  // real engineer with real credentials still cannot ship alone. Nobody can wave it through.
-  private async actRushedHotfix() {
+  // == Act 3 - the gate is chosen by the CALL, not by the caller ===============
+  // Moved here out of Demo 2, where it was competing with that demo's point about agent identity.
+  // Change control is where it belongs: the same trusted engineer, the same contract, and a
+  // different required authority set — because replacing the code is a security decision, not a
+  // release decision. Note this act RESOLVES. Three refusals in a row would teach the audience
+  // that Certen's answer to everything is "no"; the honest claim is that the gate is per-action
+  // and that the right people can still ship.
+  private async actPrivilegedCall() {
     this.approvers = this.makeApprovers([
-      { role: 'cto', label: 'CTO', detail: 'Technical owner', approved: false },
-      { role: 'security', label: 'Security Lead', detail: 'Risk owner', approved: false },
-      { role: 'foundation', label: 'Foundation', detail: 'Governance owner', approved: false },
-    ]).map((x) => ({ ...x, canApprove: false })); // at 02:00 there is nobody awake to sign
+      { role: 'cto', label: 'CTO', detail: 'Senior key', approved: false },
+      { role: 'security', label: 'Security Lead', detail: 'Senior key', approved: false },
+    ]);
     this.pendingTx = hash32();
-    const decision = this.policyFor({ actionType: 'contractUpgrade', env: 'production', principal: PRINCIPAL });
+    const decision = this.policyFor({ actionType: 'upgradeTo', env: 'production', principal: PRINCIPAL });
 
     this.patch({
-      act: 2,
-      actLabel: 'Act 2 of 3 - a rushed hotfix',
+      act: 3,
+      actLabel: 'Act 3 of 3 - a privileged contract action',
       verdict: 'blocked',
       proof: null,
+      execution: { status: 'idle', headline: 'Held - replacing the implementation needs the senior keys' },
+      banner: {
+        kind: 'info',
+        text: 'Same engineer, same contract, a different call. Act 1 bumped a version and needed the three release authorities. Replacing the code needs the two senior keys instead.',
+      },
       action: {
-        verb: 'Upgrade contract',
-        summary: 'ACME protocol   v6.1 -> v6.1.1-hotfix',
+        verb: 'Replace code',
+        summary: `upgradeTo(${NEW_IMPL}) on ACME protocol`,
         principal: PRINCIPAL,
-        initiator: 'On-call engineer',
-        amountLabel: 'v6.1 to v6.1.1',
-        note: 'urgent hotfix at 02:14',
+        initiator: 'Release engineer',
+        amountLabel: 'Replace the code',
+        note: 'not a version bump',
         target: 'Production',
         icon: 'upgrade',
       },
       policy: {
         humanReadable: decision.humanReadable,
         rule: decision.rule,
-        trigger: 'production environment',
+        trigger: 'privileged contract action',
         threshold: decision.threshold,
         required: decision.required,
       },
-      approvals: { collected: this.collected(this.approvers), threshold: decision.threshold, approvers: this.approvers },
+      approvals: { collected: 0, threshold: decision.threshold, approvers: this.approvers },
       coordination: {
         pendingTxHash: this.pendingTx,
         notificationsSent: 2,
         inboxItems: [
-          { role: 'cto', status: 'signed', channel: 'kms', timestampLabel: 'just now' },
-          { role: 'security', status: 'notified', channel: 'inbox', timestampLabel: 'paged' },
-          { role: 'foundation', status: 'notified', channel: 'inbox', timestampLabel: 'paged' },
+          { role: 'cto', status: 'notified', channel: 'kms', timestampLabel: 'just now' },
+          { role: 'security', status: 'notified', channel: 'kms', timestampLabel: 'just now' },
         ],
-        coordinationSummary: 'It is 2am. One authority is awake. The change waits - it does not ship.',
+        coordinationSummary: 'Certen routed this call to the senior keys. The engineer who proposed it is not one of them, and neither is the pipeline.',
       },
       evidence: pendingRecord({
         plainMeaning:
-          'An urgent hotfix from a real engineer with real credentials, waiting on the two authorities who are asleep.',
+          'The authority set is selected by the call, not by who is asking. This one replaces the contract’s implementation, so it routes to the two senior keys rather than the release authorities.',
         auditFacts: [
-          'Intent: upgrade to v6.1.1-hotfix',
-          'Submitted at 02:14 by the on-call engineer',
-          'Awaiting Security Lead and Foundation',
+          `Intent: upgradeTo(${NEW_IMPL})`,
+          'Policy: contract upgrade needs CTO + Security Lead',
+          'Act 1 release required a different set: 3 release authorities',
+          'Proposer holds neither senior key',
         ],
         pendingTxHash: this.pendingTx,
       }),
-      execution: { status: 'idle', headline: 'Held - two authorities have not signed' },
       explainer: {
-        pain: 'At 2am, under pressure, the usual answer is to let someone push it and review in the morning.',
-        certenMove: 'CERTEN has no override. The hotfix waits for the same authorities as any other release.',
-        buyerTakeaway: 'Segregation of duties that holds at the worst possible moment, not just on paper.',
-        integrationHint: 'The same policy applies whether the change is routine or urgent.',
+        pain: 'Most systems have one deploy permission, so a version bump and a code replacement are the same privilege.',
+        certenMove: 'Certen selects the authority set from the call itself. A different function is a different gate, on the same contract and the same person.',
+        buyerTakeaway: 'Permissions follow the action, not the job title of whoever holds the key.',
+        integrationHint: 'The gate is per-selector policy, so adding one is configuration, not a redeploy.',
       },
       presenterCue: {
-        say: 'Two in the morning. An on-call engineer has a genuine fix and real credentials. One authority is awake. Nothing ships, and there is no button anyone can press to change that.',
-        waitFor: '1 of 3, REFUSED',
-        objection: 'What if it is a real emergency?',
-        answer: 'Then you wake the other two. What you cannot do is decide alone that tonight is an exception.',
+        say: 'Same engineer, same contract. But this call replaces the code rather than bumping a version, so Certen routes it to the two senior keys. Different action, different people.',
+        waitFor: '0 of 2, then both senior keys signing',
+        objection: 'Why not just make everything need everyone?',
+        answer: 'Because then nothing ships and people route around it. The gate is sized to the action.',
       },
-      controls: [ctl('act:21', 'Page the other two authorities', 'primary', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
-      message: 'HELD - 1 of 3 authorities',
-    });
-
-    // Watch the one authority who IS awake sign. Seeing a signature land, and then nothing
-    // following it, is the whole point of the act.
-    await this.beat(900);
-    const cto = this.approvers[0];
-    cto.approved = true;
-    this.patch({
-      approvals: { collected: this.collected(this.approvers), threshold: 3, approvers: this.approvers },
-      message: 'CTO signed - the other two are asleep',
+      controls: [
+        ctl('approve:cto', 'CTO signs', 'approve', { role: 'cto', emphasis: true }),
+        ctl('approve:security', 'Security Lead signs', 'approve', { role: 'security', emphasis: true }),
+        ctl('reset', 'Reset', 'reset'),
+      ],
+      message: 'BLOCKED - 0 of 2 senior keys',
     });
   }
 
-  /** Act 2, beat 2 - the other two are paged, and the release still does not ship. */
-  private async actHotfixPagesTheOthers() {
-    this.patch({ busy: true, message: 'Paging the Security Lead and the Foundation...' });
-    await this.beat(1600);
+  /** Act 3's approvals: two senior keys, then the implementation is actually replaced. */
+  private async approvePrivileged(role: string): Promise<void> {
+    const a = this.approvers.find((x) => x.role === role);
+    if (!a || a.approved) return;
+    a.approved = true;
+    a.canApprove = false;
+
+    const threshold = this.state.approvals?.threshold ?? 2;
+    const remaining = this.approvers
+      .filter((x) => x.canApprove)
+      .map((x) => ctl(`approve:${x.role}`, `${x.label} signs`, 'approve', { role: x.role, emphasis: true }));
 
     this.patch({
-      busy: false,
-      verdict: 'blocked',
+      approvals: { collected: this.collected(this.approvers), threshold, approvers: this.approvers },
       coordination: {
         pendingTxHash: this.pendingTx,
-        notificationsSent: 4,
-        inboxItems: [
-          { role: 'cto', status: 'signed', channel: 'kms', timestampLabel: '02:14' },
-          { role: 'security', status: 'missing', channel: 'inbox', timestampLabel: 'paged twice, asleep' },
-          { role: 'foundation', status: 'missing', channel: 'inbox', timestampLabel: 'paged twice, asleep' },
-        ],
-        coordinationSummary: 'Paged again. Still one signature. There is no button that makes tonight an exception.',
+        notificationsSent: 2,
+        inboxItems: this.approvers.map((x) => ({
+          role: x.role,
+          status: (x.approved ? 'signed' : 'notified') as 'signed' | 'notified',
+          channel: 'kms' as const,
+          timestampLabel: x.approved ? 'just now' : undefined,
+        })),
+        coordinationSummary: `${this.collected(this.approvers)} of ${threshold} senior keys have signed.`,
       },
-      evidence: blockedRecord({
-        title: 'Refusal Record',
-        plainMeaning:
-          'An urgent hotfix from a real engineer with real credentials. It waits for the other two authorities, because urgency is not an authority.',
-        auditFacts: [
-          'Intent: upgrade to v6.1.1-hotfix',
-          '1 of 3 required authorities signed',
-          'Paged twice - no response',
-          'No override path exists',
-          'Production unchanged',
-        ],
-        pendingTxHash: this.pendingTx,
-      }),
-      execution: {
-        status: 'never',
-        shortLabel: 'still on v6.1',
-        headline: 'Production unchanged - the other two authorities never signed',
-      },
-      banner: {
-        kind: 'danger',
-        text: 'Paged twice. Still one of three. The fix is real and the engineer is legitimate - and it still does not ship.',
-      },
-      controls: [ctl('act:3', 'Now the build pipeline is compromised', 'danger', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
-      message: 'REFUSED - 1 of 3 authorities',
+      controls: [...remaining, ctl('reset', 'Reset', 'reset')],
+      message: `${a.label} signed`,
     });
+
+    if (this.collected(this.approvers) < threshold) return;
+
+    await this.reveal(async () => {
+      this.patch({
+        execution: {
+          status: 'executing',
+          headline: `Replacing the implementation with ${NEW_IMPL}…`,
+          legs: [{ chain: 'base', label: 'Base', status: 'executing' }],
+        },
+      });
+      await this.beat(1000);
+      const out = await execSetVersion('base', '7.0');
+      this.patch({
+        execution: {
+          status: 'done',
+          accountAddress: '0x3F8b91Ac…D42e',
+          shortLabel: 'now running v7.0',
+          headline: 'implementation replaced   v6.1 → v7.0',
+          detail: 'Executed only after both senior keys signed. The release authorities were not required for this call, and could not have authorized it.',
+          verified: out.verified,
+          verifiedDetail: out.verifiedDetail,
+          legs: [
+            { chain: 'base', label: out.chainLabel, status: 'done', txHash: out.txHash, explorerUrl: out.explorerUrl },
+          ],
+          explorerUrl: out.explorerUrl,
+        },
+        banner: {
+          kind: 'success',
+          text: 'The right two people signed and the code was replaced. The gate is not a wall — it is a different gate for a different call.',
+        },
+        explainer: {
+          pain: 'One deploy permission means a version bump and a code replacement carry the same risk.',
+          certenMove: 'Certen picked the authority set from the call, collected exactly those signatures, and executed against the proof.',
+          buyerTakeaway: 'Sizing the gate to the action is what makes people use it instead of routing around it.',
+          integrationHint: 'Per-selector policy: adding a gate is a configuration change.',
+        },
+      });
+    }, { governanceLevel: 'G2', validators: 7 });
+
+    const ev = this.state.evidence;
+    if (ev && ev.kind === 'execution-proof') {
+      this.patch({
+        evidence: {
+          ...ev,
+          plainMeaning: 'Proof that the two senior keys authorized this exact call, and that the implementation actually running matches the one they approved.',
+          auditFacts: [
+            'CTO + Security Lead signed',
+            `Bound to upgradeTo(${NEW_IMPL})`,
+            `${ev.attestations} of ${ev.validators} validators attested`,
+            'On-chain version verified = 7.0',
+          ],
+        },
+      });
+    }
+
+    this.patch({ controls: [ctl('reset', 'Reset scenario', 'reset')] });
   }
 
-  // == Act 3 - the pipeline itself is owned ===================================
+  // == Act 2 - the pipeline itself is owned ===================================
   // The sharpest point in this demo: CI/CD is a PROPOSER, never an authority. Owning it lets an
   // attacker ask for anything and obtain nothing.
+  //
+  // The screen has to carry three separate facts or the act does not read: the BUILD is malicious,
+  // the three authorities are LEGITIMATE (nothing about them is compromised), and they REFUSE.
+  // Previously it showed "Pipeline - compromised" and "0 of 3" and left an audience to guess which
+  // of those parties had been taken over.
   private async actCompromisedPipeline() {
     this.approvers = this.makeApprovers([
-      { role: 'cto', label: 'CTO', detail: 'Technical owner', approved: false },
-      { role: 'security', label: 'Security Lead', detail: 'Risk owner', approved: false },
-      { role: 'foundation', label: 'Foundation', detail: 'Governance owner', approved: false },
+      { role: 'cto', label: 'CTO', detail: 'Technical owner · not compromised', approved: false },
+      { role: 'security', label: 'Security Lead', detail: 'Risk owner · not compromised', approved: false },
+      { role: 'foundation', label: 'Foundation', detail: 'Governance owner · not compromised', approved: false },
     ]).map((x) => ({ ...x, canApprove: false }));
     this.pendingTx = hash32();
     const decision = this.policyFor({ actionType: 'contractUpgrade', env: 'production', principal: PRINCIPAL });
 
     this.patch({
       act: 3,
-      actLabel: 'Act 3 of 3 - the pipeline is compromised',
+      actLabel: 'Act 2 of 3 - the pipeline is compromised',
       verdict: 'blocked',
       proof: null,
       banner: {
         kind: 'danger',
-        text: 'The build pipeline is fully compromised. The attacker holds valid CI credentials and is pushing a backdoored build through the normal release path.',
+        text: 'One thing here is compromised: the build pipeline. The code it is shipping contains an attacker’s backdoor. The CTO, the Security Lead and the Foundation are the real people, with their own uncompromised keys.',
       },
       action: {
         verb: 'Upgrade contract',
-        summary: 'ACME protocol   v6.1 -> v6.6.6 (backdoored)',
+        summary: 'ACME protocol   v6.1 -> v6.6.6   build contains an attacker backdoor',
         principal: PRINCIPAL,
-        initiator: 'Pipeline - compromised',
+        // Kept short deliberately: the action band sizes its headline figure down to make room
+        // for the actor chip, and a longer label here shrinks "Malicious build" until it clips.
+        initiator: 'Compromised build pipeline',
+        // 16 characters, not 15: the action band picks its font step from the character count, and
+        // "Malicious build" lands one step larger than "Backdoored build" and clips against the
+        // actor chip. Both say the build is malicious; only one of them fits.
         amountLabel: 'Backdoored build',
-        note: 'valid CI credentials',
+        note: 'genuine CI credentials, attacker’s code',
         target: 'Production',
         icon: 'upgrade',
         destructive: true,
@@ -429,14 +503,15 @@ export class StopTheMistakeScenario extends BaseScenario {
           { role: 'security', status: 'missing' },
           { role: 'foundation', status: 'missing' },
         ],
-        coordinationSummary: 'All three authorities were notified of an unrecognised release. None signed.',
+        coordinationSummary: 'The pipeline is the only compromised party. All three authorities are legitimate and uncompromised, and all three were asked to sign this build.',
       },
       evidence: pendingRecord({
         plainMeaning:
-          'A backdoored build, submitted through the normal release path with valid CI credentials. The pipeline can ask; it cannot approve.',
+          'The attacker controls the build pipeline and has put a backdoor in the code it is shipping. The CI credentials it used are genuine — that is what being compromised means here. The three signing authorities are not compromised, and the pipeline cannot sign on their behalf.',
         auditFacts: [
-          'Intent: upgrade to v6.6.6 (backdoored)',
-          'Submitted with valid CI credentials',
+          'Build v6.6.6: contains an attacker backdoor',
+          'Build pipeline: compromised, using genuine CI credentials',
+          'CTO · Security Lead · Foundation: not compromised',
           'Awaiting all three authorities',
         ],
         pendingTxHash: this.pendingTx,
@@ -449,12 +524,12 @@ export class StopTheMistakeScenario extends BaseScenario {
         integrationHint: 'Your CI keeps its credentials; it simply never had signing authority.',
       },
       presenterCue: {
-        say: 'Now the attacker owns the build pipeline outright - valid credentials, the normal release path, a backdoored build. The pipeline was never an authority. It asks, and it gets nothing.',
+        say: 'One thing is compromised: the pipeline. The credentials it holds are genuine, and the code it is shipping has an attacker backdoor in it. The three people who have to sign are not compromised. Watch all three of them refuse.',
         waitFor: '0 of 3, REFUSED',
         objection: 'Most teams would be breached here.',
         answer: 'Because the pipeline usually holds the deploy key. Here it holds nothing but the ability to ask.',
       },
-      controls: [ctl('act:31', 'CERTEN asks all three authorities', 'primary', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
+      controls: [ctl('act:21', 'CERTEN asks all three authorities', 'primary', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
       message: 'HELD - 0 of 3 authorities',
     });
   }
@@ -471,22 +546,22 @@ export class StopTheMistakeScenario extends BaseScenario {
         pendingTxHash: this.pendingTx,
         notificationsSent: 3,
         inboxItems: [
-          { role: 'cto', status: 'missing', channel: 'inbox', timestampLabel: 'unrecognised release' },
-          { role: 'security', status: 'missing', channel: 'inbox', timestampLabel: 'unrecognised release' },
-          { role: 'foundation', status: 'missing', channel: 'inbox', timestampLabel: 'unrecognised release' },
+          { role: 'cto', status: 'missing', channel: 'inbox', timestampLabel: 'refused to sign' },
+          { role: 'security', status: 'missing', channel: 'inbox', timestampLabel: 'refused to sign' },
+          { role: 'foundation', status: 'missing', channel: 'inbox', timestampLabel: 'refused to sign' },
         ],
-        coordinationSummary: 'All three were asked. None of them recognised this release, and none of them signed.',
+        coordinationSummary: 'All three legitimate authorities were asked. None of them authorised this build, and all three refused to sign it.',
       },
       evidence: blockedRecord({
         title: 'Refusal Record',
         plainMeaning:
-          'The pipeline was never an authority - it only proposes. Owning it lets an attacker ask for anything and obtain nothing, and the attempt notified all three authorities.',
+          'The pipeline was never an authority — it only proposes. An attacker who owns it can ask for a malicious build and obtain nothing, because the three people who actually authorise a release are untouched, and all three refused this one.',
         auditFacts: [
-          'Intent: upgrade to v6.6.6 (backdoored)',
-          'Submitted with valid CI credentials',
+          'Build v6.6.6: contains an attacker backdoor',
+          'Build pipeline: compromised, using genuine CI credentials',
+          'CTO · Security Lead · Foundation: not compromised, all three refused',
           '0 of 3 required authorities signed',
-          'All three notified of an unrecognised release',
-          'Production unchanged',
+          'Production unchanged — still on v6.1',
         ],
         pendingTxHash: this.pendingTx,
       }),
@@ -497,9 +572,12 @@ export class StopTheMistakeScenario extends BaseScenario {
       },
       banner: {
         kind: 'danger',
-        text: 'Three requests, no signatures, and three people who now know something is wrong with the build system.',
+        text: 'Three legitimate authorities, asked to sign a build with a backdoor in it. All three refused, and all three now know the build system is compromised.',
       },
-      controls: [ctl('reset', 'Reset scenario', 'reset')],
+      controls: [
+        ctl('act:3', 'Now a privileged contract action', 'primary', { emphasis: true }),
+        ctl('reset', 'Reset', 'reset'),
+      ],
       message: 'REFUSED - 0 of 3 authorities',
     });
   }

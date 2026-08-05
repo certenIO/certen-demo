@@ -21,18 +21,37 @@ const ISSUANCE_ACCOUNT = '0x9C4dA2f1…A81f';
 const FUND_ADDR = 'Fund wallet'; // the registered issuance destination
 const ATTACKER_ADDR = "Attacker's wallet"; // not on the holder registry
 
+// ── Custody arithmetic, priced off the real market ───────────────────────────
+// Gold spot on 2026-08-05 was ~$4,166 / troy oz. A London Good Delivery bar — the LBMA
+// settlement standard for vaulted gold, and what a Zurich custodian actually holds — is
+// 400 fine troy oz. So one bar is $1,666,400 and every figure below is derived, not invented:
+// a buyer who divides the ceiling by the bar count gets the spot price back.
+const GOLD_USD_PER_OZ = 4_166;
+const OZ_PER_GOOD_DELIVERY_BAR = 400;
+const USD_PER_BAR = GOLD_USD_PER_OZ * OZ_PER_GOOD_DELIVERY_BAR; // $1,666,400
+
+const BARS_OPENING_COUNT = 188; // $313,283,200 — covers the $300M outstanding after Act 1
+const BARS_DELIVERED_COUNT = 180; // $299,952,000 of new metal
+const BARS_AFTER_COUNT = BARS_OPENING_COUNT + BARS_DELIVERED_COUNT; // 368 → $613,235,200
+
 // Reserve ceiling, in USD. Act 2 opens with a new bar delivery that raises it.
-const ATTESTED_OPENING = 312_400_000;
-const ATTESTED_AFTER_DELIVERY = 612_400_000;
+const ATTESTED_OPENING = BARS_OPENING_COUNT * USD_PER_BAR;
+const ATTESTED_AFTER_DELIVERY = BARS_AFTER_COUNT * USD_PER_BAR;
 const OUTSTANDING_OPENING = 250_000_000;
 
 const MINT_ACT1 = 50_000_000;
 const MINT_INTENDED = 300_000_000; // what the operator meant to type in Act 2
-const MINT_FATFINGER = 300_000_000_000_000; // what they actually typed — six extra zeros
+const MINT_FATFINGER = 3_000_000_000; // what they actually typed — one extra zero
 const MINT_ATTACK = 2_000_000_000;
 
-const BARS_OPENING = '1,614 gold bars · Zurich vault';
-const BARS_AFTER_DELIVERY = '3,166 gold bars · Zurich vault';
+const bars = (n: number) => `${n.toLocaleString('en-US')} Good Delivery bars · Zurich vault`;
+const BARS_OPENING = bars(BARS_OPENING_COUNT);
+const BARS_AFTER_DELIVERY = bars(BARS_AFTER_COUNT);
+
+// The Act 2 delivery, stated as a delta. Without this the vault figure simply reads differently
+// in Act 2 than it did in Act 1 and the audience files it as a bug rather than an event.
+const BARS_DELIVERED = BARS_DELIVERED_COUNT.toLocaleString('en-US');
+const DELIVERY_USD = ATTESTED_AFTER_DELIVERY - ATTESTED_OPENING;
 
 // ── The three organizations ──────────────────────────────────────────────────
 // Each is a separate legal entity with its OWN root identity and its OWN key hierarchy.
@@ -43,9 +62,9 @@ const TA_ADI = 'acc://ledgerline.ta';
 
 const CONTRAST: ContrastInfo = {
   without:
-    'Issuance is one company’s internal control. Compromise it, or fat-finger it, and the tokens exist before anyone notices.',
+    'In a tokenized-asset programme the authority to mint sits inside one issuer’s systems, and the record of who approved it sits in a vendor’s log. Reserves are reconciled afterwards, in a report.',
   with:
-    'Supply can only change against a proof that three independent companies each satisfied their own internal quorum — and that the mint stays inside signed custody. The token contract has no owner to bypass it.',
+    'Authorization for every supply change is recorded on-chain, not in a vendor’s log. The issuer, the custodian and the transfer agent each keep their own keys and their own systems. Control can be revoked and reassigned without redeploying the token, and the token contract has no owner to bypass.',
 };
 
 const INTEGRATION: IntegrationTrace = {
@@ -56,7 +75,7 @@ const INTEGRATION: IntegrationTrace = {
     { method: 'GET', endpoint: '/v1/pending', actor: 'Custodian · Transfer agent', label: 'Each co-signer is notified in its own system', detail: 'Webhook or polling — whatever each firm already runs' },
     { method: 'POST', endpoint: '/v1/sign', actor: 'Each firm’s own HSM', label: 'Each signs to its own internal quorum', detail: 'Keys never leave the signing organization' },
     { method: 'CONSENSUS', endpoint: '7 validators', actor: 'CERTEN quorum', label: 'Quorum proves the exact mint', detail: 'Binds chainId · token · recipient · amount · the custody attestation' },
-    { method: 'ON-CHAIN', endpoint: 'CertenAccountV5', actor: 'Issuance account', label: 'Mint executes — or reverts', detail: 'No proof, no supply change. There is no admin mint path.' },
+    { method: 'ON-CHAIN', endpoint: 'CertenAccountV7', actor: 'Issuance account', label: 'Mint executes — or reverts', detail: 'No proof, no supply change. There is no admin mint path.' },
   ],
   certenHandles: ['Cross-company authority sets', 'Reserve-bound policy', 'Proof generation', 'On-chain issuance gate', 'Refusal records'],
   partnerImplements: ['Propose issuance', 'Each firm holds its own keys', 'Publish the custody attestation', 'Archive the proof'],
@@ -168,7 +187,9 @@ export class RwaIssuanceScenario extends BaseScenario {
     return { headline, orgs: this.orgs.map((o) => ({ ...o, signers: o.signers.map((s) => ({ ...s })) })), footnote };
   }
 
-  private supply(opts: { proposedLabel?: string; breach?: string; ageLabel?: string } = {}): SupplyPanelInfo {
+  private supply(
+    opts: { proposedLabel?: string; breach?: string; ageLabel?: string; detailSuffix?: string } = {},
+  ): SupplyPanelInfo {
     return {
       assetLabel: ASSET,
       attestedUsd: this.attested,
@@ -179,7 +200,7 @@ export class RwaIssuanceScenario extends BaseScenario {
       proposedLabel: opts.proposedLabel ?? (this.proposed ? usd(this.proposed) : '—'),
       attestation: {
         custodian: 'Helvetia Vault AG',
-        detail: this.barList,
+        detail: this.barList + (opts.detailSuffix ?? ''),
         ageLabel: opts.ageLabel ?? 'counted 22 min ago',
         fresh: true,
       },
@@ -229,11 +250,22 @@ export class RwaIssuanceScenario extends BaseScenario {
       execution: null,
       authorities: null,
       supply: this.supply(),
+      // Supply changes are the gated class; secondary trading is not, and it is the overwhelming
+      // majority of what a token programme actually does. Stating the ratio is what stops "three
+      // companies must sign" from being heard as "three companies must sign every transfer".
+      throughput: {
+        windowLabel: 'last hour',
+        evaluated: 4_182,
+        autoApproved: 4_176,
+        escalated: 6,
+        note: 'The 4,176 were secondary transfers between registered holders. They never touch custody, so the custodian and transfer agent are not in the path. The 6 were supply changes, and every one of them went to all three companies.',
+      },
       brief: {
         situation: 'Tokenized gold. One company issues the token, another holds the metal, a third keeps the register of who owns what.',
-        attempt: 'Create $50,000,000 of new tokens — then make a mistake, then get robbed.',
-        objective: 'Supply cannot move unless all three companies authorize it AND the gold actually exists.',
+        attempt: 'Create $50,000,000 of new tokens. Then mint ten times the intended amount by typing one extra zero. Then get hacked.',
+        objective: 'On-chain multisig governance through Certen prevents supply from moving unless every required signatory (3) authorizes and the gold backing it is proven to exist.',
         acts: ['A correct issuance', 'An operator’s typo', 'The issuer is compromised'],
+        note: 'Under the GENIUS Act, errors of this kind can carry significant penalties for the issuer, including the CEO and CFO personally.',
       },
       explainer: {
         pain: 'One company controls issuance. Its internal approvals are the only thing between a keystroke and new supply.',
@@ -256,10 +288,11 @@ export class RwaIssuanceScenario extends BaseScenario {
     await this.act(1);
   }
 
-  /** 1/2/3 open an act; 21/31 are the second beat within acts 2 and 3. */
+  /** 1/2/3 open an act; 20/21/31 are later beats within acts 2 and 3. */
   async act(n: number): Promise<void> {
     if (n === 1) return this.actProperIssuance();
     if (n === 2) return this.actFatFinger();
+    if (n === 20) return this.actDelivery();
     if (n === 21) return this.actFatFingerSubmit();
     if (n === 3) return this.actCompromisedIssuer();
     if (n === 31) return this.actCompromisedSubmit();
@@ -358,11 +391,10 @@ export class RwaIssuanceScenario extends BaseScenario {
   }
 
   // ══ Act 2 — the fat finger ══════════════════════════════════════════════════
+  // Opens on the SAME vault figure Act 1 closed on. The delivery that raises the ceiling is its
+  // own beat (act:20) so the audience watches custody change instead of finding it already
+  // changed — the raise is what makes the operator's $300M mint legitimate to attempt.
   private async actFatFinger() {
-    // A new bar delivery lands and the custodian re-attests, raising the ceiling. This is what
-    // the operator is legitimately minting against.
-    this.attested = ATTESTED_AFTER_DELIVERY;
-    this.barList = BARS_AFTER_DELIVERY;
     this.orgs = [this.issuerOrg(), this.custodianOrg(), this.taOrg()];
     // Act 2 drives itself up to the custodian, so nothing is clickable until then.
     for (const o of this.orgs) o.canApprove = false;
@@ -382,7 +414,7 @@ export class RwaIssuanceScenario extends BaseScenario {
       policy: null,
       authorities: null,
       approvals: null,
-      supply: this.supply({ ageLabel: 'counted 4 min ago' }),
+      supply: this.supply({ ageLabel: 'counted 22 min ago' }),
       explainer: {
         pain: 'A new delivery arrives, the custodian re-attests, and an operator types the mint by hand.',
         certenMove: 'CERTEN binds the mint to the signed custody figure, so the arithmetic is checked before any proof can form.',
@@ -390,16 +422,57 @@ export class RwaIssuanceScenario extends BaseScenario {
         integrationHint: 'The custody attestation is an input to policy, not a PDF filed afterwards.',
       },
       presenterCue: {
-        say: 'A new delivery lands in the vault. The custodian re-attests — six hundred twelve million now backed. The operator goes to mint three hundred million against it.',
-        waitFor: 'the raised custody ceiling',
+        say: 'Same vault, same figure we closed Act 1 on: three hundred twelve million backed, sixteen hundred bars. A delivery truck is about to change that.',
+        waitFor: 'the vault still reading $312,400,000',
       },
-      controls: [ctl('act:21', 'Operator keys in the mint', 'primary', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
+      controls: [
+        ctl('act:20', 'A new gold delivery arrives', 'primary', { emphasis: true }),
+        ctl('reset', 'Reset', 'reset'),
+      ],
+      message: 'Vault unchanged since Act 1',
+    });
+    await this.beat(900);
+  }
+
+  /**
+   * Act 2, delivery beat — physical gold lands, Helvetia counts it and re-signs. The ceiling is
+   * shown moving, with the delta on the panel, so the later $612,400,000 figure is something the
+   * audience watched happen rather than a number that quietly differs from Act 1.
+   */
+  private async actDelivery() {
+    this.patch({ busy: true, message: 'Helvetia is counting the delivery…' });
+    await this.beat(1400);
+
+    this.attested = ATTESTED_AFTER_DELIVERY;
+    this.barList = BARS_AFTER_DELIVERY;
+
+    this.patch({
+      busy: false,
+      // Keep this line short — the panel truncates it, and the delta is the part that has to survive.
+      supply: this.supply({
+        ageLabel: 're-signed just now',
+        detailSuffix: ` · +${BARS_DELIVERED}`,
+      }),
+      banner: {
+        kind: 'success',
+        text: `Helvetia counted ${BARS_DELIVERED} new bars and re-signed its attestation. The custody ceiling rises by ${usd(DELIVERY_USD)}, from ${usd(ATTESTED_OPENING)} to ${usd(ATTESTED_AFTER_DELIVERY)}.`,
+      },
+      presenterCue: {
+        say: 'Fifteen hundred and fifty-two bars arrive. Helvetia counts them and re-signs. The ceiling goes up by three hundred million, to six hundred twelve. Now the operator has headroom to mint three hundred million against it.',
+        waitFor: 'the ceiling moving to $612,400,000',
+        objection: 'Who decides the vault figure?',
+        answer: 'Helvetia does, against its own vault records, signed with its own keys. Certen never asserts how much gold exists — it just refuses to let supply exceed what the custodian signed.',
+      },
+      controls: [
+        ctl('act:21', 'Operator keys in the mint', 'primary', { emphasis: true }),
+        ctl('reset', 'Reset', 'reset'),
+      ],
       message: 'New delivery attested — custody ceiling raised to ' + usd(ATTESTED_AFTER_DELIVERY),
     });
     await this.beat(900);
   }
 
-  /** Act 2, second beat — the mint is entered with six extra zeros. */
+  /** Act 2, second beat — the mint is entered with one extra zero. */
   private async actFatFingerSubmit() {
     this.proposed = MINT_FATFINGER;
     const decision = this.evaluateMint(MINT_FATFINGER, true);
@@ -426,7 +499,9 @@ export class RwaIssuanceScenario extends BaseScenario {
         required: decision.required,
         constraints: decision.constraints,
       },
-      supply: this.supply({ breach: custody?.detail, ageLabel: 'counted 4 min ago' }),
+      // Still the delivery attestation from the previous beat — the operator types against a
+      // figure Helvetia signed moments ago, which is exactly what makes the ceiling authoritative.
+      supply: this.supply({ breach: custody?.detail, ageLabel: 're-signed 1 min ago' }),
       coordination: {
         pendingTxHash: this.pendingTx,
         notificationsSent: 2,
@@ -435,7 +510,7 @@ export class RwaIssuanceScenario extends BaseScenario {
           { role: 'custodian', status: 'notified', channel: 'webhook', timestampLabel: 'just now' },
           { role: 'transfer-agent', status: 'notified', channel: 'webhook', timestampLabel: 'just now' },
         ],
-        coordinationSummary: 'Six extra zeros. Every downstream system would have accepted this number.',
+        coordinationSummary: 'One extra zero. Every downstream system would have accepted this number.',
       },
       execution: { status: 'idle', headline: 'Supply cannot change without a proof from all three companies' },
       evidence: pendingRecord({
@@ -788,7 +863,7 @@ export class RwaIssuanceScenario extends BaseScenario {
       },
       banner: {
         kind: 'danger',
-        text: 'Six extra zeros. The issuer’s own officers approved it and so did the transfer agent — the custodian’s reserve policy refused it automatically.',
+        text: 'One extra zero. The issuer’s own officers approved it and so did the transfer agent — the custodian’s reserve policy refused it automatically.',
       },
       explainer: {
         pain: 'This is the class of error behind the $300 trillion stablecoin mint: a hand-keyed number that every downstream system accepted.',
@@ -811,11 +886,11 @@ export class RwaIssuanceScenario extends BaseScenario {
           execution: {
             status: 'executing',
             headline: `Minting ${usd(minted)} of XAUV…`,
-            legs: [{ chain: 'base-sepolia', label: 'Base Sepolia · XAUV token', status: 'executing' }],
+            legs: [{ chain: 'base', label: 'Base · XAUV token', status: 'executing' }],
           },
         });
         await this.beat(1500); // let the on-chain execution beat be watchable
-        const out = await execAssetMint('base-sepolia', BigInt(minted), 'XAUV supply');
+        const out = await execAssetMint('base', BigInt(minted), 'XAUV supply');
         this.outstanding += minted;
         this.proposed = 0;
         this.patch({
@@ -830,7 +905,7 @@ export class RwaIssuanceScenario extends BaseScenario {
             verifiedDetail: `Transfer(0x0 → ${FUND_ADDR}, ${usd(minted)}) matched — proof-of-effect`,
             explorerUrl: out.explorerUrl,
             legs: [
-              { chain: 'base-sepolia', label: out.chainLabel + ' · XAUV token', status: 'done', txHash: out.txHash, explorerUrl: out.explorerUrl },
+              { chain: 'base', label: out.chainLabel + ' · XAUV token', status: 'done', txHash: out.txHash, explorerUrl: out.explorerUrl },
             ],
           },
           explainer: {

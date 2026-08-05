@@ -19,8 +19,8 @@ const COMPROMISED_KEY_HASH = 'c0'.repeat(32);
 const FRESH_KEY_HASH = 'f5'.repeat(32);
 
 const CONTRAST: ContrastInfo = {
-  without: 'One stolen key can trigger an irreversible bridge transfer.',
-  with: 'A stolen key only produces a recorded, refused attempt. Funds move solely on a verified proof that an independent quorum signed, policy was satisfied, and the transfer is exactly the one approved — and the vault account has no key to steal.',
+  without: 'Treasury authority is a signer list held inside one tool, and the record of who approved a transfer sits in that tool’s log. Rotating a compromised signer means touching every chain the treasury runs on.',
+  with: 'Each approval is recorded on-chain rather than in a vendor’s log. Every authority keeps its own keys and its own systems. A compromised signer can be revoked and replaced everywhere in a single action, without redeploying, and the vault account has no key to steal.',
 };
 
 const INTEGRATION: IntegrationTrace = {
@@ -37,8 +37,8 @@ const INTEGRATION: IntegrationTrace = {
 
 const treasuryInitial = (): TreasuryPanel => ({
   totalLabel: TOTAL,
-  source: { label: 'Base Sepolia', chain: 'base-sepolia', balanceLabel: '$250,000,000', fraction: 1 },
-  dest: { label: 'Arbitrum Sepolia', chain: 'arbitrum-sepolia', balanceLabel: '$0', fraction: 0 },
+  source: { label: 'Base', chain: 'base', balanceLabel: '$250,000,000', fraction: 1 },
+  dest: { label: 'Arbitrum', chain: 'arbitrum', balanceLabel: '$0', fraction: 0 },
 });
 
 /**
@@ -80,10 +80,19 @@ export class TreasuryProtectionScenario extends BaseScenario {
       proof: null,
       execution: null,
       treasury: treasuryInitial(),
+      // A treasury runs constantly. Quorum applies to the moves that cross a threshold, not to
+      // every operation, or nobody would run a treasury this way.
+      throughput: {
+        windowLabel: 'last hour',
+        evaluated: 6_714,
+        autoApproved: 6_711,
+        escalated: 3,
+        note: 'The 6,711 were inside standing policy: rebalances, yield claims and payments to registered counterparties. The 3 were cross-chain moves above the threshold, and those went to the full quorum.',
+      },
       brief: {
         situation: 'A DAO treasury holding $250,000,000, spread across two chains.',
         attempt: 'Move $25M legitimately. Then let a thief steal a key, phish a second one, and replay a real proof.',
-        objective: 'Stolen keys buy signatures, not outcomes — and the surviving authorities revoke them everywhere in one action.',
+        objective: 'Stolen keys buy signatures, not outcomes. The surviving authorities revoke them everywhere in one action.',
         acts: ['A legitimate transfer', 'Two keys compromised', 'A real proof replayed', 'The keys are revoked'],
       },
       contrast: CONTRAST,
@@ -172,6 +181,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
     if (n === 3) return this.actReplayAttempt();
     if (n === 31) return this.actReplayChecked();
     if (n === 4) return this.rotate();
+    if (n === 41) return this.actReassign();
   }
 
   async approve(role: string): Promise<void> {
@@ -200,37 +210,37 @@ export class TreasuryProtectionScenario extends BaseScenario {
     if (this.collected(this.approvers) < threshold) return;
 
     await this.reveal(async () => {
-      // Leg 1 — debit the source chain (Base Sepolia)
+      // Leg 1 — debit the source chain (Base)
       this.patch({
         execution: {
           status: 'executing',
           headline: 'Moving $25,000,000 across chains…',
           legs: [
-            { chain: 'base-sepolia', label: 'Base Sepolia (debit)', status: 'executing' },
-            { chain: 'arbitrum-sepolia', label: 'Arbitrum Sepolia (credit)', status: 'pending' },
+            { chain: 'base', label: 'Base (debit)', status: 'executing' },
+            { chain: 'arbitrum', label: 'Arbitrum (credit)', status: 'pending' },
           ],
         },
       });
       await this.beat(1500); // let the on-chain execution beat be watchable
-      const src = await execWithdraw('base-sepolia', 25000000n, 'Source treasury');
+      const src = await execWithdraw('base', 25000000n, 'Source treasury');
       this.patch({
         execution: {
           status: 'executing',
           headline: 'Moving $25,000,000 across chains…',
           legs: [
-            { chain: 'base-sepolia', label: 'Base Sepolia (debit)', status: 'done', txHash: src.txHash, explorerUrl: src.explorerUrl },
-            { chain: 'arbitrum-sepolia', label: 'Arbitrum Sepolia (credit)', status: 'executing' },
+            { chain: 'base', label: 'Base (debit)', status: 'done', txHash: src.txHash, explorerUrl: src.explorerUrl },
+            { chain: 'arbitrum', label: 'Arbitrum (credit)', status: 'executing' },
           ],
         },
         treasury: {
           totalLabel: TOTAL,
-          source: { label: 'Base Sepolia', chain: 'base-sepolia', balanceLabel: '$225,000,000', fraction: 0.9, delta: '−$25M' },
-          dest: { label: 'Arbitrum Sepolia', chain: 'arbitrum-sepolia', balanceLabel: '$0', fraction: 0 },
+          source: { label: 'Base', chain: 'base', balanceLabel: '$225,000,000', fraction: 0.9, delta: '−$25M' },
+          dest: { label: 'Arbitrum', chain: 'arbitrum', balanceLabel: '$0', fraction: 0 },
         },
       });
-      // Leg 2 — credit the destination chain (Arbitrum Sepolia)
+      // Leg 2 — credit the destination chain (Arbitrum)
       await this.beat(1500); // let the on-chain execution beat be watchable
-      const dst = await execDeposit('arbitrum-sepolia', 25000000n, 'Destination treasury');
+      const dst = await execDeposit('arbitrum', 25000000n, 'Destination treasury');
       this.patch({
         execution: {
           status: 'done',
@@ -241,14 +251,14 @@ export class TreasuryProtectionScenario extends BaseScenario {
           verified: src.verified && dst.verified,
           verifiedDetail: `${src.verifiedDetail}  ·  ${dst.verifiedDetail}`,
           legs: [
-            { chain: 'base-sepolia', label: 'Base Sepolia (debit)', status: 'done', txHash: src.txHash, explorerUrl: src.explorerUrl },
-            { chain: 'arbitrum-sepolia', label: 'Arbitrum Sepolia (credit)', status: 'done', txHash: dst.txHash, explorerUrl: dst.explorerUrl },
+            { chain: 'base', label: 'Base (debit)', status: 'done', txHash: src.txHash, explorerUrl: src.explorerUrl },
+            { chain: 'arbitrum', label: 'Arbitrum (credit)', status: 'done', txHash: dst.txHash, explorerUrl: dst.explorerUrl },
           ],
         },
         treasury: {
           totalLabel: TOTAL,
-          source: { label: 'Base Sepolia', chain: 'base-sepolia', balanceLabel: '$225,000,000', fraction: 0.9, delta: '−$25M' },
-          dest: { label: 'Arbitrum Sepolia', chain: 'arbitrum-sepolia', balanceLabel: '$25,000,000', fraction: 0.1, delta: '+$25M' },
+          source: { label: 'Base', chain: 'base', balanceLabel: '$225,000,000', fraction: 0.9, delta: '−$25M' },
+          dest: { label: 'Arbitrum', chain: 'arbitrum', balanceLabel: '$25,000,000', fraction: 0.1, delta: '+$25M' },
         },
         explainer: {
           pain: 'Without CERTEN, a treasury admin could push a cross-chain transfer alone.',
@@ -480,7 +490,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
         integrationHint: 'Single-use is enforced on-chain, not by a replay cache you have to operate.',
       },
       presenterCue: {
-        say: 'Now they stop trying to fake authority and reuse authority that was real. This is the proof that moved twenty-five million dollars in Act 1 - every signature genuine. It was consumed when it executed, and it was bound to a different destination. Refused before anything runs.',
+        say: 'Now they stop trying to fake authority and reuse authority that was real. This is the proof that moved twenty-five million dollars in Act 1 - every signature genuine. But it was bound to one exact action and spent when it executed. Different destination, already used. Refused before anything runs.',
         waitFor: '3 of 3 signatures, still REFUSED',
         objection: 'Three of three - why does that not execute?',
         answer: 'Because a proof authorises one specific action once. This one already did its job.',
@@ -511,10 +521,10 @@ export class TreasuryProtectionScenario extends BaseScenario {
       evidence: blockedRecord({
         title: 'Refusal Record',
         plainMeaning:
-          'The attacker stopped forging authority and reused authority that was really granted. The proof from Act 1 is single-use: its anchor was consumed the moment it executed, and the destination it authorised was never this wallet.',
+          'The attacker stopped forging authority and reused authority that was really granted. The proof from Act 1 is single-use: the authorization was consumed the moment it executed, and the destination it authorised was never this wallet.',
         auditFacts: [
           'Proof signatures: all genuine',
-          'Anchor already consumed on first execution',
+          'Authorization already consumed on first execution',
           'Bound destination does not match this request',
           'Replay refused before any call was made',
           'Balances unchanged',
@@ -529,7 +539,16 @@ export class TreasuryProtectionScenario extends BaseScenario {
       },
       banner: {
         kind: 'danger',
-        text: 'The anchor was consumed when this proof executed in Act 1, and it was bound to a different destination. Genuine signatures, spent authority.',
+        text: 'The approval is bound to one exact action: this chain, this contract, this amount, this call. It can be spent once. Change the destination and it is a different action, so the proof no longer matches. Certen re-checks both in the account immediately before execution.',
+      },
+      // The banner is Detail-only, so the same mechanism is split across the band, which now
+      // renders in Diagram view as well. Both halves of the refusal have to be readable there:
+      // exact-call binding AND single use. Either one alone under-explains the act.
+      explainer: {
+        pain: 'A captured proof looks like a skeleton key: real signatures, real quorum, already approved.',
+        certenMove: 'The approval is bound to one exact action: this chain, this contract, this amount, this call. Certen re-checks it in the account immediately before execution.',
+        buyerTakeaway: 'Change the destination and it is a different action. And an approval that was already spent cannot be spent again.',
+        integrationHint: 'Single-use and exact-call binding are enforced on-chain, not by a replay cache you have to operate.',
       },
       controls: [ctl('act:4', 'Now revoke the compromised keys', 'primary', { emphasis: true }), ctl('reset', 'Reset', 'reset')],
       message: 'REFUSED - proof already used',
@@ -637,10 +656,8 @@ export class TreasuryProtectionScenario extends BaseScenario {
           status: 'done',
           accountAddress: '0x5E19c73B…7A0d',
           shortLabel: 'stolen key revoked',
-          headline: 'Compromised key revoked — the authority set is healed',
-          detail:
-            'One key-page update on Accumulate. Every external account it controls (Base, Arbitrum, …) ' +
-            'is now governed by the new key set — with no per-chain transaction.',
+          headline: 'Stolen key revoked — it can no longer sign for anything',
+          detail: 'The compromised key is out of the key page. What replaces it is the next beat.',
           verified: out.verified,
           verifiedDetail: out.verifiedDetail,
           legs: [
@@ -649,16 +666,16 @@ export class TreasuryProtectionScenario extends BaseScenario {
           explorerUrl: out.explorerUrl,
         },
         explainer: {
-          pain: 'Per-chain key rotation is slow, costly, and error-prone.',
-          certenMove: 'One Accumulate key-page update removed the stolen key for every governed chain.',
-          buyerTakeaway: 'Single control plane: rotate once, secured everywhere.',
-          integrationHint: 'No fund migration, no redeploys, no per-chain scramble.',
+          pain: 'While a stolen key is still in the authority set, every account it governs is exposed.',
+          certenMove: 'The surviving authorities removed it from the Accumulate key page. It is now a key that signs for nothing.',
+          buyerTakeaway: 'Revocation does not need the cooperation of the key being revoked.',
+          integrationHint: 'The compromised key could not block its own removal — recovery threshold excludes it.',
         },
         banner: {
           kind: 'success',
-          text: 'Threat neutralized. One Accumulate key-page update re-secured the treasury across every chain — the stolen key is now powerless.',
+          text: 'The stolen key is revoked. It is still in the attacker’s hands and it now signs for nothing.',
         },
-        message: 'Compromised key rotated out — resolved',
+        message: 'Stolen key revoked',
       });
     }, { governanceLevel: 'G1', validators: 7 });
 
@@ -668,7 +685,78 @@ export class TreasuryProtectionScenario extends BaseScenario {
       this.patch({
         evidence: {
           ...ev,
-          plainMeaning: 'Proof that the key page was updated — the compromised key removed and a fresh key added.',
+          plainMeaning: 'Proof that the key page was updated and the compromised key removed.',
+          auditFacts: [
+            'remove_key compromised ✓',
+            'Signed by 2 of 3 surviving authorities',
+            'The revoked key did not participate',
+          ],
+        },
+      });
+    }
+
+    // STOP. Revoke and reassign are two different claims — "the thief is locked out" and "control
+    // is back in the right hands, everywhere, without redeploying" — and running them together
+    // spent the second one in about a second and a half.
+    this.patch({
+      presenterCue: {
+        say: 'The stolen key is gone. Now watch where control goes, and how far it reaches.',
+        waitFor: 'the reassignment',
+      },
+      controls: [
+        ctl('act:41', 'Now reassign control to a fresh key', 'primary', { emphasis: true }),
+        ctl('reset', 'Reset', 'reset'),
+      ],
+    });
+  }
+
+  /**
+   * Act 4, beat 2 — the reassignment. Same key-page update, but stated on its own: a fresh key
+   * takes the revoked seat, and every chain the identity governs inherits it with no per-chain
+   * transaction and no redeploy. This is the beat that carries the control-plane argument.
+   */
+  private async actReassign(): Promise<void> {
+    this.patch({ busy: true, message: 'Installing the fresh key…' });
+    await this.beat(1400);
+
+    const ev = this.state.evidence;
+    this.patch({
+      busy: false,
+      verdict: 'executed',
+      execution: {
+        ...(this.state.execution ?? { status: 'done' }),
+        status: 'done',
+        shortLabel: 'control reassigned',
+        headline: 'Fresh key installed — the authority set is healed',
+        detail:
+          'One key-page update on Accumulate. Every external account the identity controls (Base, Arbitrum, …) ' +
+          'is governed by the new key set — no per-chain transaction, no redeploy, no fund migration.',
+      },
+      explainer: {
+        pain: 'Rotating a compromised signer usually means touching every chain the treasury runs on.',
+        certenMove: 'Control was reassigned once, on Accumulate. Base and Arbitrum inherit it without being touched.',
+        buyerTakeaway: 'Single control plane: revoke once, reassign once, secured everywhere.',
+        integrationHint: 'No fund migration, no redeploys, no per-chain scramble.',
+      },
+      banner: {
+        kind: 'success',
+        text: 'Threat neutralized. One key-page update revoked the stolen key and reassigned control, and every chain the identity governs is re-secured.',
+      },
+      presenterCue: {
+        say: 'A fresh key takes the seat, and both chains are re-secured by that one update. Nothing was redeployed and no funds moved.',
+        waitFor: 'the healed authority set',
+        objection: 'Don’t you have to fix every chain?',
+        answer: 'No. Authority lives on Accumulate. One key-page update re-secures every external account it controls.',
+      },
+      controls: [ctl('reset', 'Reset scenario', 'reset')],
+      message: 'Control reassigned — resolved',
+    });
+
+    if (ev && ev.kind === 'execution-proof') {
+      this.patch({
+        evidence: {
+          ...ev,
+          plainMeaning: 'Proof that the key page was updated — the compromised key removed and a fresh key added in its place.',
           auditFacts: [
             'remove_key compromised ✓',
             'add_key fresh ✓',
@@ -678,7 +766,5 @@ export class TreasuryProtectionScenario extends BaseScenario {
         },
       });
     }
-
-    this.patch({ controls: [ctl('reset', 'Reset scenario', 'reset')] });
   }
 }

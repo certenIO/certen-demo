@@ -183,6 +183,27 @@ export interface Banner {
   text: string;
 }
 
+/**
+ * What the policy engine handled in the background while the demo showed one action.
+ *
+ * The demos walk through exceptions one at a time, which silently implies that every action needs
+ * this much ceremony. It does not: the engine's job is to absorb routine volume on policy alone
+ * and escalate only what crosses a rule. Without this panel nothing on screen conveys that the
+ * model scales with transaction count.
+ */
+export interface PolicyThroughput {
+  /** e.g. "last hour" */
+  windowLabel: string;
+  /** total actions the engine evaluated in the window */
+  evaluated: number;
+  /** how many cleared on policy alone, with no human involved */
+  autoApproved: number;
+  /** how many crossed a rule and went to people — the class the demo is showing */
+  escalated: number;
+  /** one line naming what the escalations were, in this scenario's own terms */
+  note: string;
+}
+
 // ── Audit/runbook additions ─────────────────────────────────────────────────
 
 /** "Why this matters" self-teaching strip (Runbook 2). */
@@ -365,6 +386,12 @@ export interface ScenarioBrief {
   objective: string;
   /** the acts, in order, as short labels */
   acts: string[];
+  /**
+   * Per-scene footnote for the card's empty lower area — the regulatory or commercial stake that
+   * makes the scenario matter, which the acts themselves cannot show. Scenario-specific; omit it
+   * and the card simply closes after the act chips.
+   */
+  note?: string;
 }
 
 export interface Control {
@@ -397,6 +424,7 @@ export interface ScenarioState {
   dataPanel?: DataPanel | null;
   treasury?: TreasuryPanel | null;
   banner?: Banner | null;
+  throughput?: PolicyThroughput | null;
   // runbook additions
   explainer?: ScenarioExplainer | null;
   coordination?: CoordinationInfo | null;

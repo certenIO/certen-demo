@@ -51,6 +51,21 @@ const REGISTERED_DESTINATION: PolicyConstraint = {
 };
 
 /**
+ * The treasury's payee register. Separate from the holder-of-record check above: this one governs
+ * who an actor may pay at all, and it is the check that survives a perfectly valid credential —
+ * an agent that authenticates correctly still cannot pay an address nobody registered.
+ */
+const REGISTERED_PAYEE: PolicyConstraint = {
+  id: 'registered-payee',
+  short: 'Payee is registered',
+  describe: 'Payments may only be made to addresses on the payee register',
+  check: (ctx) =>
+    ctx.recipientListed
+      ? { satisfied: true, detail: 'this address is on the payee register' }
+      : { satisfied: false, detail: 'this address is not on the payee register' },
+};
+
+/**
  * Splitting a payment to stay under a per-transaction cap is the oldest evasion there is, and an
  * autonomous agent can do it in milliseconds. The limit is therefore evaluated over a rolling
  * window across ALL of the actor's activity, not per transaction.
@@ -134,6 +149,18 @@ export const DEMO_RULES: PolicyRule[] = [
     when: { actionType: 'upgradeTo' },
     require: { approvers: ['CTO', 'Security'], threshold: 2 },
     describe: 'Contract upgrade → requires {threshold} of {count} senior keys: {approvers}',
+  },
+
+  // ── Demo 2 — payment to an address that is not on the payee register ────────
+  // Ordered ABOVE the amount rules on purpose. An unlisted payee is not a question of how much or
+  // of who co-signs: no quorum makes an unregistered destination payable. Left below them, a
+  // $4,000,000 injected payment would match `large-transfer` and merely ask for a human, which
+  // says the opposite of what the act is for.
+  {
+    name: 'payment-payee-register',
+    when: { actionType: 'transfer', recipientListed: false },
+    require: { approvers: [], threshold: 0, constraints: [REGISTERED_PAYEE] },
+    describe: 'Payments may only go to addresses on the payee register',
   },
 
   // ── Demo 2 — large transfer needs a human ───────────────────────────────────

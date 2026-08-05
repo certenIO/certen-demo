@@ -59,7 +59,7 @@ export function ActionRail({
         </Box>
         <Stack alignItems="flex-end" spacing={0.25}>
           {action.amountLabel && (
-            <Tooltip title="Testnet execution · value-equivalent demo label">
+            <Tooltip title="Simulated execution · value-equivalent demo label">
               <Typography sx={{ fontWeight: 700, fontSize: '1.2rem', color: danger ? CERTEN_COLORS.error.main : CERTEN_COLORS.primary.main, whiteSpace: 'nowrap', lineHeight: 1.05 }}>
                 {action.amountLabel}*
               </Typography>

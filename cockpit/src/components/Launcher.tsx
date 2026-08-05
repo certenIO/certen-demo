@@ -62,7 +62,8 @@ export function Launcher({
               Everyone else records who approved, then trusts a key to execute.
             </Typography>
             <Typography variant="body1" sx={{ color: CERTEN_COLORS.primary.main, fontWeight: 700 }}>
-              We removed the key. Without a valid proof, the action is not blocked — it is impossible.
+              The smart account has no key. Control comes from an authorized identity, not from holding a key.
+              Without a valid proof, the action is not blocked. It is impossible.
             </Typography>
           </Box>
         </motion.div>

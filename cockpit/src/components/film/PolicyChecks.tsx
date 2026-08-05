@@ -8,7 +8,7 @@ import type { PolicyInfo } from '../../types';
 /**
  * The non-quorum half of the policy, as a checklist rather than prose: a few plain words and a
  * tick or a cross. No figures — the magnitude of a failure is stated on the supply chart in words
- * ("489,876× more tokens than gold"), which is the form that survives a video bitrate.
+ * ("5.38× more tokens than gold"), which is the form that survives a video bitrate.
  */
 export function PolicyChecks({ policy }: { policy: PolicyInfo | null | undefined }) {
   const cs = policy?.constraints;

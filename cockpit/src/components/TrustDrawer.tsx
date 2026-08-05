@@ -27,7 +27,7 @@ const QA: { q: string; a: string }[] = [
   },
   {
     q: 'Are the dollars real?',
-    a: 'The demo uses testnet transactions with value-equivalent labels. The control path, proof path, and execution shape are the point.',
+    a: 'The demo uses simulated transactions with value-equivalent labels. The control path, proof path, and execution shape are the point.',
   },
 ];
 

@@ -129,7 +129,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
       actLabel: 'Act 1 of 4 · a legitimate transfer',
       verdict: 'blocked',
       action: {
-        verb: 'Move funds', summary: 'Base → Arbitrum   ·   DAO Treasury', amountLabel: '$25,000,000', target: 'Arbitrum', note: 'DAO treasury',
+        verb: 'Move funds', summary: 'Base Sepolia → Arbitrum Sepolia   ·   DAO Treasury', amountLabel: '$25,000,000', target: 'Arbitrum Sepolia', note: 'DAO treasury',
         initiator: 'DAO Treasury proposal', icon: 'bridge',
       },
       policy: {
@@ -246,7 +246,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
           status: 'done',
           accountAddress: '0x5E19c73B…7A0d',
           shortLabel: '$25,000,000 moved',
-          headline: '$25,000,000 moved Base → Arbitrum',
+          headline: '$25,000,000 moved Base Sepolia → Arbitrum Sepolia',
           detail: 'Both legs executed, bound to one CERTEN proof.',
           verified: src.verified && dst.verified,
           verifiedDetail: `${src.verifiedDetail}  ·  ${dst.verifiedDetail}`,
@@ -291,7 +291,7 @@ export class TreasuryProtectionScenario extends BaseScenario {
       actLabel: 'Act 2 of 4 · one key stolen',
       verdict: 'blocked',
       action: {
-        verb: 'Move funds', summary: 'Base → attacker wallet', amountLabel: '$25,000,000', target: "Attacker's wallet",
+        verb: 'Move funds', summary: 'Base Sepolia → attacker wallet', amountLabel: '$25,000,000', target: "Attacker's wallet",
         initiator: 'Treasurer · stolen key', icon: 'bridge', destructive: true,
       },
       policy: {

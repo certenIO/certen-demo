@@ -239,6 +239,8 @@ export interface AuthorityOrg {
   status: OrgStatus;
   scope?: string;
   note?: string;
+  /** ≤4 plain words for the diagram, e.g. "not enough gold" — mirrors the orchestrator type */
+  filmNote?: string;
   canApprove?: boolean;
   automated?: boolean;
 }

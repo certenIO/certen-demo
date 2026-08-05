@@ -14,7 +14,15 @@
     "strict": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    // Mirror of the `@engine` alias in vite.config.ts. Without it `tsc --noEmit` cannot resolve
+    // the shared scenario engine the static build imports, so `npm run typecheck` reported four
+    // phantom errors while `vite build` succeeded — the worst kind of broken gate.
+    "baseUrl": ".",
+    "paths": {
+      "@engine/*": ["../orchestrator/src/*"]
+    }
   },
   "include": ["src"]
 }

@@ -1,10 +1,10 @@
 # Certen Demos — the Authorization Cockpit
 
-> **One engine. Three stories. The action is the only thing that changes.**
+> **One engine. Four stories. The action is the only thing that changes.**
 >
 > A self-contained, projection-ready demo suite that makes Certen's value scream off the screen:
 > nothing high-value executes until policy is satisfied and *proven* — whether the actor is a
-> person, a multisig, or an AI.
+> person, a consortium of companies, a release pipeline, or an AI.
 
 Presenter and planning material is kept out of this repository.
 This README is how you **run** what those docs describe.
@@ -15,22 +15,29 @@ This README is how you **run** what those docs describe.
 
 ```
 demos/
-├── cockpit/         The Authorization Cockpit — the cinematic 5-rail UI (Vite + React + MUI)
+├── cockpit/         The Authorization Cockpit — the cinematic UI (Vite + React + MUI)
 ├── orchestrator/    The demo engine — Policy Engine, scenarios, SSE feed (Node + Fastify)
 ├── agent/           Demo 2's real Claude agent whose only action tool routes through Certen
 ├── contracts/       DemoUpgradeable / DemoTreasury Solidity + Foundry deploy script
 ├── scripts/         seed.ts (provision live identities) + preflight.ts (health checks)
+├── qa/              Playwright checks — viewport, walkthrough, static-build verification
 ├── docker-compose.yml
 └── .env.example
 ```
 
 The cockpit is a pure function of one `ScenarioState` object the orchestrator streams over SSE.
-Its five rails map 1:1 to the Certen engine, so the audience literally watches *"same engine,
-different action"* three times:
+Everything maps 1:1 to the Certen engine, so the audience literally watches *"same engine,
+different action"* four times:
 
 ```
 ① Proposed Action → ② Policy → ③ Approvals → ④ Proof → ⑤ Execution
 ```
+
+**Two views, toggled in the header.** **Diagram** (the default) draws the flow as an authority
+graph — actor and action, each organization's seats converging into a proof node that gates
+execution — with a proof journey on the right naming each phase of the real V6.1 cycle as it lands.
+**Detail** is the text layout, and carries the *Without CERTEN → CERTEN did this → Why it matters*
+band.
 
 ---
 
@@ -67,61 +74,73 @@ Full options in [`SHARE.md`](./SHARE.md). (`npm run dev` stays orchestrator-back
 
 ## Cockpit features (self-teaching, audit-driven)
 
-The cockpit follows the internal audit runbooks:
+- **No-scroll layout** — everything lands at **1280×720** and **1440×900** with no scrolling.
+  Verified by `npm run qa:viewport` (Playwright; screenshots to `qa/shots/`).
+- **Presenter-driven beats** — every act stops between beats, so each refusal and each signature is
+  its own moment and nothing runs away from you mid-sentence. **Pace** (Cinematic / Standard /
+  Instant, default Standard) and **Step mode** (advance with **Space**) live in the ⚙ popover, along
+  with the build stamp — so "am I on the current bundle?" is a five-second check.
+- **Step back one beat** — separate from Reset, which restarts the whole scenario.
+- **Policy-engine throughput** — the volume the engine cleared on policy alone while the demo walked
+  one exception. Without it, the screen reads as "every action needs three companies and a proof."
+- **Evidence** — distinguishes an **Execution Proof** from a **Refusal Record** (refused actions are
+  auditable, not an empty rail). Simulated artifacts are tagged **SAMPLE** and left unlinked.
+- **Modes** — Diagram / Detail, Exec / Technical, a presenter-cues toggle (operator-only), and a
+  Trust model drawer.
+- **Live vs simulated** — a **SIMULATED** chip or, in live mode, a **LIVE** chip with real dependency
+  health (gateway / proofs / RPCs), backed by `GET /api/demo-health`.
 
-- **No-scroll layout** — all five rails + the proof/execution payoff are visible at **1280×720**
-  and **1440×900** with no scrolling. Verified by `npm run qa:viewport` (Playwright; captures
-  screenshots to `qa/shots/`).
-- **Cinematic staged reveal** — the five rails are introduced one at a time with an **active-rail
-  spotlight** (not-yet-reached rails are dimmed), so each action and result lands as its own beat
-  and the verdict stamp holds until the approvals appear. **Pace** (Cinematic / Standard / Instant,
-  default Cinematic) and **Step mode** (advance with **Space** or the on-screen button) live in the
-  ⚙ presenter-settings popover.
-- **"Why This Matters" strip** — every state shows *Without CERTEN → CERTEN did this → Why it
-  matters*, so the screen teaches without narration.
-- **Approvals & Coordination** — the live pending-tx hash, who has **Signed** vs been **notified**
-  (inbox/webhook/KMS), and a coordination summary. Collapses to one line once quorum is reached.
-- **Evidence rail** — distinguishes an **Execution Proof** from a **Blocked Action Record** (refused
-  actions are auditable, not an empty rail) and translates **G0/G1/G2** to plain English.
-- **Modes** (top-right): **Story / Builder** (Builder shows the API integration trace),
-  **Exec / Technical** (Technical expands proof id / tx / Merkle), a **presenter-cues** toggle
-  (operator-only), and a **Trust model** drawer.
-- **Live vs simulated** — a **SIMULATED CHOREOGRAPHY** chip (tooltip explains it) or, in live mode,
-  a **LIVE** chip with real dependency health (gateway / proofs / RPCs), backed by
-  `GET /api/demo-health`.
-
-## How to drive each demo
+## The four demos
 
 Open the cockpit, click a demo card, then click the **pulsing** button. Everything is a button —
-never type during a demo.
+never type during a demo. Entering a demo auto-resets it.
 
-### Demo 1 · Stop the $10M Mistake
-1. **Propose the upgrade** → lands at **BLOCKED** (CTO ✓, Security ✓, Foundation ✗ — 2 of 3).
-2. Click **Approve** on the Foundation tile → stamp slams **APPROVED** → a **Proof** card
-   materializes → the **Execution** rail flips the on-chain version `6.0 → 6.1`.
+### Demo 1 · Regulated Asset Issuance — 3 acts, 12 beats
+Tokenized gold across three companies: an issuer, a custodian holding the metal, a transfer agent
+keeping the register. Each holds its own keys; some seats are people and some are that company's own
+headless policy-engine signer.
+1. A correct issuance — three companies, three thresholds, one proof, and only then does supply move.
+2. **The keystroke.** A delivery arrives and the ceiling rises; then an operator keys in six extra
+   zeros. The issuer's own officers approve it and so does the transfer agent. The custodian's
+   reserve policy refuses — *arithmetically*, not because someone read carefully.
+3. **Total compromise.** The attacker holds every one of the issuer's officer keys. That buys one
+   seat of three. The custodian refuses on the gold; the transfer agent refuses on the register.
 
-### Demo 2 · AI Agent Guardrails (three acts)
-1. **Wake the AI agent** → Act 1: the agent reasons live (right panel) and auto-executes a $250k
-   transfer — *proves Certen is policy, not a blanket wall.*
-2. **Now the agent moves $5,000,000** → **BLOCKED** (over $1M needs a human). Click **Approve**
-   (Human) → executes with proof.
-3. **Now the agent tries to delete the database** → **BLOCKED forever.** The Customer Records panel
-   stays at **1,284,902 — untouched.** There is intentionally no approve button. Mic drop.
+### Demo 2 · AI Agent Guardrails — 4 acts, 8 beats
+An AI agent with its own key and real spending authority.
+1. Within policy → it proves and executes on its own key. *Certen is policy, not a wall.*
+2. $5M needs a person — so the agent splits it into six payments under the limit. Refused: the limit
+   is a rolling window across everything the actor moved, not a per-transaction cap. Then a human
+   co-signs the original and it executes.
+3. **Prompt injection.** A genuine credential, a valid signature, and a payee that isn't on the
+   register. No proof can form.
+4. **Its key is stolen** — with a genuinely issued proof. The account re-derives the commitment,
+   the destination changed, and nothing executes. *The blast radius of a stolen agent key is nothing.*
 
-### Demo 3 · Cross-Chain Treasury Protection (two acts)
-1. **Propose the $25M transfer** → **BLOCKED** at 2 of 3 (Treasurer ✓, Foundation ✓, Council ✗).
-   Click **Approve** (Security Council) → proof → both bridge legs execute, treasury bar moves
-   $250M → $225M / +$25M.
-2. **Now: treasurer key is stolen** → the attacker resubmits with the *real* treasurer key →
-   **1 of 3 → BLOCKED.** Funds never move.
+### Demo 3 · Stop the Production Mistake — 3 acts, 7 beats
+1. A correct release: three authorities sign, the version changes only against the proof.
+2. **The pipeline is compromised** — valid CI credentials, the normal release path, a backdoored
+   build. All three authorities are legitimate, and none of them recognises the release.
+3. **The gate is sized to the action.** Same engineer, same contract, a different call: replacing
+   the code needs the two senior keys, not the three release authorities. This act *resolves* — the
+   claim is that the right people can still ship.
 
-Click **Reset** (or just re-enter the demo) to start clean. Entering a demo auto-resets it.
+### Demo 4 · Cross-Chain Treasury Protection — 4 acts, 10 beats
+1. A legitimate $25M cross-chain transfer: three authorities, one proof, both legs.
+2. The treasurer key is stolen, then a second authority is phished. Both signatures genuine. Nothing
+   moves.
+3. **The replayed proof** — the strongest single frame in any demo. The attacker stops faking
+   authority and reuses authority that was real: the proof that moved $25M in Act 1. Three of three
+   genuine signatures, and it is still refused. A proof authorizes one action, once, bound to one
+   destination.
+4. Revoke both compromised keys in one action, then reassign control to a fresh key — every account
+   on every chain those keys controlled is re-secured without touching those chains.
 
 ---
 
 ## Live mode — REAL on-chain execution + verification
 
-In live mode the execution rail (⑤) sends a **real transaction** to demo contracts deployed on
+In live mode the execution rail sends a **real transaction** to demo contracts deployed on
 **Base Sepolia** and **Arbitrum Sepolia**, then **reads the contract state back to prove it** and
 shows the real block-explorer link. This is genuinely verifiable by anyone.
 
@@ -136,9 +155,10 @@ Then `npm run dev` and present. What happens on chain per demo:
 
 | Demo | Real on-chain action | Verified by |
 |------|----------------------|-------------|
-| 1 · Stop the Mistake | `DemoUpgradeable.setVersion("6.1")` on Base Sepolia | re-reading `version()` == "6.1" |
-| 2 · AI Guardrails | `DemoTreasury.withdraw()` on Base ($250k, then $5M); delete-DB **never** executes | balance delta |
-| 3 · Treasury | `withdraw` on Base + `deposit` on Arbitrum (cross-chain); stolen-key attack **never** executes | balance delta on both chains |
+| 1 · Asset Issuance | `DemoTreasury` mint of XAUV supply on Base Sepolia | balance delta; the over-mint and the compromised-issuer mints **never** execute |
+| 2 · AI Guardrails | `DemoTreasury.withdraw()` on Base Sepolia ($250k, then $5M); the split-payment evasion, the unlisted payee and the stolen-key call **never** execute | balance delta |
+| 3 · Change Control | `DemoUpgradeable.setVersion()` on Base Sepolia | re-reading `version()`; the backdoored build **never** executes |
+| 4 · Treasury | `withdraw` on Base Sepolia + `deposit` on Arbitrum Sepolia; the stolen-key and replayed-proof attempts **never** execute | balance delta on both chains |
 
 Deployed contracts are recorded in [`contracts/deployments.json`](./contracts/deployments.json).
 Redeploy your own with [`contracts/README.md`](./contracts/README.md) (Foundry). Top balances back
@@ -147,10 +167,10 @@ up between sessions with the treasury's `deposit` (or just redeploy).
 **Pre-flight:** `DEMO_MODE=live npm run preflight` checks the orchestrator, the live gateway +
 proofs service, **and that every demo contract has bytecode on-chain**. Must exit 0.
 
-### Real Certen authorization on Kermit (rails ①–④)
+### Real Certen authorization on Kermit
 
-Rails ①–④ (the multi-sig approval + Certen proof) drive against the **real API Gateway**, which is
-wired to Accumulate (Kermit) + the proofs service. Validate the real path end-to-end:
+The approval + proof path drives against the **real API Gateway**, which is wired to Accumulate
+(Kermit) + the proofs service. Validate the real path end-to-end:
 
 ```bash
 GATEWAY_API_KEY=ck_live_… DEMO_MODE=live npm --workspace orchestrator run kermit:check
@@ -179,6 +199,10 @@ It runs `claude-opus-4-8` with exactly one tool — `certen_execute` — so the 
 except through Certen. Watch it reason, try to delete the database, and get refused. See
 [`agent/README.md`](./agent/README.md).
 
+Note what this does and does not prove: it demonstrates that the model is **confined to one tool**
+against a local mirror of the Certen ruleset. It is not the on-chain proof path — that is live mode
+above.
+
 ---
 
 ## Docker
@@ -206,5 +230,7 @@ cd demos && docker compose up -d --build
   `npm run dev:orchestrator`. It auto-retries once the orchestrator is up.
 - **A demo looks stuck mid-reveal** → the choreography has deliberate ~1–2s beats (blocked → proof
   → execute). Give it a moment; controls are disabled (`busy`) during the reveal.
+- **A fix looks like it didn't land** → check the build stamp in the ⚙ popover. A cached `index.html`
+  silently serves an old bundle.
 - **Live mode 401s** → the gateway needs a valid `GATEWAY_API_KEY` with the right scopes; re-run
   `npm run preflight`.
